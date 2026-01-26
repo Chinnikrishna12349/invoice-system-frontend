@@ -1,0 +1,81 @@
+/**
+ * Japanese font support for jsPDF
+ * Ensures proper rendering of Japanese characters using html2canvas
+ */
+
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+
+/**
+ * Render Japanese text as image and add to PDF
+ * This is necessary because jsPDF's default fonts don't support Japanese characters
+ */
+export const renderJapaneseText = async (
+  text: string,
+  fontSize: number = 10,
+  fontStyle: 'normal' | 'bold' = 'normal',
+  width: number = 100,
+  align: 'left' | 'center' | 'right' = 'left'
+): Promise<string> => {
+  try {
+    // Create a temporary div element
+    const div = document.createElement('div');
+    div.style.position = 'absolute';
+    div.style.left = '-9999px';
+    div.style.top = '-9999px';
+    div.style.fontSize = `${fontSize}pt`;
+    div.style.fontFamily = "'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif";
+    div.style.fontWeight = fontStyle === 'bold' ? 'bold' : 'normal';
+    div.style.color = '#000000';
+    div.style.whiteSpace = 'nowrap';
+    div.style.width = `${width}px`;
+    div.style.textAlign = align;
+    div.style.overflow = 'hidden';
+    div.style.textOverflow = 'ellipsis';
+    div.textContent = text;
+    
+    document.body.appendChild(div);
+    
+    // Render to canvas
+    const canvas = await html2canvas(div, {
+      backgroundColor: '#FFFFFF',
+      scale: 2,
+      logging: false,
+      useCORS: true,
+    });
+    
+    // Remove the temporary element
+    document.body.removeChild(div);
+    
+    // Convert to data URL
+    return canvas.toDataURL('image/png');
+  } catch (error) {
+    console.error('Error rendering Japanese text:', error);
+    return '';
+  }
+};
+
+/**
+ * Configure jsPDF document for Japanese text rendering
+ * Note: We'll use html2canvas for Japanese text rendering
+ */
+export const configureJapaneseFont = (doc: jsPDF): void => {
+  try {
+    // For Japanese, we'll render text using html2canvas
+    // Set default font for non-Japanese text
+    doc.setFont('helvetica');
+    
+    console.log('Japanese font support configured (using html2canvas for Japanese text)');
+  } catch (error) {
+    console.error('Error configuring Japanese font:', error);
+  }
+};
+
+/**
+ * Check if a string contains Japanese characters
+ */
+export const containsJapanese = (text: string): boolean => {
+  // Check for Hiragana, Katakana, or Kanji
+  return /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text);
+};
+

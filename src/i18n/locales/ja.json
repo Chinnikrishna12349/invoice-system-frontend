@@ -1,0 +1,107 @@
+{
+  "app": {
+    "title": "オライフォークス 請求書",
+    "subtitle": "プロフェッショナルな請求書管理システム",
+    "actions": {
+      "newInvoice": "新しい請求書",
+      "edit": "編集",
+      "delete": "削除",
+      "download": "PDFダウンロード",
+      "sendEmail": "メール送信",
+      "save": "保存",
+      "cancel": "キャンセル",
+      "back": "戻る",
+      "search": "検索"
+    },
+    "status": {
+      "loading": "請求書を読み込み中...",
+      "saving": "保存中...",
+      "deleting": "削除中...",
+      "noInvoices": "請求書がありません",
+      "createFirst": "左側のフォームを使用して最初の請求書を作成してください",
+      "noResults": "請求書が見つかりません",
+      "adjustSearch": "検索条件を調整してみてください"
+    }
+  },
+  "invoice": {
+    "title": "請求書",
+    "number": "請求書番号",
+    "date": "日付",
+    "dueDate": "支払期日",
+    "from": "差出人",
+    "to": "請求先",
+    "companyName": "オライフォークス株式会社",
+    "description": "作業内容",
+    "hours": "時間数",
+    "unitPrice": "単価（円）",
+    "amount": "金額（円）",
+    "subtotal": "小計",
+    "cgst": "CGST（中央消費税）",
+    "sgst": "SGST（州消費税）",
+    "consumptionTax": "消費税",
+    "tax": "Tax",
+    "total": "合計金額",
+    "grandTotal": "合計金額",
+    "notes": "備考",
+    "terms": "支払条件",
+    "termsText": "請求日より15日以内にお支払いください。",
+    "thankYou": "ご利用いただき誠にありがとうございます。",
+    "employeeId": "従業員ID",
+    "email": "メールアドレス",
+    "phone": "電話番号",
+    "address": "住所",
+    "invoiceNo": "請求書番号：",
+    "dateLabel": "発行日：",
+    "dueLabel": "支払期限："
+  },
+  "form": {
+    "required": "この項目は必須です",
+    "invalidEmail": "有効なメールアドレスを入力してください",
+    "saveSuccess": "請求書を保存しました",
+    "saveError": "請求書の保存中にエラーが発生しました",
+    "deleteConfirm": "この請求書を削除してもよろしいですか？",
+    "deleteConfirmDesc": "この操作は元に戻せません。",
+    "emailSent": "請求書メールを送信しました 📧",
+    "emailError": "請求書メールの送信に失敗しました ❌",
+    "invoiceNotFound": "請求書が見つかりません ❌"
+  },
+  "language": {
+    "en": "英語",
+    "ja": "日本語",
+    "selectLanguage": "言語を選択",
+    "downloadIn": "ダウンロード言語"
+  },
+  "download": {
+    "selectLanguage": "言語を選択",
+    "selectLanguageDesc": "請求書PDFの言語を選択してください",
+    "english": "English",
+    "englishDesc": "英語でダウンロード",
+    "japanese": "日本語",
+    "japaneseDesc": "日本語でダウンロード",
+    "downloadPdf": "PDFをダウンロード"
+  },
+  "company": {
+    "name": "オライフォークス株式会社",
+    "tagline": "Aspiring Intelligence",
+    "address": "ベダヤパレム、ネロール、アーンドラ・プラデーシュ州、PIN: 524004、インド",
+    "gstin": "GSTIN: 29ABCDE1234F1Z5",
+    "phone": "電話: +91 98765 43210",
+    "email": "メール: info@oryfolks.com"
+  },
+  "payment": {
+    "instructions": "お支払い方法",
+    "bankName": "銀行名：",
+    "branchName": "支店名：",
+    "accountType": "口座種別：",
+    "accountNumber": "口座番号：",
+    "accountName": "口座名義：",
+    "ifsc": "IFSC：",
+    "branchCode": "支店コード：",
+    "note": "※振込手数料はお客様のご負担でお願いいたします。",
+    "authorisedSignature": "承認された署名"
+  },
+  "contact": {
+    "info": "お問い合わせ先",
+    "phoneHours": "（営業時間：月〜金 9:00-18:00）"
+  }
+}

@@ -1,0 +1,85 @@
+.app-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.print-button-container {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding: 10px 0;
+}
+
+.print-button, .back-button {
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.print-button {
+  background-color: #2c3e50;
+  color: white;
+  margin-left: auto;
+}
+
+.print-button:hover {
+  background-color: #1a252f;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.back-button {
+  background-color: #f1f5f9;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+}
+
+.back-button:hover {
+  background-color: #e2e8f0;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.invoice-print-container {
+  background: white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Print styles */
+@media print {
+  .print-button-container {
+    display: none;
+  }
+  
+  .app-container {
+    padding: 0;
+  }
+  
+  .invoice-print-container {
+    box-shadow: none;
+    border-radius: 0;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .print-button-container {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .print-button, .back-button {
+    width: 100%;
+    justify-content: center;
+  }
+}

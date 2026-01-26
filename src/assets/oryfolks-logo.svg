@@ -1,0 +1,93 @@
+<svg width="320" height="70" viewBox="0 0 320 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradBlue" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1E3A8A"/>
+      <stop offset="100%" stop-color="#60A5FA"/>
+    </linearGradient>
+    <linearGradient id="gradOrange" x1="100%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#EA580C"/>
+      <stop offset="100%" stop-color="#FBBF24"/>
+    </linearGradient>
+    <linearGradient id="gradBlueText" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1E3A8A"/>
+      <stop offset="100%" stop-color="#2563EB"/>
+    </linearGradient>
+    <linearGradient id="gradOrangeText" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#EA580C"/>
+      <stop offset="100%" stop-color="#F97316"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Left Head Silhouette (Blue) -->
+  <g opacity="0.9">
+    <!-- Head outline with dots pattern -->
+    <path d="M20 20 Q20 10 30 10 Q40 10 45 15 Q50 20 50 25 Q50 30 48 35 Q45 40 40 45 Q35 50 30 50 Q25 50 20 45 Q15 40 15 35 Q15 30 18 25 Q20 20 20 20 Z" fill="url(#gradBlue)" opacity="0.3"/>
+    
+    <!-- Dots pattern for left head -->
+    <circle cx="25" cy="20" r="2" fill="url(#gradBlue)" opacity="0.8"/>
+    <circle cx="30" cy="18" r="1.5" fill="url(#gradBlue)" opacity="0.7"/>
+    <circle cx="35" cy="20" r="2" fill="url(#gradBlue)" opacity="0.8"/>
+    <circle cx="22" cy="28" r="2.5" fill="url(#gradBlue)" opacity="0.9"/>
+    <circle cx="28" cy="30" r="2" fill="url(#gradBlue)" opacity="0.8"/>
+    <circle cx="35" cy="28" r="1.5" fill="url(#gradBlue)" opacity="0.7"/>
+    <circle cx="25" cy="35" r="2" fill="url(#gradBlue)" opacity="0.8"/>
+    <circle cx="32" cy="38" r="2.5" fill="url(#gradBlue)" opacity="0.9"/>
+    <circle cx="38" cy="35" r="1.5" fill="url(#gradBlue)" opacity="0.7"/>
+    <circle cx="20" cy="40" r="2" fill="url(#gradBlue)" opacity="0.8"/>
+    <circle cx="28" cy="42" r="2" fill="url(#gradBlue)" opacity="0.8"/>
+    <circle cx="35" cy="40" r="1.5" fill="url(#gradBlue)" opacity="0.7"/>
+    
+    <!-- Connecting lines for left head -->
+    <line x1="25" y1="20" x2="30" y2="18" stroke="#60A5FA" stroke-width="0.5" opacity="0.6"/>
+    <line x1="30" y1="18" x2="35" y2="20" stroke="#60A5FA" stroke-width="0.5" opacity="0.6"/>
+    <line x1="22" y1="28" x2="28" y2="30" stroke="#60A5FA" stroke-width="0.5" opacity="0.6"/>
+    <line x1="28" y1="30" x2="35" y2="28" stroke="#60A5FA" stroke-width="0.5" opacity="0.6"/>
+    <line x1="25" y1="35" x2="32" y2="38" stroke="#60A5FA" stroke-width="0.5" opacity="0.6"/>
+    <line x1="32" y1="38" x2="38" y2="35" stroke="#60A5FA" stroke-width="0.5" opacity="0.6"/>
+  </g>
+  
+  <!-- Right Head Silhouette (Orange) -->
+  <g opacity="0.9">
+    <!-- Head outline with dots pattern -->
+    <path d="M50 20 Q50 10 40 10 Q30 10 25 15 Q20 20 20 25 Q20 30 22 35 Q25 40 30 45 Q35 50 40 50 Q45 50 50 45 Q55 40 55 35 Q55 30 52 25 Q50 20 50 20 Z" fill="url(#gradOrange)" opacity="0.3"/>
+    
+    <!-- Dots pattern for right head -->
+    <circle cx="45" cy="20" r="2" fill="url(#gradOrange)" opacity="0.8"/>
+    <circle cx="40" cy="18" r="1.5" fill="url(#gradOrange)" opacity="0.7"/>
+    <circle cx="35" cy="20" r="2" fill="url(#gradOrange)" opacity="0.8"/>
+    <circle cx="48" cy="28" r="2.5" fill="url(#gradOrange)" opacity="0.9"/>
+    <circle cx="42" cy="30" r="2" fill="url(#gradOrange)" opacity="0.8"/>
+    <circle cx="35" cy="28" r="1.5" fill="url(#gradOrange)" opacity="0.7"/>
+    <circle cx="45" cy="35" r="2" fill="url(#gradOrange)" opacity="0.8"/>
+    <circle cx="38" cy="38" r="2.5" fill="url(#gradOrange)" opacity="0.9"/>
+    <circle cx="32" cy="35" r="1.5" fill="url(#gradOrange)" opacity="0.7"/>
+    <circle cx="50" cy="40" r="2" fill="url(#gradOrange)" opacity="0.8"/>
+    <circle cx="42" cy="42" r="2" fill="url(#gradOrange)" opacity="0.8"/>
+    <circle cx="35" cy="40" r="1.5" fill="url(#gradOrange)" opacity="0.7"/>
+    
+    <!-- Connecting lines for right head -->
+    <line x1="45" y1="20" x2="40" y2="18" stroke="#FBBF24" stroke-width="0.5" opacity="0.6"/>
+    <line x1="40" y1="18" x2="35" y2="20" stroke="#FBBF24" stroke-width="0.5" opacity="0.6"/>
+    <line x1="48" y1="28" x2="42" y2="30" stroke="#FBBF24" stroke-width="0.5" opacity="0.6"/>
+    <line x1="42" y1="30" x2="35" y2="28" stroke="#FBBF24" stroke-width="0.5" opacity="0.6"/>
+    <line x1="45" y1="35" x2="38" y2="38" stroke="#FBBF24" stroke-width="0.5" opacity="0.6"/>
+    <line x1="38" y1="38" x2="32" y2="35" stroke="#FBBF24" stroke-width="0.5" opacity="0.6"/>
+    
+    <!-- Bridge lines connecting the two heads -->
+    <line x1="35" y1="20" x2="35" y2="20" stroke="#60A5FA" stroke-width="0.5" opacity="0.4"/>
+    <line x1="35" y1="28" x2="35" y2="28" stroke="#FBBF24" stroke-width="0.5" opacity="0.4"/>
+    <line x1="35" y1="35" x2="35" y2="35" stroke="#60A5FA" stroke-width="0.5" opacity="0.4"/>
+  </g>
+  
+  <!-- Brand Name: ORY FOLKS -->
+  <text x="70" y="42" font-family="Georgia, 'Times New Roman', serif" font-weight="700" font-size="30" fill="url(#gradBlueText)">ORY</text>
+  <text x="130" y="42" font-family="Georgia, 'Times New Roman', serif" font-weight="700" font-size="30" fill="url(#gradOrangeText)">FOLKS</text>
+  
+  <!-- Tagline: ASPIRING INTELLIGENCE -->
+  <text x="72" y="60" font-family="'Segoe UI', Arial, sans-serif" font-weight="600" font-size="13" letter-spacing="1">
+    <tspan fill="url(#gradBlueText)">A</tspan>
+    <tspan fill="#1F2937">SPIRING </tspan>
+    <tspan fill="url(#gradOrangeText)">I</tspan>
+    <tspan fill="#1F2937">NTELLIGENCE</tspan>
+  </text>
+</svg>
