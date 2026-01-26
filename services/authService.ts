@@ -61,7 +61,7 @@ const USER_KEY = 'authUser';
 const COMPANY_INFO_KEY = 'companyInfo';
 
 // API base URL
-const AUTH_API_URL = import.meta.env?.VITE_API_URL?.replace('/api/invoices', '') || 'http://localhost:8080';
+const AUTH_API_URL = import.meta.env?.VITE_API_URL?.replace('/api/invoices', '') || 'https://invoice-system-backend-owhd.onrender.com';
 
 interface ApiResponse<T> {
     success: boolean;

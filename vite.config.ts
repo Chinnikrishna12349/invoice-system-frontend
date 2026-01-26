@@ -16,13 +16,13 @@ export default defineConfig(({ mode }) => {
       proxy: {
         // Proxy API requests to the backend
         '^/api': {
-          target: 'http://localhost:8080',
+          target: 'https://invoice-system-backend-owhd.onrender.com',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, '')
         },
         // Serve uploaded files
         '^/uploads': {
-          target: 'http://localhost:8080',
+          target: 'https://invoice-system-backend-owhd.onrender.com',
           changeOrigin: true,
           rewrite: (path) => path
         }

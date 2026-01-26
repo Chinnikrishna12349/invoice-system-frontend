@@ -7,8 +7,8 @@ import { Invoice } from '../types';
 
 // Vite uses import.meta.env; fall back to localhost backend
 // @ts-ignore - Vite provides import.meta.env at runtime
-const API_BASE_URL = import.meta.env?.VITE_API_URL || 'http://localhost:8080/api/invoices';
-const AUTH_API_URL = import.meta.env?.VITE_API_URL?.replace('/api/invoices', '') || 'http://localhost:8080';
+const API_BASE_URL = import.meta.env?.VITE_API_URL || 'https://invoice-system-backend-owhd.onrender.com/api/invoices';
+const AUTH_API_URL = import.meta.env?.VITE_API_URL?.replace('/api/invoices', '') || 'https://invoice-system-backend-owhd.onrender.com';
 
 /**
  * Get JWT token from localStorage
