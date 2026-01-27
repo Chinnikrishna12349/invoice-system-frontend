@@ -28,7 +28,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         invoiceNumber: '',
         date: new Date().toISOString().split('T')[0],
         dueDate: '',
-        company: 'Ory Folks Pvt Ltd',
+        company: '',
         employeeName: '',
         employeeId: '',
         employeeEmail: '',
@@ -183,7 +183,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             invoiceNumber: formData.invoiceNumber || `INV-${String(invoicesCount + 1).padStart(4, '0')}`,
             date: formData.date || new Date().toISOString().split('T')[0],
             dueDate: formattedDueDate, // Auto-calculated
-            company: formData.company || 'Ory Folks Pvt Ltd',
+            company: formData.company || companyInfo?.companyName || '',
             employeeName: formData.employeeName || '',
             employeeId: formData.employeeId || '',
             employeeEmail: formData.employeeEmail || '',
