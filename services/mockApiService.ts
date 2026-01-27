@@ -17,7 +17,7 @@ let mockInvoices: Invoice[] = [
     ],
     taxRate: 10,
     dueDate: '2023-11-15',
-    company: 'Ory Folks Pvt Ltd'
+    company: 'Example Corp'
   },
   {
     id: '2',

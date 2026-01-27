@@ -52,7 +52,7 @@ export const Navigation: React.FC = () => {
                                 </>
                             ) : (
                                 <>
-                                    <img src={logo} alt="OryFolks Logo" className="h-10 w-auto sm:h-12 flex-shrink-0" />
+                                    <img src={logo} alt="System Logo" className="h-10 w-auto sm:h-12 flex-shrink-0" />
                                 </>
                             )}
                         </div>

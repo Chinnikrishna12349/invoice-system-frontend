@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Ory Folks Invoice",
+    "title": "Invoice Management",
     "subtitle": "Professional invoice management system",
     "actions": {
       "newInvoice": "New Invoice",
@@ -30,7 +30,7 @@
     "dueDate": "Due Date",
     "from": "From",
     "to": "Bill To",
-    "companyName": "Ory Folks Pvt Ltd",
+    "companyName": "Your Company Name",
     "description": "Description",
     "hours": "Hours",
     "unitPrice": "Unit Price",
@@ -81,12 +81,12 @@
     "downloadPdf": "Download PDF"
   },
   "company": {
-    "name": "Ory Folks Pvt Ltd",
-    "tagline": "Aspiring Intelligence",
-    "address": "Vedayapalem, Nellore, Andhra Pradesh, PIN: 524004, India",
-    "gstin": "GSTIN: 29ABCDE1234F1Z5",
-    "phone": "Phone: +91 98765 43210",
-    "email": "Email: info@oryfolks.com"
+    "name": "Your Company Name",
+    "tagline": "Professional Services",
+    "address": "Company Address",
+    "gstin": "GSTIN: ---",
+    "phone": "Phone: ---",
+    "email": "Email: ---"
   },
   "payment": {
     "instructions": "Payment Details",

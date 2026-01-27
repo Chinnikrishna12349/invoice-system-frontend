@@ -459,7 +459,7 @@ const drawInvoiceContent = async (
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
     // Company Name Bold
-    await addTextToPdf(doc, companyInfoToUse?.companyName || 'Ory Folks Pvt Ltd', 14, fromY, {
+    await addTextToPdf(doc, companyInfoToUse?.companyName || invoice.company || t.companyName, 14, fromY, {
         fontSize: 10,
         fontStyle: 'bold',
         language,

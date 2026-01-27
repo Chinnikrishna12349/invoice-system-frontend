@@ -7,14 +7,14 @@ const InvoiceTemplate = () => {
       {/* Header Section */}
       <header className="invoice-header">
         <div className="company-info">
-          <h1>ORY FOLKS</h1>
-          <p className="tagline">ASPIRING INTELLIGENCE</p>
+          <h1>INVOICE SYSTEM</h1>
+          <p className="tagline">PROFESSIONAL SERVICES</p>
         </div>
         <div className="invoice-info">
           <h2>INVOICE</h2>
           <div className="invoice-details">
-            <p><strong>Invoice #:</strong> OF-INV-02</p>
-            <p><strong>Date:</strong> 12/29/2025</p>
+            <p><strong>Invoice #:</strong> ---</p>
+            <p><strong>Date:</strong> ---</p>
           </div>
         </div>
       </header>
@@ -23,16 +23,16 @@ const InvoiceTemplate = () => {
       <div className="address-section">
         <div className="from-address">
           <h3>From:</h3>
-          <p>Ory Folks Pvt Ltd</p>
-          <p>Vedayapalem</p>
-          <p>Nellore, Andhra Pradesh</p>
-          <p>PIN: 524004</p>
-          <p>India</p>
-          <p>GSTIN: 29ABCDE1234F1Z5</p>
-          <p>Phone: +91 9876543210</p>
-          <p>Email: info@oryfolks.com</p>
+          <p>Your Company Name</p>
+          <p>Company Address</p>
+          <p>City, State</p>
+          <p>PIN: ---</p>
+          <p>Country</p>
+          <p>GSTIN: ---</p>
+          <p>Phone: ---</p>
+          <p>Email: ---</p>
         </div>
-        
+
         <div className="bill-to">
           <h3>Bill To:</h3>
           <p>kamalhasanPenubala</p>
@@ -91,10 +91,10 @@ const InvoiceTemplate = () => {
       <div className="bank-signature">
         <div className="bank-details">
           <h3>Bank Details:</h3>
-          <p>Account Name: Ory Folks Pvt Ltd</p>
-          <p>Account No: 123456789012</p>
-          <p>IFSC: HDFC0001234</p>
-          <p>Branch Code: 01234</p>
+          <p>Account Name: Your Account Name</p>
+          <p>Account No: ---</p>
+          <p>IFSC: ---</p>
+          <p>Branch Code: ---</p>
         </div>
         <div className="signature">
           <div className="signature-line"></div>
