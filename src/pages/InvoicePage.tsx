@@ -12,49 +12,42 @@ const InvoicePage: React.FC = () => {
     invoiceNumber: `OF-INV-${id?.padStart(2, '0') || '01'}`,
     date: new Date().toLocaleDateString('en-US'),
     from: {
-      name: 'Ory Folks Pvt Ltd',
+      name: 'Your Company Name',
       address: [
-        'Vedayapalem',
-        'Nellore, Andhra Pradesh',
-        'PIN: 524004',
-        'India'
+        'Company Address',
+        'City, State',
+        'PIN: ---',
+        'Country'
       ],
-      gstin: '29ABCDE1234F1Z5',
-      phone: '+91 9876543210',
-      email: 'info@oryfolks.com'
+      gstin: 'GSTIN: ---',
+      phone: 'Phone: ---',
+      email: 'Email: ---'
     },
     billTo: {
-      name: 'kamalhasanPenubala',
-      employeeId: '1029',
-      email: 'techkamalhasan@gmail.com',
-      phone: '999999999999',
-      address: 'Tokyo, Japan'
+      name: 'Customer Name',
+      employeeId: '---',
+      email: 'customer@example.com',
+      phone: '---',
+      address: '---'
     },
     items: [
       {
         sno: 1,
-        description: 'Login page',
-        hours: 2,
-        unitPrice: 1000,
-        amount: 2000
-      },
-      {
-        sno: 2,
-        description: 'Dash Board',
-        hours: 5,
-        unitPrice: 3000,
-        amount: 15000
+        description: 'Service A',
+        hours: 0,
+        unitPrice: 0,
+        amount: 0
       }
     ],
-    subtotal: 17000,
-    taxRate: 10,
-    taxAmount: 1700,
-    grandTotal: 18700,
+    subtotal: 0,
+    taxRate: 0,
+    taxAmount: 0,
+    grandTotal: 0,
     bankDetails: {
-      accountName: 'Ory Folks Pvt Ltd',
-      accountNumber: '123456789012',
-      ifsc: 'HDFC0001234',
-      branchCode: '01234'
+      accountName: 'Your Account Name',
+      accountNumber: '---',
+      ifsc: '---',
+      branchCode: '---'
     }
   };
 
@@ -116,7 +109,7 @@ const InvoicePage: React.FC = () => {
             Print Invoice
           </button>
         </div>
-        
+
         <div id="invoice-content">
           <InvoiceLayout {...invoiceData} />
         </div>

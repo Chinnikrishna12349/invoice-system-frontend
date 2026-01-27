@@ -28,10 +28,10 @@ export const InvoicePage: React.FC = () => {
         grandTotal: 18700,
         country: 'india' as const,
         bankDetails: {
-            accountName: 'Ory Folks Pvt Ltd',
-            accountNumber: '1234567890',
-            ifscCode: 'ORFL0000001',
-            bankName: 'Example Bank',
+            accountName: 'Your Account Name',
+            accountNumber: '---',
+            ifscCode: '---',
+            bankName: '---',
         },
     };
 

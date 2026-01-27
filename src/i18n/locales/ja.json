@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "オライフォークス 請求書",
+    "title": "請求書管理システム",
     "subtitle": "プロフェッショナルな請求書管理システム",
     "actions": {
       "newInvoice": "新しい請求書",
@@ -30,18 +30,18 @@
     "dueDate": "支払期日",
     "from": "差出人",
     "to": "請求先",
-    "companyName": "オライフォークス株式会社",
+    "companyName": "貴社名",
     "description": "作業内容",
     "hours": "時間数",
-    "unitPrice": "単価（円）",
-    "amount": "金額（円）",
+    "unitPrice": "単価",
+    "amount": "金額",
     "subtotal": "小計",
-    "cgst": "CGST（中央消費税）",
-    "sgst": "SGST（州消費税）",
+    "cgst": "CGST",
+    "sgst": "SGST",
     "consumptionTax": "消費税",
-    "tax": "Tax",
-    "total": "合計金額",
-    "grandTotal": "合計金額",
+    "tax": "税金",
+    "total": "合計",
+    "grandTotal": "合計",
     "notes": "備考",
     "terms": "支払条件",
     "termsText": "請求日より15日以内にお支払いください。",
@@ -81,12 +81,12 @@
     "downloadPdf": "PDFをダウンロード"
   },
   "company": {
-    "name": "オライフォークス株式会社",
-    "tagline": "Aspiring Intelligence",
-    "address": "ベダヤパレム、ネロール、アーンドラ・プラデーシュ州、PIN: 524004、インド",
-    "gstin": "GSTIN: 29ABCDE1234F1Z5",
-    "phone": "電話: +91 98765 43210",
-    "email": "メール: info@oryfolks.com"
+    "name": "貴社名",
+    "tagline": "プロフェッショナルサービス",
+    "address": "住所",
+    "gstin": "GSTIN: ---",
+    "phone": "電話: ---",
+    "email": "メール: ---"
   },
   "payment": {
     "instructions": "お支払い方法",
