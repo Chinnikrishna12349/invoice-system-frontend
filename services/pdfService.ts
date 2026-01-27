@@ -388,17 +388,18 @@ const drawInvoiceContent = async (
     const companyInfoToUse = companyInfo;
     const effectiveCountry = language === 'ja' ? 'japan' : (invoice.country || 'india');
 
-    // Helper to format currency
+    // Helper to format currency safely for PDF
     const formatAmount = (value: number) => {
-        // Use the formatCurrency helper from countryPreferenceService if possible, 
-        // but we need to import it or replicate logic here since we are inside the function.
-        // We will implement the logic here to match the requirement.
-        const symbol = effectiveCountry === 'japan' ? '¥' : '₹';
-        if (effectiveCountry === 'japan') {
-            return `${symbol}${Math.round(value).toLocaleString('ja-JP')}`;
-        }
-        // India: 2 decimal places
-        return `${symbol}${value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        const isJapan = effectiveCountry === 'japan';
+        const symbol = isJapan ? 'Yen ' : 'Rs '; // Using text aliases is safer for core fonts
+
+        // Manual formatting to avoid hidden characters from toLocaleString
+        const fixedValue = isJapan ? Math.round(value).toString() : value.toFixed(2);
+        const parts = fixedValue.split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        const formattedNumber = parts.join('.');
+
+        return `${symbol}${formattedNumber}`;
     };
 
     // Format date as DD/MM/YYYY
