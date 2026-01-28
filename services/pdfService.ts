@@ -210,53 +210,47 @@ const addLogoToPdf = async (doc: jsPDF, x: number, y: number, logoUrl: string | 
 
         // Determine if it's already a full URL or data URL
         let imageUrl = logoUrl;
-        const isRelative = !logoUrl.startsWith('http') && !logoUrl.startsWith('data:');
+        const isDataUrl = logoUrl.startsWith('data:');
+        const isRelative = !logoUrl.startsWith('http') && !isDataUrl;
 
         if (isRelative) {
             // Ensure single leading slash
             imageUrl = logoUrl.startsWith('/') ? logoUrl : '/' + logoUrl;
         }
 
-        console.log(`PDF Generator: Attempting to fetch logo from: ${imageUrl}`);
+        console.log(`PDF Generator: Processing logo: ${isDataUrl ? 'Base64/Data URL' : imageUrl}`);
 
-        // 1. Fetch the image
-        let response;
-        try {
-            console.log(`PDF Generator: Primary fetch attempt for: ${imageUrl}`);
-            response = await fetch(imageUrl);
+        let imageToLoad = imageUrl;
 
-            // If it's a 404/500 and was a relative path, try prepending the backend URL
-            if (!response.ok && isRelative) {
-                throw new Error(`Relative fetch failed with status ${response.status}`);
-            }
-        } catch (fetchErr) {
-            console.warn('PDF Generator: Relative or direct fetch failed, trying with Backend URL...', fetchErr);
-
-            // Try to construct an absolute URL using the backend base
-            // In production on Render, this should be https://invoice-system-backend-owhd.onrender.com
-            const backendBase = import.meta.env?.VITE_API_URL?.replace('/api/invoices', '')
-                || 'https://invoice-system-backend-owhd.onrender.com';
-
-            const absoluteUrl = `${backendBase}${imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl}`;
-            console.log(`PDF Generator: Retrying with absolute backend URL: ${absoluteUrl}`);
-
+        // 1. Fetch only if not a data URL
+        if (!isDataUrl) {
             try {
-                response = await fetch(absoluteUrl);
-            } catch (retryErr) {
-                console.error('PDF Generator: All fetch attempts failed:', retryErr);
-                throw retryErr;
+                console.log(`PDF Generator: Primary fetch attempt for: ${imageUrl}`);
+                const response = await fetch(imageUrl);
+
+                if (!response.ok) {
+                    if (isRelative) throw new Error(`Relative fetch failed with status ${response.status}`);
+                    throw new Error(`Logo fetch failed with status: ${response.status}`);
+                }
+                const blob = await response.blob();
+                imageToLoad = URL.createObjectURL(blob);
+            } catch (fetchErr) {
+                console.warn('PDF Generator: Primary fetch failed, trying absolute backend URL fallback...', fetchErr);
+                const backendBase = import.meta.env?.VITE_API_URL?.replace('/api/invoices', '')
+                    || 'https://invoice-system-backend-owhd.onrender.com';
+
+                const absoluteUrl = `${backendBase}${imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl}`;
+                try {
+                    const response = await fetch(absoluteUrl);
+                    if (!response.ok) throw new Error(`Absolute fetch failed: ${response.status}`);
+                    const blob = await response.blob();
+                    imageToLoad = URL.createObjectURL(blob);
+                } catch (retryErr) {
+                    console.error('PDF Generator: All fetch attempts failed:', retryErr);
+                    return; // Fail gracefully
+                }
             }
         }
-
-        if (!response.ok) {
-            throw new Error(`Logo fetch failed with status: ${response.status} ${response.statusText}`);
-        }
-
-        const blob = await response.blob();
-        console.log(`PDF Generator: Successfully fetched blob (${blob.size} bytes), type: ${blob.type}`);
-
-        // 2. Convert to object URL
-        const objectUrl = URL.createObjectURL(blob);
 
         try {
             await new Promise<void>((resolve, reject) => {
@@ -318,10 +312,13 @@ const addLogoToPdf = async (doc: jsPDF, x: number, y: number, logoUrl: string | 
                     reject(new Error('Image metadata load failed'));
                 };
 
-                img.src = objectUrl;
+                img.src = imageToLoad;
             });
         } finally {
-            URL.revokeObjectURL(objectUrl);
+            // Revoke object URL ONLY if we created one for a blob
+            if (imageToLoad.startsWith('blob:')) {
+                URL.revokeObjectURL(imageToLoad);
+            }
         }
     } catch (error) {
         console.error('PDF Generator: Logo insertion skipped due to error:', error);
