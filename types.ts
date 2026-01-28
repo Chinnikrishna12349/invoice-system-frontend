@@ -43,5 +43,6 @@ export interface CompanyInfo {
   companyName: string;
   companyAddress: string;
   companyLogoUrl: string;
+  invoiceFormat?: string;
   bankDetails: BankDetails;
 }

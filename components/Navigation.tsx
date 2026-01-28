@@ -1,21 +1,23 @@
 import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import logo from '../src/assets/oryfolks-logo.svg';
 
 import { useAuth } from '../contexts/AuthContext';
+import { CompanySettings } from './CompanySettings';
+
 export const Navigation: React.FC = () => {
     const { t } = useTranslation();
     const location = useLocation();
-    const navigate = useNavigate();
-    const { isAuthenticated, user, companyInfo, logout } = useAuth();
+    const { isAuthenticated, companyInfo, logout } = useAuth();
+
+    const [logoError, setLogoError] = useState(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     // Reset logo error when companyInfo changes
     React.useEffect(() => {
         setLogoError(false);
     }, [companyInfo?.companyLogoUrl]);
-
-    const [logoError, setLogoError] = useState(false);
 
     const isActive = (path: string) => {
         return location.pathname === path;
@@ -34,7 +36,7 @@ export const Navigation: React.FC = () => {
                                         <img
                                             src={(() => {
                                                 const url = companyInfo.companyLogoUrl;
-                                                if (url.startsWith('http')) return url;
+                                                if (url.startsWith('http') || url.startsWith('data:')) return url;
 
                                                 const backendBase = import.meta.env?.VITE_API_URL?.replace('/api/invoices', '')
                                                     || 'https://invoice-system-backend-owhd.onrender.com';
@@ -43,10 +45,7 @@ export const Navigation: React.FC = () => {
                                             })()}
                                             alt={`${companyInfo.companyName} Logo`}
                                             className="h-10 sm:h-12 w-auto object-contain flex-shrink-0"
-                                            onError={() => {
-                                                // Fallback to initial letter avatar if company logo fails to load
-                                                setLogoError(true);
-                                            }}
+                                            onError={() => setLogoError(true)}
                                         />
                                     ) : (
                                         <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center flex-shrink-0">
@@ -57,33 +56,41 @@ export const Navigation: React.FC = () => {
                                     )}
                                 </>
                             ) : (
-                                <>
-                                    <img src={logo} alt="System Logo" className="h-10 w-auto sm:h-12 flex-shrink-0" />
-                                </>
+                                <img src={logo} alt="System Logo" className="h-10 w-auto sm:h-12 flex-shrink-0" />
                             )}
                         </div>
 
                         <nav className="flex items-center gap-2 sm:gap-3">
                             {isAuthenticated && (
                                 <>
-                                    {/* User info - removed as per request */}
+                                    <Link
+                                        to="/dashboard"
+                                        className={`px-3 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${isActive('/dashboard') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'
+                                            }`}
+                                    >
+                                        <span className="hidden sm:inline">Dashboard</span>
+                                    </Link>
 
-                                    {/* Navigation Links */}
                                     <Link
                                         to="/invoices"
-                                        className={`px-3 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${isActive('/invoices')
-                                            ? 'bg-blue-100 text-blue-700'
-                                            : 'text-gray-600 hover:bg-gray-100'
+                                        className={`px-3 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${isActive('/invoices') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'
                                             }`}
-                                        title="Invoices"
                                     >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                        </svg>
                                         <span className="hidden sm:inline">Invoices</span>
                                     </Link>
 
-                                    {/* Logout Button */}
+                                    <button
+                                        onClick={() => setIsSettingsOpen(true)}
+                                        className="px-3 py-2 rounded-lg font-medium transition-colors text-gray-600 hover:bg-gray-100 flex items-center gap-2"
+                                        title="Company Settings"
+                                    >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
+                                        <span className="hidden sm:inline">Settings</span>
+                                    </button>
+
                                     <button
                                         onClick={logout}
                                         className="px-3 py-2 rounded-lg font-medium transition-all duration-200 text-gray-700 hover:bg-red-50 hover:text-red-600"
@@ -102,6 +109,10 @@ export const Navigation: React.FC = () => {
                     </div>
                 </div>
             </header>
+
+            {isSettingsOpen && (
+                <CompanySettings onClose={() => setIsSettingsOpen(false)} />
+            )}
         </>
     );
 };

@@ -10,6 +10,7 @@ interface AuthContextType {
     login: (credentials: LoginCredentials) => Promise<void>;
     signup: (credentials: SignupCredentials) => Promise<void>;
     logout: () => void;
+    refreshCompanyInfo: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -103,6 +104,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         navigate('/');
     };
 
+    const handleRefreshCompanyInfo = async () => {
+        try {
+            const info = await fetchCompanyInfo();
+            if (info) {
+                setCompanyInfo(info);
+            }
+        } catch (error) {
+            console.error('Failed to refresh company info:', error);
+        }
+    };
+
     const value: AuthContextType = {
         user,
         companyInfo,
@@ -111,8 +123,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         login: handleLogin,
         signup: handleSignup,
         logout: handleLogout,
+        refreshCompanyInfo: handleRefreshCompanyInfo,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
-

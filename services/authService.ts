@@ -38,6 +38,7 @@ export interface CompanyInfo {
     companyName: string;
     companyAddress: string;
     companyLogoUrl: string;
+    invoiceFormat?: string;
     bankDetails: {
         bankName: string;
         accountNumber: string;
@@ -396,6 +397,52 @@ export const signup = async (credentials: SignupCredentials): Promise<{ token: s
         user: { id: userId, email },
         companyInfo,
     };
+};
+
+/**
+ * Update company info - handles Base64 logo conversion in backend
+ */
+export const updateCompanyInfo = async (credentials: Partial<SignupCredentials>): Promise<CompanyInfo> => {
+    const token = getToken();
+    if (!token) throw new Error('Not authenticated');
+
+    const formData = new FormData();
+    if (credentials.companyName) formData.append('companyName', credentials.companyName.trim());
+    if (credentials.companyAddress) formData.append('companyAddress', credentials.companyAddress.trim());
+    if (credentials.invoiceFormat) formData.append('invoiceFormat', credentials.invoiceFormat);
+    if (credentials.companyLogo) formData.append('companyLogo', credentials.companyLogo);
+
+    if (credentials.bankDetails) {
+        if (credentials.bankDetails.bankName) formData.append('bankName', credentials.bankDetails.bankName.trim());
+        if (credentials.bankDetails.accountNumber) formData.append('accountNumber', credentials.bankDetails.accountNumber.trim());
+        if (credentials.bankDetails.accountHolderName) formData.append('accountHolderName', credentials.bankDetails.accountHolderName.trim());
+        if (credentials.bankDetails.ifscCode) formData.append('ifscCode', credentials.bankDetails.ifscCode.trim());
+        if (credentials.bankDetails.branchName) formData.append('branchName', credentials.bankDetails.branchName.trim());
+        if (credentials.bankDetails.branchCode) formData.append('branchCode', credentials.bankDetails.branchCode.trim());
+        if (credentials.bankDetails.accountType) formData.append('accountType', credentials.bankDetails.accountType.trim());
+    }
+
+    const response = await fetch(`${AUTH_API_URL}/api/auth/update-company`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        },
+        body: formData
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Update failed: ${errorText || response.statusText}`);
+    }
+
+    const result: ApiResponse<CompanyInfo> = await response.json();
+    if (!result.success || !result.data) {
+        throw new Error(result.error || 'Update failed');
+    }
+
+    // Update local storage
+    localStorage.setItem(COMPANY_INFO_KEY, JSON.stringify(result.data));
+    return result.data;
 };
 
 /**
