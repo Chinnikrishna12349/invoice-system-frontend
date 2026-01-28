@@ -228,21 +228,26 @@ const addLogoToPdf = async (doc: jsPDF, x: number, y: number, logoUrl: string | 
                 console.log(`PDF Generator: Primary fetch attempt for: ${imageUrl}`);
                 const response = await fetch(imageUrl);
 
-                if (!response.ok) {
-                    if (isRelative) throw new Error(`Relative fetch failed with status ${response.status}`);
-                    throw new Error(`Logo fetch failed with status: ${response.status}`);
+                const contentType = response.headers.get('Content-Type');
+                if (!response.ok || (contentType && !contentType.startsWith('image/'))) {
+                    throw new Error(`Fetch failed or invalid content type: ${response.status} (${contentType})`);
                 }
                 const blob = await response.blob();
                 imageToLoad = URL.createObjectURL(blob);
             } catch (fetchErr) {
-                console.warn('PDF Generator: Primary fetch failed, trying absolute backend URL fallback...', fetchErr);
+                console.warn('PDF Generator: Primary fetch failed or returned non-image, trying absolute backend URL fallback...', fetchErr);
                 const backendBase = import.meta.env?.VITE_API_URL?.replace('/api/invoices', '')
                     || 'https://invoice-system-backend-owhd.onrender.com';
 
                 const absoluteUrl = `${backendBase}${imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl}`;
+                console.log(`PDF Generator: Fallback attempt with absolute URL: ${absoluteUrl}`);
+
                 try {
                     const response = await fetch(absoluteUrl);
-                    if (!response.ok) throw new Error(`Absolute fetch failed: ${response.status}`);
+                    const contentType = response.headers.get('Content-Type');
+                    if (!response.ok || (contentType && !contentType.startsWith('image/'))) {
+                        throw new Error(`Absolute fetch failed or invalid content type: ${response.status} (${contentType})`);
+                    }
                     const blob = await response.blob();
                     imageToLoad = URL.createObjectURL(blob);
                 } catch (retryErr) {
