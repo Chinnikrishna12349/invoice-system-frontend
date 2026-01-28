@@ -36,25 +36,39 @@ const addTextToPdf = async (
                 await new Promise<void>((resolve) => {
                     img.onload = () => {
                         const aspectRatio = img.width / img.height;
-                        const height = maxWidth / aspectRatio;
+
+                        // Calculate target height in mm based on font size (pt to mm conversion: 1pt ≈ 0.3527mm)
+                        // Add a small buffer factor because html2canvas might have padding
+                        const targetHeight = fontSize * 0.3527 * 1.5;
+
+                        // Calculate natural width based on aspect ratio
+                        let finalWidth = targetHeight * aspectRatio;
+                        let finalHeight = targetHeight;
+
+                        // Constrain by maxWidth if necessary
+                        if (finalWidth > maxWidth) {
+                            finalWidth = maxWidth;
+                            finalHeight = finalWidth / aspectRatio;
+                        }
+
                         // Adjust positions based on alignment
                         let adjustedX = x;
                         let adjustedY = y;
 
                         if (align === 'right') {
-                            // For right alignment, x is the right edge, so we need to subtract the image width
-                            adjustedX = x - maxWidth;
-                            adjustedY = y - height;
+                            // For right alignment, x is the right edge
+                            adjustedX = x - finalWidth;
+                            adjustedY = y - finalHeight / 1.5; // Center vertically relative to baseline approx
                         } else if (align === 'center') {
-                            adjustedX = x - maxWidth / 2;
-                            adjustedY = y - height / 2;
+                            adjustedX = x - finalWidth / 2;
+                            adjustedY = y - finalHeight / 1.5;
                         } else {
                             // Left alignment
-                            adjustedY = y - height;
+                            adjustedY = y - finalHeight / 1.5;
                         }
 
-                        // Add image with basic settings
-                        doc.addImage(imageData, 'PNG', adjustedX, adjustedY, maxWidth, height, '', 'FAST');
+                        // Add image with calculated dimensions
+                        doc.addImage(imageData, 'PNG', adjustedX, adjustedY, finalWidth, finalHeight, '', 'FAST');
                         resolve();
                     };
                     img.onerror = () => {
