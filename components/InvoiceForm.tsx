@@ -90,7 +90,15 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
     const handleServiceChange = (index: number, field: keyof ServiceItem, value: string | number) => {
         setFormData(prev => {
             const services = [...(prev.services || [])];
-            services[index] = { ...services[index], [field]: value };
+
+            // Apply defensive rounding to numeric fields to avoid floating point artifacts (e.g., 2000 -> 1999.96)
+            let processedValue = value;
+            if ((field === 'hours' || field === 'rate') && typeof value === 'number') {
+                // Rounding to 4 decimal places should be more than enough for precision while clearing noise
+                processedValue = Math.round((value + Number.EPSILON) * 10000) / 10000;
+            }
+
+            services[index] = { ...services[index], [field]: processedValue as any };
             return { ...prev, services };
         });
     };

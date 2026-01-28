@@ -32,9 +32,15 @@ export const Navigation: React.FC = () => {
                                 <>
                                     {companyInfo.companyLogoUrl && !logoError ? (
                                         <img
-                                            src={companyInfo.companyLogoUrl.startsWith('http')
-                                                ? companyInfo.companyLogoUrl
-                                                : companyInfo.companyLogoUrl.startsWith('/') ? companyInfo.companyLogoUrl : '/' + companyInfo.companyLogoUrl}
+                                            src={(() => {
+                                                const url = companyInfo.companyLogoUrl;
+                                                if (url.startsWith('http')) return url;
+
+                                                const backendBase = import.meta.env?.VITE_API_URL?.replace('/api/invoices', '')
+                                                    || 'https://invoice-system-backend-owhd.onrender.com';
+
+                                                return `${backendBase}${url.startsWith('/') ? url : '/' + url}`;
+                                            })()}
                                             alt={`${companyInfo.companyName} Logo`}
                                             className="h-10 sm:h-12 w-auto object-contain flex-shrink-0"
                                             onError={() => {

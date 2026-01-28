@@ -222,15 +222,34 @@ const addLogoToPdf = async (doc: jsPDF, x: number, y: number, logoUrl: string | 
         // 1. Fetch the image
         let response;
         try {
+            console.log(`PDF Generator: Primary fetch attempt for: ${imageUrl}`);
             response = await fetch(imageUrl);
+
+            // If it's a 404/500 and was a relative path, try prepending the backend URL
+            if (!response.ok && isRelative) {
+                throw new Error(`Relative fetch failed with status ${response.status}`);
+            }
         } catch (fetchErr) {
-            console.warn('PDF Generator: Relative fetch failed, trying with origin...');
-            const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3006';
-            response = await fetch(`${origin}${imageUrl}`);
+            console.warn('PDF Generator: Relative or direct fetch failed, trying with Backend URL...', fetchErr);
+
+            // Try to construct an absolute URL using the backend base
+            // In production on Render, this should be https://invoice-system-backend-owhd.onrender.com
+            const backendBase = import.meta.env?.VITE_API_URL?.replace('/api/invoices', '')
+                || 'https://invoice-system-backend-owhd.onrender.com';
+
+            const absoluteUrl = `${backendBase}${imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl}`;
+            console.log(`PDF Generator: Retrying with absolute backend URL: ${absoluteUrl}`);
+
+            try {
+                response = await fetch(absoluteUrl);
+            } catch (retryErr) {
+                console.error('PDF Generator: All fetch attempts failed:', retryErr);
+                throw retryErr;
+            }
         }
 
         if (!response.ok) {
-            throw new Error(`Logo fetch failed with status: ${response.status}`);
+            throw new Error(`Logo fetch failed with status: ${response.status} ${response.statusText}`);
         }
 
         const blob = await response.blob();
@@ -771,7 +790,11 @@ export const generateInvoicePDFBytes = async (invoice: Invoice, language: 'en' |
     const t = await getTranslations(language);
 
     try {
-        const doc = new jsPDF();
+        const doc = new jsPDF({
+            compress: true,
+            unit: 'mm',
+            format: 'a4'
+        });
 
         if (language === 'ja') {
             configureJapaneseFont(doc);
@@ -796,7 +819,6 @@ export const generateInvoicePDF = async (invoice: Invoice, language: 'en' | 'ja'
         // Initialize PDF with compression and optimization settings
         const doc = new jsPDF({
             compress: true,
-            precision: 1,
             unit: 'mm',
             format: 'a4'
         });
