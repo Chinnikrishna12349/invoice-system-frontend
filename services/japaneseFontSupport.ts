@@ -24,7 +24,7 @@ export const renderJapaneseText = async (
     div.style.left = '-9999px';
     div.style.top = '-9999px';
     div.style.fontSize = `${fontSize}pt`;
-    div.style.fontFamily = "'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif";
+    div.style.fontFamily = "'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
     div.style.fontWeight = fontStyle === 'bold' ? 'bold' : 'normal';
     div.style.color = '#000000';
     div.style.whiteSpace = 'nowrap';
@@ -33,9 +33,9 @@ export const renderJapaneseText = async (
     div.style.overflow = 'hidden';
     div.style.textOverflow = 'ellipsis';
     div.textContent = text;
-    
+
     document.body.appendChild(div);
-    
+
     // Render to canvas
     const canvas = await html2canvas(div, {
       backgroundColor: '#FFFFFF',
@@ -43,10 +43,10 @@ export const renderJapaneseText = async (
       logging: false,
       useCORS: true,
     });
-    
+
     // Remove the temporary element
     document.body.removeChild(div);
-    
+
     // Convert to data URL
     return canvas.toDataURL('image/png');
   } catch (error) {
@@ -64,7 +64,7 @@ export const configureJapaneseFont = (doc: jsPDF): void => {
     // For Japanese, we'll render text using html2canvas
     // Set default font for non-Japanese text
     doc.setFont('helvetica');
-    
+
     console.log('Japanese font support configured (using html2canvas for Japanese text)');
   } catch (error) {
     console.error('Error configuring Japanese font:', error);
@@ -76,6 +76,6 @@ export const configureJapaneseFont = (doc: jsPDF): void => {
  */
 export const containsJapanese = (text: string): boolean => {
   // Check for Hiragana, Katakana, or Kanji
-  return /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text);
+  return /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF\u00A5\u20B9]/.test(text);
 };
 

@@ -5,6 +5,7 @@ import i18n from '../src/i18n/i18n';
 import { configureJapaneseFont, renderJapaneseText } from './japaneseFontSupport';
 import { getCompanyInfo } from './authService';
 import visionAiStamp from '../src/assets/visionai-stamp.png';
+import placeholderLogo from '../src/assets/oryfolks-logo.svg';
 
 // Helper function to add text to PDF (handles Japanese properly using html2canvas)
 const addTextToPdf = async (
@@ -22,8 +23,8 @@ const addTextToPdf = async (
 ): Promise<void> => {
     const { fontSize = 10, fontStyle = 'normal', align = 'left', language = 'en', maxWidth = 100 } = options;
 
-    // Check if text contains Japanese characters
-    const hasJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text);
+    // Check for Japanese characters OR specific currency symbols (¥, ₹)
+    const hasJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF\u00A5\u20B9]/.test(text);
 
     if (hasJapanese || language === 'ja') {
         // Use html2canvas for Japanese text
@@ -316,6 +317,9 @@ const addLogoToPdf = async (doc: jsPDF, x: number, y: number, logoUrl: string | 
 
             // Try with crossOrigin first
             img.crossOrigin = 'anonymous';
+            // Use provided URL or fallback to placeholder if explicit null/undefined/empty string passed by caller logic
+            // But here we rely on the logoUrl passed in. The caller should handle fallback logic or we do it here?
+            // Let's do it in the caller to be safe, but here we just load what is given.
             img.src = imageUrl;
 
             // Fallback timeout
@@ -388,10 +392,9 @@ const drawInvoiceContent = async (
     const companyInfoToUse = companyInfo;
     const effectiveCountry = language === 'ja' ? 'japan' : (invoice.country || 'india');
 
-    // Helper to format currency safely for PDF
     const formatAmount = (value: number) => {
         const isJapan = effectiveCountry === 'japan';
-        const symbol = isJapan ? 'Yen ' : 'Rs '; // Using text aliases is safer for core fonts
+        const symbol = isJapan ? '¥' : '₹';
 
         // Manual formatting to avoid hidden characters from toLocaleString
         const fixedValue = isJapan ? Math.round(value).toString() : value.toFixed(2);
@@ -412,7 +415,9 @@ const drawInvoiceContent = async (
     };
 
     // Add logo at top left
-    await addLogoToPdf(doc, 14, yPosition, companyInfoToUse?.companyLogoUrl, 50);
+    // Fallback to placeholderLogo if companyLogoUrl is missing
+    const logoToUse = companyInfoToUse?.companyLogoUrl || placeholderLogo;
+    await addLogoToPdf(doc, 14, yPosition, logoToUse, 50);
 
     // Right Column Start Position (Aligned for Header and Bill To)
     const rightColX = 120;
@@ -643,7 +648,8 @@ const drawInvoiceContent = async (
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
 
-    invoice.services.forEach((service, index) => {
+    // Use for..of loop to support await inside
+    for (const [index, service] of invoice.services.entries()) {
         const amount = service.hours * service.rate;
         const descWidth = colX[2] - colX[1] - 4;
         const descLines = doc.splitTextToSize(service.description || '-', descWidth);
@@ -660,21 +666,37 @@ const drawInvoiceContent = async (
 
         // Description
         if (descLines.length === 1) {
-            doc.text(descLines, (colX[1] + colX[2]) / 2, rowTextY, { align: 'center' });
+            // Check for Japanese in description too
+            await addTextToPdf(doc, descLines[0], (colX[1] + colX[2]) / 2, rowTextY, {
+                align: 'center', language, maxWidth: descWidth, fontSize: 10
+            });
         } else {
-            doc.text(descLines, (colX[1] + colX[2]) / 2, yPosition + 4, { align: 'center' });
+            // For multi-line, we might need a loop or simple text if no Japanese.
+            // If description has Japanese, doc.splitTextToSize might behave oddly if it doesn't support the font.
+            // But assuming split works or we just print lines:
+            let lineY = yPosition + 4;
+            for (const line of descLines) {
+                await addTextToPdf(doc, line, (colX[1] + colX[2]) / 2, lineY, {
+                    align: 'center', language, maxWidth: descWidth, fontSize: 10
+                });
+                lineY += 5;
+            }
         }
 
         // Hours
         doc.text(service.hours.toFixed(0), (colX[2] + colX[3]) / 2, rowTextY, { align: 'center' });
 
-        // Unit Price WITH CURRENCY
+        // Unit Price WITH CURRENCY (Use addTextToPdf to support symbols)
         const formattedRate = formatAmount(service.rate);
-        doc.text(formattedRate, (colX[3] + colX[4]) / 2, rowTextY, { align: 'center' });
+        await addTextToPdf(doc, formattedRate, (colX[3] + colX[4]) / 2, rowTextY, {
+            align: 'center', language, fontSize: 10, maxWidth: (colX[4] - colX[3]) - 2
+        });
 
         // Amount WITH CURRENCY
         const formattedAmount = formatAmount(amount);
-        doc.text(formattedAmount, (colX[4] + colX[5]) / 2, rowTextY, { align: 'center' });
+        await addTextToPdf(doc, formattedAmount, (colX[4] + colX[5]) / 2, rowTextY, {
+            align: 'center', language, fontSize: 10, maxWidth: (colX[5] - colX[4]) - 2
+        });
 
         doc.line(colX[0], yPosition + rowHeight, colX[5], yPosition + rowHeight);
 
@@ -683,8 +705,9 @@ const drawInvoiceContent = async (
         if (yPosition > 250) {
             doc.addPage();
             yPosition = 20;
+            // Draw header again on new page? (Optional, but good for production ready)
         }
-    });
+    }
 
     // Totals Section
     const subTotal = invoice.services.reduce((acc, s) => acc + (s.hours * s.rate), 0);
