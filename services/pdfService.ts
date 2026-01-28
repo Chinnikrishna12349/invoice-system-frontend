@@ -202,153 +202,111 @@ const optimizeImageForPdf = (canvas: HTMLCanvasElement, maxWidth: number, maxHei
 
 // Helper function to load logo image and add it to PDF with optimization
 const addLogoToPdf = async (doc: jsPDF, x: number, y: number, logoUrl: string | null | undefined, maxWidth: number = 50, maxHeight: number = 25): Promise<void> => {
-    return new Promise<void>((resolve) => {
-        try {
-            // Check if we're in a browser environment
-            if (typeof window === 'undefined' || typeof document === 'undefined') {
-                console.warn('Not in browser environment, skipping logo');
-                resolve();
-                return;
-            }
-
-            // If no logo URL provided, skip logo
-            if (!logoUrl) {
-                console.log('No logo URL provided, skipping logo');
-                resolve();
-                return;
-            }
-
-            const img = new Image();
-            let resolved = false;
-
-            const finish = () => {
-                if (resolved) return;
-                resolved = true;
-                resolve();
-            };
-
-            // Construct full URL if it's a relative path
-            const baseUrl = import.meta.env?.VITE_API_URL?.replace('/api/invoices', '') || 'http://localhost:8080';
-            const imageUrl = logoUrl.startsWith('http')
-                ? logoUrl
-                : `${baseUrl}${logoUrl.startsWith('/') ? logoUrl : '/' + logoUrl}`;
-
-            console.log('Loading logo from URL:', imageUrl);
-
-            img.onload = () => {
-                try {
-                    if (!img.complete) {
-                        console.warn('Image not complete');
-                        finish();
-                        return;
-                    }
-
-                    // Define normalized canvas size (high resolution for print)
-                    // Target is 50mm x 25mm (2:1 ratio)
-                    // Using 1000x500 to ensure high quality
-                    const targetWidth = 1000;
-                    const targetHeight = 500;
-
-                    const canvas = document.createElement('canvas');
-                    canvas.width = targetWidth;
-                    canvas.height = targetHeight;
-                    const ctx = canvas.getContext('2d');
-
-                    if (!ctx) {
-                        console.warn('Could not get canvas context for logo');
-                        finish();
-                        return;
-                    }
-
-                    // Fill with white background to ensure consistent box
-                    ctx.fillStyle = '#FFFFFF';
-                    ctx.fillRect(0, 0, targetWidth, targetHeight);
-
-                    // Calculate dimensions to fit within the normalized canvas (Contain)
-                    const imgRatio = img.naturalWidth / img.naturalHeight;
-                    const targetRatio = targetWidth / targetHeight;
-
-                    let drawWidth = targetWidth;
-                    let drawHeight = targetHeight;
-                    let offsetX = 0;
-                    let offsetY = 0;
-
-                    if (imgRatio > targetRatio) {
-                        // Image is wider than target (Horizontal banner)
-                        // Fit to width
-                        drawHeight = targetWidth / imgRatio;
-
-                        // ALIGNMENT LOGIC:
-                        // Horizontal: Left (offsetX = 0) to match "From" text alignment
-                        // Vertical: Center (offsetY = (targetHeight - drawHeight) / 2)
-                        // This ensures the logo floats in the middle of the header space, aligning better with the "Invoice #" text
-                        offsetY = (targetHeight - drawHeight) / 2;
-                    } else {
-                        // Image is taller than target (Square/Portrait) (or same aspect ratio)
-                        // Fit to height
-                        drawWidth = targetHeight * imgRatio;
-
-                        // Horizontal: Left (offsetX = 0)
-                        offsetX = 0;
-                        // Vertical: Full height used, so offsetY is 0 (Center/Top/Bottom are ideally same)
-                        // But strictly centering is safer if rounding errors occur
-                        offsetY = (targetHeight - drawHeight) / 2;
-                    }
-
-                    // Draw the image at calculated offsets (Left/Center aligned)
-                    ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
-
-                    // Optimize the normalized canvas
-                    const optimizedImageData = optimizeImageForPdf(canvas, targetWidth, targetHeight);
-
-                    if (!optimizedImageData) {
-                        console.warn('Failed to optimize logo');
-                        finish();
-                        return;
-                    }
-
-                    // Add optimized image to PDF at FIXED size
-                    try {
-                        // Use 'JPEG' format for better compression
-                        // Always use maxWidth and maxHeight to enforce the fixed dimension
-                        doc.addImage(optimizedImageData, 'JPEG', x, y, maxWidth, maxHeight);
-                        console.log(`Logo added normalized at (${x}, ${y}), size: ${maxWidth}x${maxHeight}`);
-                        finish();
-                    } catch (addError) {
-                        console.error('Error adding logo to PDF:', addError);
-                        finish();
-                    }
-                } catch (error) {
-                    console.error('Error processing logo:', error);
-                    finish();
-                }
-            };
-
-            img.onerror = (error) => {
-                console.error('Could not load logo image:', error);
-                finish();
-            };
-
-            // Try with crossOrigin first
-            img.crossOrigin = 'anonymous';
-            // Use provided URL or fallback to placeholder if explicit null/undefined/empty string passed by caller logic
-            // But here we rely on the logoUrl passed in. The caller should handle fallback logic or we do it here?
-            // Let's do it in the caller to be safe, but here we just load what is given.
-            img.src = imageUrl;
-
-            // Fallback timeout
-            setTimeout(() => {
-                if (!resolved && (!img.complete || img.naturalWidth === 0)) {
-                    console.warn('Logo load timeout');
-                    finish();
-                }
-            }, 3000);
-
-        } catch (error) {
-            console.error('Error setting up logo for PDF:', error);
-            resolve();
+    try {
+        if (!logoUrl) {
+            console.warn('PDF Generator: No logoUrl provided.');
+            return;
         }
-    });
+
+        // Determine if it's already a full URL or data URL
+        let imageUrl = logoUrl;
+        const isRelative = !logoUrl.startsWith('http') && !logoUrl.startsWith('data:');
+
+        if (isRelative) {
+            // Ensure single leading slash
+            imageUrl = logoUrl.startsWith('/') ? logoUrl : '/' + logoUrl;
+        }
+
+        console.log(`PDF Generator: Attempting to fetch logo from: ${imageUrl}`);
+
+        // 1. Fetch the image
+        let response;
+        try {
+            response = await fetch(imageUrl);
+        } catch (fetchErr) {
+            console.warn('PDF Generator: Relative fetch failed, trying with origin...');
+            const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3006';
+            response = await fetch(`${origin}${imageUrl}`);
+        }
+
+        if (!response.ok) {
+            throw new Error(`Logo fetch failed with status: ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        console.log(`PDF Generator: Successfully fetched blob (${blob.size} bytes), type: ${blob.type}`);
+
+        // 2. Convert to object URL
+        const objectUrl = URL.createObjectURL(blob);
+
+        try {
+            await new Promise<void>((resolve, reject) => {
+                const img = new Image();
+
+                // Allow timeout
+                const timeout = setTimeout(() => {
+                    img.src = '';
+                    reject(new Error('Image loading timed out'));
+                }, 5000);
+
+                img.onload = () => {
+                    clearTimeout(timeout);
+                    try {
+                        const width = img.naturalWidth || 500;
+                        const height = img.naturalHeight || 250;
+
+                        const canvas = document.createElement('canvas');
+                        const scale = 3; // 3x scale is enough for good quality without bloating size
+                        canvas.width = width * scale;
+                        canvas.height = height * scale;
+
+                        const ctx = canvas.getContext('2d');
+                        if (!ctx) throw new Error('Could not create canvas context');
+
+                        // White background for logos with transparency
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+                        const imgRatio = width / height;
+                        const targetRatio = maxWidth / maxHeight;
+                        let drawWidth = maxWidth;
+                        let drawHeight = maxHeight;
+                        let offsetX = 0;
+                        let offsetY = 0;
+
+                        if (imgRatio > targetRatio) {
+                            drawHeight = maxWidth / imgRatio;
+                            offsetY = (maxHeight - drawHeight) / 2;
+                        } else {
+                            drawWidth = maxHeight * imgRatio;
+                            offsetY = (maxHeight - drawHeight) / 2;
+                        }
+
+                        // 6. Add to PDF
+                        doc.addImage(dataUrl, 'JPEG', x + offsetX, y + offsetY, drawWidth, drawHeight, undefined, 'FAST');
+                        console.log('PDF Generator: Logo added successfully to document.');
+                        resolve();
+                    } catch (err) {
+                        reject(err);
+                    }
+                };
+
+                img.onerror = () => {
+                    clearTimeout(timeout);
+                    reject(new Error('Image metadata load failed'));
+                };
+
+                img.src = objectUrl;
+            });
+        } finally {
+            URL.revokeObjectURL(objectUrl);
+        }
+    } catch (error) {
+        console.error('PDF Generator: Logo insertion skipped due to error:', error);
+    }
 };
 
 // Helper function to add static logo/stamp to PDF

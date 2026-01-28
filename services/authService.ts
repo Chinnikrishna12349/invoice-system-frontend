@@ -61,7 +61,7 @@ const USER_KEY = 'authUser';
 const COMPANY_INFO_KEY = 'companyInfo';
 
 // API base URL
-const AUTH_API_URL = import.meta.env?.VITE_API_URL?.replace('/api/invoices', '') || 'https://invoice-system-backend-owhd.onrender.com';
+const AUTH_API_URL = import.meta.env?.VITE_API_URL?.replace('/api/invoices', '') || 'http://localhost:8081';
 
 interface ApiResponse<T> {
     success: boolean;
@@ -108,13 +108,20 @@ export const isAuthenticated = (): boolean => {
  */
 export const validateToken = async (token: string): Promise<boolean> => {
     try {
+        // Add timeout to prevent infinite loading
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
         const response = await fetch(`${AUTH_API_URL}/api/auth/validate`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ token }),
+            signal: controller.signal,
         });
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
             return false;

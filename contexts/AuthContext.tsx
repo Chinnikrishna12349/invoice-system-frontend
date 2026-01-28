@@ -42,15 +42,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     const isValid = await validateToken(token);
                     if (isValid) {
                         const storedUser = getUser();
-                        let storedCompanyInfo = getCompanyInfo();
-                        
-                        // If company info is not in localStorage, fetch from backend
-                        if (!storedCompanyInfo) {
-                            storedCompanyInfo = await fetchCompanyInfo();
-                        }
-                        
+                        // Always fetch latest company info from backend to ensure we have the correct logo URL
+                        const latestCompanyInfo = await fetchCompanyInfo();
+
                         setUser(storedUser);
-                        setCompanyInfo(storedCompanyInfo);
+                        setCompanyInfo(latestCompanyInfo || getCompanyInfo());
                     } else {
                         // Token is invalid, clear it
                         logout();
@@ -75,12 +71,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         try {
             const { user: loggedInUser } = await login(credentials);
             let storedCompanyInfo = getCompanyInfo();
-            
+
             // If company info is not in localStorage, fetch from backend
             if (!storedCompanyInfo) {
                 storedCompanyInfo = await fetchCompanyInfo();
             }
-            
+
             setUser(loggedInUser);
             setCompanyInfo(storedCompanyInfo);
             navigate('/dashboard');

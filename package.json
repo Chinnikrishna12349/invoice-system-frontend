@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "clean-ports": "fix-ports.bat",
     "build": "vite build",
     "preview": "vite preview"
   },

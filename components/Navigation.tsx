@@ -34,7 +34,7 @@ export const Navigation: React.FC = () => {
                                         <img
                                             src={companyInfo.companyLogoUrl.startsWith('http')
                                                 ? companyInfo.companyLogoUrl
-                                                : `https://invoice-system-backend-owhd.onrender.com${companyInfo.companyLogoUrl.startsWith('/') ? companyInfo.companyLogoUrl : '/' + companyInfo.companyLogoUrl}`}
+                                                : companyInfo.companyLogoUrl.startsWith('/') ? companyInfo.companyLogoUrl : '/' + companyInfo.companyLogoUrl}
                                             alt={`${companyInfo.companyName} Logo`}
                                             className="h-10 sm:h-12 w-auto object-contain flex-shrink-0"
                                             onError={() => {
