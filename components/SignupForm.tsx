@@ -4,7 +4,7 @@ import { ImageUpload } from './ImageUpload';
 import { BankDetailsForm, BankDetailsFormData } from './BankDetailsForm';
 import { checkBackendHealth } from '../services/authService';
 
-const API_URL = import.meta.env?.VITE_API_URL?.replace('/api/invoices', '') || 'http://localhost:8081';
+const API_URL = import.meta.env?.VITE_API_URL?.replace('/api/invoices', '') || 'https://invoice-system-backend-owhd.onrender.com';
 
 export const SignupForm: React.FC = () => {
     const { signup } = useAuth();
