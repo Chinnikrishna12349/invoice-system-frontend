@@ -16,13 +16,13 @@ export default defineConfig(({ mode }) => {
       proxy: {
         // Proxy API requests to the backend
         '^/api': {
-          target: 'https://invoice-system-backend-owhd.onrender.com',
+          target: 'http://localhost:8080',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, '')
         },
         // Serve uploaded files
         '^/uploads': {
-          target: 'https://invoice-system-backend-owhd.onrender.com',
+          target: 'http://localhost:8080',
           changeOrigin: true,
           rewrite: (path) => path
         }
@@ -31,8 +31,8 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     define: {
       'process.env': {
-        VITE_API_URL: JSON.stringify(env.VITE_API_URL || 'https://invoice-system-backend-owhd.onrender.com/api/invoices'),
-        VITE_UPLOAD_URL: JSON.stringify(env.VITE_UPLOAD_URL || 'https://invoice-system-backend-owhd.onrender.com/uploads'),
+        VITE_API_URL: JSON.stringify(env.VITE_API_URL || 'http://localhost:8080/api/invoices'),
+        VITE_UPLOAD_URL: JSON.stringify(env.VITE_UPLOAD_URL || 'http://localhost:8080/uploads'),
         GEMINI_API_KEY: JSON.stringify(env.GEMINI_API_KEY || ''),
         NODE_ENV: JSON.stringify(mode)
       }
