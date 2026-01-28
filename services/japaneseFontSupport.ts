@@ -28,11 +28,15 @@ export const renderJapaneseText = async (
     div.style.fontWeight = fontStyle === 'bold' ? 'bold' : 'normal';
     div.style.color = '#000000';
     div.style.whiteSpace = 'nowrap';
-    div.style.width = `${width}px`;
-    div.style.textAlign = align;
-    div.style.overflow = 'hidden';
-    div.style.textOverflow = 'ellipsis';
-    div.textContent = text;
+    div.style.width = 'auto'; // Auto width to fit content
+    div.style.minWidth = '50px'; // Minimum width to prevent collapse
+    div.style.padding = '4px'; // Padding to prevent clipping
+    // div.style.textAlign = align; // Text align doesn't matter for auto width div
+    div.style.overflow = 'visible';
+    div.style.whiteSpace = 'nowrap';
+    const textNode = document.createTextNode(text);
+    div.appendChild(textNode);
+    // div.textContent = text;
 
     document.body.appendChild(div);
 
