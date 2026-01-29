@@ -387,7 +387,7 @@ const drawInvoiceContent = async (
 
     const formatAmount = (value: number) => {
         const isJapan = effectiveCountry === 'japan';
-        const symbol = isJapan ? '¥ ' : 'Rs. ';
+        const symbol = isJapan ? 'Yen ' : 'Rs. ';
 
         // Manual formatting to avoid hidden characters from toLocaleString
         const fixedValue = isJapan ? Math.round(value).toString() : value.toFixed(2);
