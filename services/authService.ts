@@ -243,23 +243,50 @@ export const fetchCompanyInfo = async (): Promise<CompanyInfo | null> => {
 
 /**
  * Check if backend server is reachable
+ * Specifically designed for Render Free Tier: tries multiple times for up to 45 seconds
+ * to allow server to wake up from sleep.
  */
-export const checkBackendHealth = async (): Promise<boolean> => {
-    try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+export const checkBackendHealth = async (maxRetries = 5): Promise<boolean> => {
+    const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+    const timeoutPerTry = 8000; // 8 seconds per individual attempt
 
-        const response = await fetch(`${AUTH_API_URL}/api/auth/health`, {
-            method: 'GET',
-            signal: controller.signal,
-        });
+    console.log(`Backend Health: Starting check (max retries: ${maxRetries})...`);
 
-        clearTimeout(timeoutId);
-        return response.ok;
-    } catch (error) {
-        console.error('Backend health check failed:', error);
-        return false;
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            if (i > 0) {
+                console.log(`Backend Health: Attempt ${i + 1} of ${maxRetries}...`);
+            }
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeoutPerTry);
+
+            const response = await fetch(`${AUTH_API_URL}/api/auth/health`, {
+                method: 'GET',
+                signal: controller.signal,
+            }).catch(e => {
+                if (e.name === 'AbortError') throw new Error('Timeout');
+                throw e;
+            });
+
+            clearTimeout(timeoutId);
+
+            if (response.ok) {
+                console.log('Backend Health: SUCCESS - Server is Online');
+                return true;
+            }
+        } catch (error) {
+            console.warn(`Backend Health: Attempt ${i + 1} failed.`, error instanceof Error ? error.message : '');
+        }
+
+        // Wait a bit before retrying, unless it's the last try
+        if (i < maxRetries - 1) {
+            await delay(2000);
+        }
     }
+
+    console.error('Backend Health: FAILED - All attempts exhausted.');
+    return false;
 };
 
 /**

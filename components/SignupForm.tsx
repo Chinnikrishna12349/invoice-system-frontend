@@ -158,42 +158,40 @@ export const SignupForm: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-8">
             {/* Backend Status Indicator */}
             {backendStatus === 'checking' && (
-                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
+                <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg shadow-sm animate-pulse">
                     <div className="flex items-center gap-3">
-                        <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-yellow-600"></div>
-                        <p className="text-yellow-800 text-sm">Checking backend connection...</p>
+                        <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-600"></div>
+                        <div>
+                            <p className="text-blue-800 font-medium text-sm">Waking up backend server...</p>
+                            <p className="text-blue-600 text-xs">This can take up to 45 seconds on the first load. Please wait.</p>
+                        </div>
                     </div>
                 </div>
             )}
             {backendStatus === 'offline' && (
-                <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg">
+                <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg shadow-sm">
                     <div className="flex items-start gap-3">
-                        <svg className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
+                        <div className="p-1 bg-red-100 rounded-full">
+                            <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
                         <div className="flex-1">
-                            <p className="text-red-800 font-medium text-sm mb-1">Backend Server Offline</p>
-                            <p className="text-red-700 text-sm mb-2">The backend server is not reachable at {API_URL}</p>
-                            <div className="bg-red-100 p-3 rounded mt-2">
-                                <p className="text-red-800 text-xs font-medium mb-1">To start the backend:</p>
-                                <ol className="text-red-700 text-xs list-decimal list-inside space-y-1">
-                                    <li>Open PowerShell or Terminal</li>
-                                    <li>Navigate to backend folder: <code className="bg-red-200 px-1 rounded">cd backend</code></li>
-                                    <li>Run: <code className="bg-red-200 px-1 rounded">mvn spring-boot:run</code></li>
-                                    <li>Wait for: <code className="bg-red-200 px-1 rounded">Started InvoiceManagementApplication</code></li>
-                                </ol>
-                                <button
-                                    type="button"
-                                    onClick={async () => {
-                                        setBackendStatus('checking');
-                                        const isHealthy = await checkBackendHealth();
-                                        setBackendStatus(isHealthy ? 'online' : 'offline');
-                                    }}
-                                    className="mt-3 text-xs bg-red-600 text-white px-3 py-1.5 rounded-md hover:bg-red-700 transition-colors"
-                                >
-                                    Retry Connection
-                                </button>
-                            </div>
+                            <h4 className="text-red-800 font-bold text-sm">Backend Connectivity Error</h4>
+                            <p className="text-red-700 text-sm mt-1">We couldn't reach the server at <span className="font-mono text-xs">{API_URL}</span>. </p>
+                            <p className="text-red-600 text-xs mt-2 italic">Tip: If you are running locally, ensure your backend project is started with <code className="bg-red-100 px-1 rounded">mvn spring-boot:run</code>.</p>
+
+                            <button
+                                type="button"
+                                onClick={async () => {
+                                    setBackendStatus('checking');
+                                    const isHealthy = await checkBackendHealth(8); // Try even harder on manual retry
+                                    setBackendStatus(isHealthy ? 'online' : 'offline');
+                                }}
+                                className="mt-4 w-full sm:w-auto bg-red-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-red-700 transition-all shadow-md active:scale-95"
+                            >
+                                Retry Connection
+                            </button>
                         </div>
                     </div>
                 </div>

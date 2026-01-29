@@ -68,6 +68,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         checkAuth();
     }, []);
 
+    // Background pinger to keep Render backend awake (pings every 10 minutes)
+    useEffect(() => {
+        const pinger = setInterval(async () => {
+            try {
+                const AUTH_API_URL = import.meta.env?.VITE_API_URL?.replace('/api/invoices', '') || 'https://invoice-system-backend-owhd.onrender.com';
+                await fetch(`${AUTH_API_URL}/api/auth/health`);
+                console.log('Stay-Awake: Backend pinged successfully');
+            } catch (e) {
+                console.warn('Stay-Awake: Ping failed, backend might be sleeping');
+            }
+        }, 10 * 60 * 1000); // 10 minutes
+
+        return () => clearInterval(pinger);
+    }, []);
+
     const handleLogin = async (credentials: LoginCredentials) => {
         try {
             const { user: loggedInUser } = await login(credentials);
