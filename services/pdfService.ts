@@ -387,7 +387,7 @@ const drawInvoiceContent = async (
 
     const formatAmount = (value: number) => {
         const isJapan = effectiveCountry === 'japan';
-        const symbol = isJapan ? '¥' : '₹';
+        const symbol = isJapan ? '¥ ' : 'Rs. ';
 
         // Manual formatting to avoid hidden characters from toLocaleString
         const fixedValue = isJapan ? Math.round(value).toString() : value.toFixed(2);
@@ -616,17 +616,17 @@ const drawInvoiceContent = async (
     await addTextToPdf(doc, t.description, (colX[1] + colX[2]) / 2, textY, {
         fontSize: 10, fontStyle: 'bold', align: 'center', language
     });
-    // Hours
-    await addTextToPdf(doc, t.hours, (colX[2] + colX[3]) / 2, textY, {
-        fontSize: 10, fontStyle: 'bold', align: 'center', language
+    // Hours (Right Aligned -4 padding)
+    await addTextToPdf(doc, t.hours, colX[3] - 4, textY, {
+        fontSize: 10, fontStyle: 'bold', align: 'right', language
     });
-    // Unit Price
-    await addTextToPdf(doc, t.unitPrice, (colX[3] + colX[4]) / 2, textY, {
-        fontSize: 10, fontStyle: 'bold', align: 'center', language
+    // Unit Price (Right Aligned -4 padding)
+    await addTextToPdf(doc, t.unitPrice, colX[4] - 4, textY, {
+        fontSize: 10, fontStyle: 'bold', align: 'right', language
     });
-    // Amount
-    await addTextToPdf(doc, t.amount, (colX[4] + colX[5]) / 2, textY, {
-        fontSize: 10, fontStyle: 'bold', align: 'center', language
+    // Amount (Right Aligned -4 padding)
+    await addTextToPdf(doc, t.amount, colX[5] - 4, textY, {
+        fontSize: 10, fontStyle: 'bold', align: 'right', language
     });
 
     for (const x of colX) {
@@ -676,19 +676,19 @@ const drawInvoiceContent = async (
             }
         }
 
-        // Hours
-        doc.text(service.hours.toFixed(0), (colX[2] + colX[3]) / 2, rowTextY, { align: 'center' });
+        // Hours (Right Aligned)
+        doc.text(service.hours.toFixed(0), colX[3] - 4, rowTextY, { align: 'right' });
 
-        // Unit Price WITH CURRENCY (Use addTextToPdf to support symbols)
+        // Unit Price WITH CURRENCY (Right Aligned)
         const formattedRate = formatAmount(service.rate);
-        await addTextToPdf(doc, formattedRate, (colX[3] + colX[4]) / 2, rowTextY, {
-            align: 'center', language, fontSize: 10, maxWidth: (colX[4] - colX[3]) - 2
+        await addTextToPdf(doc, formattedRate, colX[4] - 4, rowTextY, {
+            align: 'right', language, fontSize: 10, maxWidth: (colX[4] - colX[3]) - 2
         });
 
-        // Amount WITH CURRENCY
+        // Amount WITH CURRENCY (Right Aligned)
         const formattedAmount = formatAmount(amount);
-        await addTextToPdf(doc, formattedAmount, (colX[4] + colX[5]) / 2, rowTextY, {
-            align: 'center', language, fontSize: 10, maxWidth: (colX[5] - colX[4]) - 2
+        await addTextToPdf(doc, formattedAmount, colX[5] - 4, rowTextY, {
+            align: 'right', language, fontSize: 10, maxWidth: (colX[5] - colX[4]) - 2
         });
 
         doc.line(colX[0], yPosition + rowHeight, colX[5], yPosition + rowHeight);
@@ -725,7 +725,8 @@ const drawInvoiceContent = async (
 
         doc.setFont('helvetica', isBold ? 'bold' : 'normal');
         doc.setFontSize(fontSize);
-        doc.text(value, (colX[4] + colX[5]) / 2, yPosition + 5, { align: 'center' });
+        // Correctly right-align value at the end of the table
+        doc.text(value, colX[5] - 4, yPosition + 5, { align: 'right' });
 
         yPosition += rowH;
     };
