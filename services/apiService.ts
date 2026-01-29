@@ -267,7 +267,9 @@ export const sendInvoiceByEmail = async (id: string, invoice: any, language: 'en
     const { generateInvoicePDFBytes } = await import('./pdfService');
     const pdfBytes = await generateInvoicePDFBytes(invoice, language, companyInfo);
 
-    console.log('Generated PDF for email:', pdfBytes.length, 'bytes');
+    if (import.meta.env?.DEV) {
+      console.log('Generated PDF for email:', pdfBytes.length, 'bytes');
+    }
 
     // If Uint8Array has a byteOffset, we need to create a new ArrayBuffer
     // Otherwise, use the buffer directly
@@ -289,8 +291,10 @@ export const sendInvoiceByEmail = async (id: string, invoice: any, language: 'en
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    console.log('Sending email request to:', `${API_BASE_URL}/${id}/send-email`);
-    console.log('PDF size:', arrayBuffer.byteLength, 'bytes');
+    if (import.meta.env?.DEV) {
+      console.log('Sending email request to:', `${API_BASE_URL}/${id}/send-email`);
+      console.log('PDF size:', arrayBuffer.byteLength, 'bytes');
+    }
 
     const response = await fetch(`${API_BASE_URL}/${id}/send-email`, {
       method: 'POST',
@@ -334,7 +338,9 @@ export const sendInvoiceByEmail = async (id: string, invoice: any, language: 'en
       }
     }
 
-    console.log('Email sent successfully');
+    if (import.meta.env?.DEV) {
+      console.log('Email sent successfully');
+    }
   } catch (error: any) {
     console.error('Error in sendInvoiceByEmail:', error);
     // Re-throw with a more descriptive message if it's not already an Error

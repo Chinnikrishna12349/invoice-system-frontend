@@ -74,9 +74,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             try {
                 const AUTH_API_URL = import.meta.env?.VITE_API_URL?.replace('/api/invoices', '') || 'https://invoice-system-backend-owhd.onrender.com';
                 await fetch(`${AUTH_API_URL}/api/auth/health`);
-                console.log('Stay-Awake: Backend pinged successfully');
+                if (import.meta.env?.DEV) {
+                    console.log('Stay-Awake: Backend pinged successfully');
+                }
             } catch (e) {
-                console.warn('Stay-Awake: Ping failed, backend might be sleeping');
+                if (import.meta.env?.DEV) {
+                    console.warn('Stay-Awake: Ping failed, backend might be sleeping');
+                }
             }
         }, 10 * 60 * 1000); // 10 minutes
 

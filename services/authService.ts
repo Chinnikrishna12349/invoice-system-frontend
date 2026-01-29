@@ -131,7 +131,14 @@ export const validateToken = async (token: string): Promise<boolean> => {
         const result: ApiResponse<boolean> = await response.json();
         return result.success && result.data === true;
     } catch (error) {
-        console.error('Token validation error:', error);
+        // Don't log AbortError - it's expected when timeout occurs
+        if (error instanceof Error && error.name === 'AbortError') {
+            return false;
+        }
+        // Only log unexpected errors in development
+        if (import.meta.env?.DEV) {
+            console.error('Token validation error:', error);
+        }
         return false;
     }
 };
@@ -264,9 +271,6 @@ export const checkBackendHealth = async (maxRetries = 5): Promise<boolean> => {
             const response = await fetch(`${AUTH_API_URL}/api/auth/health`, {
                 method: 'GET',
                 signal: controller.signal,
-            }).catch(e => {
-                if (e.name === 'AbortError') throw new Error('Timeout');
-                throw e;
             });
 
             clearTimeout(timeoutId);
@@ -276,7 +280,12 @@ export const checkBackendHealth = async (maxRetries = 5): Promise<boolean> => {
                 return true;
             }
         } catch (error) {
-            console.warn(`Backend Health: Attempt ${i + 1} failed.`, error instanceof Error ? error.message : '');
+            // Handle AbortError gracefully
+            if (error instanceof Error && error.name === 'AbortError') {
+                console.warn(`Backend Health: Attempt ${i + 1} timed out.`);
+            } else {
+                console.warn(`Backend Health: Attempt ${i + 1} failed.`, error instanceof Error ? error.message : '');
+            }
         }
 
         // Wait a bit before retrying, unless it's the last try
@@ -348,8 +357,11 @@ export const signup = async (credentials: SignupCredentials): Promise<{ token: s
     }
 
     // Log FormData contents for debugging (without sensitive data)
-    console.log('Signup FormData keys:', Array.from(formData.keys()));
-    console.log('FormData has companyLogo:', formData.has('companyLogo'));
+    // Debug logging only in development
+    if (import.meta.env?.DEV) {
+        console.log('Signup FormData keys:', Array.from(formData.keys()));
+        console.log('FormData has companyLogo:', formData.has('companyLogo'));
+    }
 
     let response: Response;
     let result: ApiResponse<SignupResponse>;
@@ -400,7 +412,9 @@ export const signup = async (credentials: SignupCredentials): Promise<{ token: s
 
     try {
         const responseText = await response.text();
-        console.log('Backend response:', responseText);
+        if (import.meta.env?.DEV) {
+            console.log('Backend response:', responseText);
+        }
         result = JSON.parse(responseText);
     } catch (parseError) {
         console.error('Failed to parse response:', parseError);
