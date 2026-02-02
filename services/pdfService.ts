@@ -765,8 +765,10 @@ const drawInvoiceContent = async (
     yPosition += 15;
 
     // Footer: Bank Details (Left) and Signature (Right)
+    const hasBankDetails = companyInfoToUse?.bankDetails &&
+        Object.values(companyInfoToUse.bankDetails).some(v => v && v.toString().trim().length > 0);
 
-    if (isVisionAI) {
+    if (hasBankDetails) {
         const bankY = yPosition;
 
         await addTextToPdf(doc, 'Bank Details:', 14, bankY, { fontSize: 10, fontStyle: 'bold' });
