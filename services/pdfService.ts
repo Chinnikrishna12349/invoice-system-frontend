@@ -128,7 +128,6 @@ const getTranslations = async (language: 'en' | 'ja') => {
         invoiceNo: i18n.t('invoice.invoiceNo'),
         date: i18n.t('invoice.dateLabel'),
         dueDate: i18n.t('invoice.dueDate'), // Changed from dueLabel ('Due:') to dueDate ('Due Date') for explicit Requirement
-        employeeId: i18n.t('invoice.employeeId'),
         email: i18n.t('invoice.email'),
         phone: i18n.t('invoice.phone'),
         address: i18n.t('invoice.address'),
@@ -409,7 +408,8 @@ const drawInvoiceContent = async (
 
     // Add logo at top left
     // Fallback to placeholderLogo if companyLogoUrl is missing
-    const logoToUse = companyInfoToUse?.companyLogoUrl || placeholderLogo;
+    const isVisionAI = companyInfoToUse?.companyName === 'Vision AI LLC';
+    const logoToUse = isVisionAI ? (companyInfoToUse?.companyLogoUrl || placeholderLogo) : null;
     await addLogoToPdf(doc, 14, yPosition, logoToUse, 50);
 
     // Right Column Start Position (Aligned for Header and Bill To)
@@ -463,7 +463,7 @@ const drawInvoiceContent = async (
         language,
         maxWidth: 90
     });
-    fromY += 5;
+    fromY += 8; // Increased gap after bold company name
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
@@ -521,7 +521,6 @@ const drawInvoiceContent = async (
         });
         billToY = fromStartY + 6;
 
-        // Employee Name Bold
         await addTextToPdf(doc, invoice.employeeName.trim(), billToX, billToY, {
             fontSize: 10,
             fontStyle: 'bold',
@@ -529,18 +528,9 @@ const drawInvoiceContent = async (
             language,
             maxWidth: rightColWidth
         });
-        billToY += 5;
+        billToY += 8; // Increased gap after bold client name
 
-        // Employee ID
-        if (invoice.employeeId && invoice.employeeId.trim()) {
-            await addTextToPdf(doc, `${t.employeeId}: ${invoice.employeeId.trim()}`, billToX, billToY, {
-                fontSize: 10,
-                align: 'left',
-                language,
-                maxWidth: rightColWidth
-            });
-            billToY += 5;
-        }
+
 
         // Email
         if (invoice.employeeEmail && invoice.employeeEmail.trim()) {
@@ -705,7 +695,11 @@ const drawInvoiceContent = async (
     // Totals Section
     const subTotal = invoice.services.reduce((acc, s) => acc + (s.hours * s.rate), 0);
     const taxRate = invoice.taxRate || 0;
-    const taxCalculation = calculateTax(subTotal, taxRate, effectiveCountry);
+
+    // Only calculate tax if it's India OR Japanese Consumption Tax toggle is ON
+    const shouldCalculateTax = effectiveCountry === 'india' || (effectiveCountry === 'japan' && invoice.showConsumptionTax);
+
+    const taxCalculation = calculateTax(subTotal, shouldCalculateTax ? taxRate : 0, effectiveCountry, invoice.cgstRate, invoice.sgstRate);
     const { grandTotal, consumptionTaxRate, consumptionTaxAmount, cgstRate, sgstRate, cgstAmount, sgstAmount } = taxCalculation;
 
     const drawTotalRow = async (label: string, value: string, isBold: boolean = false) => {
@@ -736,52 +730,72 @@ const drawInvoiceContent = async (
 
     // Tax
     if (effectiveCountry === 'japan') {
-        if (consumptionTaxRate !== undefined) {
-            // Remove % from inside formatAmount, it accepts number
+        if (invoice.showConsumptionTax && consumptionTaxRate !== undefined) {
             await drawTotalRow(`${t.consumptionTax} (${consumptionTaxRate}%)`, formatAmount(consumptionTaxAmount || 0), true);
         }
     } else {
-        if (cgstRate) await drawTotalRow(`CGST (${cgstRate}%)`, formatAmount(cgstAmount || 0));
-        if (sgstRate) await drawTotalRow(`SGST (${sgstRate}%)`, formatAmount(sgstAmount || 0));
+        // Use cgstRate/sgstRate from invoice if available, else fall back to calculation
+        const effectiveCgstRate = invoice.cgstRate ?? cgstRate;
+        const effectiveSgstRate = invoice.sgstRate ?? sgstRate;
+
+        const effectiveCgstAmount = invoice.cgstRate !== undefined ? (subTotal * (invoice.cgstRate / 100)) : (cgstAmount || 0);
+        const effectiveSgstAmount = invoice.sgstRate !== undefined ? (subTotal * (invoice.sgstRate / 100)) : (sgstAmount || 0);
+
+        if (effectiveCgstRate) await drawTotalRow(`CGST (${effectiveCgstRate}%)`, formatAmount(effectiveCgstAmount), true);
+        if (effectiveSgstRate) await drawTotalRow(`SGST (${effectiveSgstRate}%)`, formatAmount(effectiveSgstAmount), true);
     }
 
     // Grand Total
-    await drawTotalRow(t.grandTotal, formatAmount(grandTotal), true);
+    const finalGrandTotal = shouldCalculateTax ? grandTotal : subTotal;
+    await drawTotalRow(t.grandTotal, formatAmount(finalGrandTotal), true);
 
     yPosition += 15;
 
     // Footer: Bank Details (Left) and Signature (Right)
-    const bankY = yPosition;
 
-    await addTextToPdf(doc, 'Bank Details:', 14, bankY, { fontSize: 10, fontStyle: 'bold' });
-    doc.setFont('helvetica', 'normal');
+    if (isVisionAI) {
+        const bankY = yPosition;
 
-    const details = [
-        `Bank Name: ${companyInfoToUse?.bankDetails?.bankName || ''}`,
-        `Branch: ${companyInfoToUse?.bankDetails?.branchName || ''}`,
-        `Account Type: ${companyInfoToUse?.bankDetails?.accountType || ''}`,
-        `Account No: ${companyInfoToUse?.bankDetails?.accountNumber || ''}`,
-        `Account Holder: ${companyInfoToUse?.bankDetails?.accountHolderName || ''}`, // Fixed label
-        `IFSC Code: ${companyInfoToUse?.bankDetails?.ifscCode || ''}`,
-    ].filter(detail => !detail.endsWith(': ')); // Only show fields that have values
+        await addTextToPdf(doc, 'Bank Details:', 14, bankY, { fontSize: 10, fontStyle: 'bold' });
+        doc.setFont('helvetica', 'normal');
 
-    let curY = bankY + 5;
-    for (const d of details) {
-        await addTextToPdf(doc, d, 14, curY, { fontSize: 10 });
-        curY += 5;
+        const details = [
+            `Bank Name: ${companyInfoToUse?.bankDetails?.bankName || ''}`,
+            `Branch: ${companyInfoToUse?.bankDetails?.branchName || ''}`,
+            `Branch Code: ${companyInfoToUse?.bankDetails?.branchCode || ''}`,
+            `Account Type: ${companyInfoToUse?.bankDetails?.accountType || ''}`,
+            `Account No: ${companyInfoToUse?.bankDetails?.accountNumber || ''}`,
+            `Account Holder: ${companyInfoToUse?.bankDetails?.accountHolderName || ''}`,
+            `IFSC Code: ${companyInfoToUse?.bankDetails?.ifscCode || ''}`,
+        ].filter(detail => {
+            const parts = detail.split(': ');
+            return parts.length > 1 && parts[1].trim().length > 0;
+        });
+
+        let curY = bankY + 7;
+        for (const d of details) {
+            await addTextToPdf(doc, d, 14, curY, { fontSize: 11, fontStyle: 'bold' });
+            curY += 7;
+        }
+
+        // Add Static VisionAI Logo/Stamp above Signature
+        const stampX = 160;
+        const stampY = bankY - 8;
+        const stampSize = 25;
+
+        await addStaticStampToPdf(doc, stampX, stampY, visionAiStamp, stampSize, stampSize);
+
+        await addTextToPdf(doc, 'Authorised Signature', stampX, bankY + 24, {
+            fontSize: 10, fontStyle: 'bold', align: 'left'
+        });
+    } else {
+        // For other companies, just show signature line
+        const sigX = 160;
+        const sigY = yPosition + 15;
+        await addTextToPdf(doc, 'Authorised Signature', sigX, sigY, {
+            fontSize: 10, fontStyle: 'bold', align: 'left'
+        });
     }
-
-    // Add Static VisionAI Logo/Stamp above Signature
-    // Positioned professionally in the footer area
-    const stampX = 160;
-    const stampY = bankY - 8; // Moved up slightly for better balance
-    const stampSize = 25;
-
-    await addStaticStampToPdf(doc, stampX, stampY, visionAiStamp, stampSize, stampSize);
-
-    await addTextToPdf(doc, 'Authorised Signature', stampX, bankY + 24, {
-        fontSize: 10, fontStyle: 'bold', align: 'left'
-    });
 };
 
 

@@ -28,9 +28,7 @@ const AppContent: React.FC = () => {
             <Routes>
                 <Route
                     path="/"
-                    element={
-                        isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />
-                    }
+                    element={<LandingPage />}
                 />
                 <Route
                     path="/dashboard"

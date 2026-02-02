@@ -49,10 +49,11 @@ export interface TaxCalculationResult {
 export const calculateTax = (
     subTotal: number,
     taxRate: number = 0,
-    country: Country = 'india'
+    country: Country = 'india',
+    cgstRateManual?: number,
+    sgstRateManual?: number
 ): TaxCalculationResult => {
     if (country === 'japan') {
-        // Japan: Single Consumption Tax
         const consumptionTaxRate = taxRate;
         const consumptionTaxAmount = subTotal * (consumptionTaxRate / 100);
         const grandTotal = subTotal + consumptionTaxAmount;
@@ -65,9 +66,11 @@ export const calculateTax = (
             consumptionTaxAmount,
         };
     } else {
-        // India: CGST + SGST (split tax rate)
-        const cgstRate = taxRate / 2;
-        const sgstRate = taxRate / 2;
+        // India: CGST + SGST
+        // Use manual rates if provided, otherwise split taxRate
+        const cgstRate = cgstRateManual !== undefined ? cgstRateManual : taxRate / 2;
+        const sgstRate = sgstRateManual !== undefined ? sgstRateManual : taxRate / 2;
+
         const cgstAmount = subTotal * (cgstRate / 100);
         const sgstAmount = subTotal * (sgstRate / 100);
         const grandTotal = subTotal + cgstAmount + sgstAmount;

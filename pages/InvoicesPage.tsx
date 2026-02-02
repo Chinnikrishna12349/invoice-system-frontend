@@ -76,14 +76,17 @@ export const InvoicesPage: React.FC = () => {
 
     const handleDownload = useCallback((language: 'en' | 'ja') => {
         if (selectedLangInvoice) {
-            generateInvoicePDF(selectedLangInvoice, language, companyInfo).catch((error) => {
+            // Use the snapshot company info from the invoice if available, otherwise fall back to user's current company info
+            const invoiceCompanyInfo = selectedLangInvoice.companyInfo || companyInfo;
+
+            generateInvoicePDF(selectedLangInvoice, language, invoiceCompanyInfo).catch((error) => {
                 console.error('Error generating PDF:', error);
                 alert('Failed to generate PDF. Please try again.');
             });
             setShowLanguageModal(false);
             setSelectedLangInvoice(null);
         }
-    }, [selectedLangInvoice]);
+    }, [selectedLangInvoice, companyInfo]);
 
     const handleCloseLanguageModal = useCallback(() => {
         setShowLanguageModal(false);
@@ -97,8 +100,7 @@ export const InvoicesPage: React.FC = () => {
         const matchesText = !searchTerm || (
             invoice.invoiceNumber.toLowerCase().includes(searchLower) ||
             invoice.employeeName.toLowerCase().includes(searchLower) ||
-            invoice.employeeEmail.toLowerCase().includes(searchLower) ||
-            invoice.employeeId.toLowerCase().includes(searchLower)
+            invoice.employeeEmail.toLowerCase().includes(searchLower)
         );
 
         // Date filter

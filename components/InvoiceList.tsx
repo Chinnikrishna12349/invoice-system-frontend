@@ -2,6 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Invoice } from '../types';
+import { calculateTax } from '../services/countryPreferenceService';
 import { ICONS } from '../constants';
 import { sendInvoiceByEmail } from "../services/apiService";
 
@@ -54,8 +55,15 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({ invoices, onEdit, onDe
     const calculateTotal = (invoice: Invoice) => {
         const subTotal = invoice.services?.reduce((acc, service) =>
             acc + (service.hours * service.rate), 0) || 0;
-        const taxAmount = subTotal * ((invoice.taxRate || 0) / 100);
-        return subTotal + taxAmount;
+
+        const taxCalculation = calculateTax(
+            subTotal,
+            invoice.taxRate || 0,
+            invoice.country,
+            invoice.cgstRate,
+            invoice.sgstRate
+        );
+        return taxCalculation.grandTotal;
     };
 
     if (invoices.length === 0) {

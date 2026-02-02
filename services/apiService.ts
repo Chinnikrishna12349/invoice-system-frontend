@@ -226,28 +226,7 @@ export const downloadInvoicePdf = async (id: string, invoiceNumber: string): Pro
   window.URL.revokeObjectURL(url);
 };
 
-/**
- * Get invoices for a specific employee
- */
-export const getInvoicesByEmployeeId = async (employeeId: string): Promise<Invoice[]> => {
-  const response = await fetch(`${API_BASE_URL}/employee/${employeeId}`, {
-    method: 'GET',
-    headers: createAuthHeaders(),
-  });
 
-  checkAuthError(response);
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch invoices: ${response.statusText}`);
-  }
-
-  const result: ApiResponse<Invoice[]> = await response.json();
-  if (!result.success) {
-    throw new Error(result.error || 'Failed to fetch invoices');
-  }
-
-  return result.data || [];
-};
 
 /**
  * Send invoice to customer email
@@ -259,13 +238,16 @@ export const sendInvoiceByEmail = async (id: string, invoice: any, language: 'en
       throw new Error('Invoice does not have a valid email address');
     }
 
-    // Get company info from localStorage
+    // Get company info from localStorage (fallback)
     const { getCompanyInfo } = await import('./authService');
-    const companyInfo = getCompanyInfo();
+    const userCompanyInfo = getCompanyInfo();
+
+    // PRIORITIZE the invoice's own snapshot info (from the "From" dropdown)
+    const companyInfoToUse = invoice.companyInfo || userCompanyInfo;
 
     // Generate PDF using the SAME function as download with selected language
     const { generateInvoicePDFBytes } = await import('./pdfService');
-    const pdfBytes = await generateInvoicePDFBytes(invoice, language, companyInfo);
+    const pdfBytes = await generateInvoicePDFBytes(invoice, language, companyInfoToUse);
 
     if (import.meta.env?.DEV) {
       console.log('Generated PDF for email:', pdfBytes.length, 'bytes');
@@ -284,6 +266,7 @@ export const sendInvoiceByEmail = async (id: string, invoice: any, language: 'en
 
     // Send PDF bytes as ArrayBuffer with proper content type
     const headers: HeadersInit = {
+      ...createAuthHeaders(),
       'Content-Type': 'application/octet-stream',
     };
     const token = getAuthToken();
@@ -308,25 +291,21 @@ export const sendInvoiceByEmail = async (id: string, invoice: any, language: 'en
     let errorMessage = `Failed to send email: ${response.status} ${response.statusText}`;
 
     if (!response.ok) {
+      const status = response.status;
+      const statusText = response.statusText;
+      let detailedError = '';
       try {
         const errorResult = await response.json();
-        if (errorResult.error) {
-          errorMessage = errorResult.error;
-        } else if (errorResult.message) {
-          errorMessage = errorResult.message;
-        }
+        detailedError = errorResult.error || errorResult.message || '';
       } catch (parseError) {
         // If response is not JSON, try to get text
         try {
-          const errorText = await response.text();
-          if (errorText) {
-            errorMessage = errorText;
-          }
+          detailedError = await response.text();
         } catch (textError) {
-          // Use default error message
+          detailedError = 'No additional error details';
         }
       }
-      throw new Error(errorMessage);
+      throw new Error(`Server Error (${status} ${statusText}): ${detailedError || 'Internal Error'}`);
     }
 
     // Parse successful response

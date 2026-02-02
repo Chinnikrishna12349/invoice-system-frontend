@@ -90,14 +90,13 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
 
                 <div>
                     <label htmlFor="ifscCode" className={labelClasses}>
-                        IFSC Code <span className="text-red-500">*</span>
+                        IFSC Code
                     </label>
                     <input
                         id="ifscCode"
                         type="text"
                         value={data.ifscCode}
                         onChange={(e) => updateField('ifscCode', e.target.value.toUpperCase())}
-                        required
                         className={inputClasses(!!errors.ifscCode)}
                         placeholder="Enter IFSC code"
                     />

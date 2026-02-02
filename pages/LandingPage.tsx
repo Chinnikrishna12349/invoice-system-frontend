@@ -9,12 +9,14 @@ export const LandingPage: React.FC = () => {
     const navigate = useNavigate();
     const [isLogin, setIsLogin] = useState(true);
 
-    // Redirect if already authenticated
+    // Redirect if already authenticated removed as per user request to always land on login
+    /*
     useEffect(() => {
         if (!isLoading && isAuthenticated) {
             navigate('/dashboard', { replace: true });
         }
     }, [isAuthenticated, isLoading, navigate]);
+    */
 
     if (isLoading) {
         return (

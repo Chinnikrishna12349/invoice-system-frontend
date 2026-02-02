@@ -107,10 +107,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const handleSignup = async (credentials: SignupCredentials) => {
         try {
-            const { user: newUser, companyInfo: newCompanyInfo } = await signup(credentials);
-            setUser(newUser);
-            setCompanyInfo(newCompanyInfo);
-            navigate('/dashboard');
+            await signup(credentials);
+            // After signup, redirect to login page as requested by user
+            navigate('/login');
         } catch (error) {
             throw error;
         }

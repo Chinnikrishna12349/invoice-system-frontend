@@ -63,12 +63,12 @@ export const Dashboard: React.FC = () => {
 
     const handleSaveInvoice = useCallback(async (invoice: Invoice) => {
         try {
-            // Ensure invoice has country set
-            const invoiceWithCountry = { ...invoice, country };
+            // Ensure invoice has country and userId set
+            const invoiceWithData = { ...invoice, country, userId: user?.id };
             if (selectedInvoice) {
-                await updateInvoice(selectedInvoice.id, invoiceWithCountry);
+                await updateInvoice(selectedInvoice.id, invoiceWithData);
             } else {
-                await createInvoice(invoiceWithCountry);
+                await createInvoice(invoiceWithData);
             }
             setSelectedInvoice(null);
             setError(null);

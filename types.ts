@@ -14,7 +14,7 @@ export interface Invoice {
   dueDate: string;
   company: string;
   employeeName: string;
-  employeeId: string;
+
   employeeEmail: string;
   employeeAddress: string;
   employeeMobile: string;
@@ -22,6 +22,7 @@ export interface Invoice {
   taxRate?: number;
   cgstRate?: number;
   sgstRate?: number;
+  showConsumptionTax?: boolean;
   country?: Country; // Country for tax calculation
   userId?: string; // For data isolation
   companyInfo?: CompanyInfo; // Snapshot of company details at creation time

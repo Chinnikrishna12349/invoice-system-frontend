@@ -21,7 +21,6 @@ interface InvoiceLayoutProps {
   };
   billTo: {
     name: string;
-    employeeId: string;
     email: string;
     phone: string;
     address: string;
@@ -38,6 +37,8 @@ interface InvoiceLayoutProps {
     branchCode: string;
   };
   country?: Country;
+  cgstRate?: number;
+  sgstRate?: number;
 }
 
 const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
@@ -52,6 +53,8 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
   grandTotal,
   bankDetails,
   country = 'india',
+  cgstRate,
+  sgstRate,
 }) => {
   return (
     <div className="bg-white p-8 rounded-lg shadow-sm">
@@ -86,7 +89,6 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
         <div className="w-1/2 pl-4 text-right">
           <h3 className="font-semibold text-gray-700">Bill To:</h3>
           <p className="font-semibold">{billTo.name}</p>
-          <p className="text-gray-600">Employee ID: {billTo.employeeId}</p>
           <p className="text-gray-600">Email: {billTo.email}</p>
           <p className="text-gray-600">Phone: {billTo.phone}</p>
           <p className="text-gray-600">{billTo.address}</p>
@@ -127,14 +129,35 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
                 {formatCurrency(subtotal, country)}
               </td>
             </tr>
-            <tr>
-              <td colSpan={4} className="border border-gray-300 p-2 text-right">
-                Consumption Tax ({taxRate}%)
-              </td>
-              <td className="border border-gray-300 p-2 text-right">
-                {formatCurrency(taxAmount, country)}
-              </td>
-            </tr>
+            {country === 'india' ? (
+              <>
+                <tr>
+                  <td colSpan={4} className="border border-gray-300 p-2 text-right">
+                    CGST ({cgstRate ?? (taxRate / 2)}%)
+                  </td>
+                  <td className="border border-gray-300 p-2 text-right">
+                    {formatCurrency(subtotal * ((cgstRate ?? (taxRate / 2)) / 100), country)}
+                  </td>
+                </tr>
+                <tr>
+                  <td colSpan={4} className="border border-gray-300 p-2 text-right">
+                    SGST ({sgstRate ?? (taxRate / 2)}%)
+                  </td>
+                  <td className="border border-gray-300 p-2 text-right">
+                    {formatCurrency(subtotal * ((sgstRate ?? (taxRate / 2)) / 100), country)}
+                  </td>
+                </tr>
+              </>
+            ) : (
+              <tr>
+                <td colSpan={4} className="border border-gray-300 p-2 text-right">
+                  Consumption Tax ({taxRate}%)
+                </td>
+                <td className="border border-gray-300 p-2 text-right">
+                  {formatCurrency(taxAmount, country)}
+                </td>
+              </tr>
+            )}
             <tr className="bg-gray-50">
               <td colSpan={4} className="border border-gray-300 p-2 text-right font-bold">
                 Grand Total
