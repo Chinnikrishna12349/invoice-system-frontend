@@ -22,7 +22,7 @@ export const FROM_COMPANIES: DummyCompany[] = [
         companyName: 'Vision AI LLC',
         companyAddress: '305-0861, Ibaraki-Ken, Tsukuba-Shi, Yatabe 1077-58',
         companyLogoUrl: VISION_AI_LOGO_BASE64,
-        invoiceFormat: 'VAI-',
+        invoiceFormat: 'INV-VI-',
         currency: 'JPY',
         bankDetails: {
             bankName: 'ＧＭＯあおぞらネット銀行 法人第二営業部',
@@ -38,7 +38,7 @@ export const FROM_COMPANIES: DummyCompany[] = [
         companyName: 'Ideal Folks LLC',
         companyAddress: '106-0044, Tokyo, Minato-Ku, Highashiazabu 3-4-17, Higashi Azabu K Building 3F',
         companyLogoUrl: '',
-        invoiceFormat: 'IFL-',
+        invoiceFormat: 'INV-IF-',
         currency: 'JPY',
         bankDetails: {
             bankName: '',
@@ -54,7 +54,7 @@ export const FROM_COMPANIES: DummyCompany[] = [
         companyName: 'VCAS Consulting LLC',
         companyAddress: '210-0025, Kanagawa-Ken, Kawasaki-Shi, Kawasaki-Ku, Shimonamiki 11-5, Kawasaki Sight City 4-809',
         companyLogoUrl: '',
-        invoiceFormat: 'VCS-',
+        invoiceFormat: 'INV-VCAS-',
         currency: 'JPY',
         bankDetails: {
             bankName: '',

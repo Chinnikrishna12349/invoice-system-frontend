@@ -83,10 +83,23 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             if (!selectedInvoice && user?.id) {
                 try {
                     const nextNum = await getNextInvoiceNumber(user.id);
-                    setFormData(prev => ({ ...prev, invoiceNumber: nextNum }));
+                    setFormData(prev => {
+                        let finalNum = nextNum;
+                        // If we have a selected company with a specific format, try to apply it
+                        if (prev.companyInfo?.invoiceFormat) {
+                            const match = nextNum.match(/\d+$/);
+                            if (match) {
+                                finalNum = `${prev.companyInfo.invoiceFormat}${match[0]}`;
+                            }
+                        }
+                        return { ...prev, invoiceNumber: finalNum };
+                    });
                 } catch (error) {
-                    const invoiceNumber = `INV-${String(invoicesCount + 1).padStart(4, '0')}`;
-                    setFormData(prev => ({ ...prev, invoiceNumber }));
+                    setFormData(prev => {
+                        const prefix = prev.companyInfo?.invoiceFormat || 'INV-';
+                        const num = String(invoicesCount + 1).padStart(4, '0');
+                        return { ...prev, invoiceNumber: `${prefix}${num}` };
+                    });
                 }
             }
         };
@@ -106,19 +119,31 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             setBankDetails({ ...company.bankDetails });
 
             // Update formData immediately for reactivity (Logo, Address, Company Name)
-            setFormData(prev => ({
-                ...prev,
-                company: company.companyName,
-                country: company.currency === 'JPY' ? 'japan' : 'india',
-                companyInfo: {
-                    id: company.id,
-                    companyName: company.companyName,
-                    companyAddress: company.companyAddress,
-                    companyLogoUrl: company.companyLogoUrl,
-                    invoiceFormat: company.invoiceFormat,
-                    bankDetails: company.bankDetails
+            setFormData(prev => {
+                // Determine new invoice number with company-specific prefix
+                let newInvoiceNumber = prev.invoiceNumber;
+                if (company.invoiceFormat) {
+                    // Extract existing number (matches any digits at the end)
+                    const match = prev.invoiceNumber.match(/\d+$/);
+                    const currentNum = match ? match[0] : '0001';
+                    newInvoiceNumber = `${company.invoiceFormat}${currentNum}`;
                 }
-            }));
+
+                return {
+                    ...prev,
+                    invoiceNumber: newInvoiceNumber,
+                    company: company.companyName,
+                    country: company.currency === 'JPY' ? 'japan' : 'india',
+                    companyInfo: {
+                        id: company.id,
+                        companyName: company.companyName,
+                        companyAddress: company.companyAddress,
+                        companyLogoUrl: company.companyLogoUrl,
+                        invoiceFormat: company.invoiceFormat,
+                        bankDetails: company.bankDetails
+                    }
+                };
+            });
         }
     };
 
