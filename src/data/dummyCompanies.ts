@@ -1,4 +1,5 @@
-import { CompanyInfo, BankDetails } from '../../types';
+import { CompanyInfo } from '../../types';
+import { VISION_AI_LOGO_BASE64 } from '../assets/visionAiLogoBase64';
 
 export interface DummyCompany extends Omit<CompanyInfo, 'id' | 'userId' | 'createdAt' | 'updatedAt'> {
     id: string; // Dummy ID
@@ -20,7 +21,7 @@ export const FROM_COMPANIES: DummyCompany[] = [
         id: 'comp_vision_ai',
         companyName: 'Vision AI LLC',
         companyAddress: '305-0861, Ibaraki-Ken, Tsukuba-Shi, Yatabe 1077-58',
-        companyLogoUrl: '/src/assets/vision-ai-logo.png',
+        companyLogoUrl: VISION_AI_LOGO_BASE64,
         invoiceFormat: 'VAI-',
         currency: 'JPY',
         bankDetails: {
