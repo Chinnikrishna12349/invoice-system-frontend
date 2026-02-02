@@ -793,12 +793,14 @@ const drawInvoiceContent = async (
             curY += 7;
         }
 
-        // Add Static VisionAI Logo/Stamp above Signature
         const stampX = 160;
-        const stampY = bankY - 8;
-        const stampSize = 25;
+        if (isVisionAI) {
+            // Add Static VisionAI Logo/Stamp above Signature
+            const stampY = bankY - 8;
+            const stampSize = 25;
 
-        await addStaticStampToPdf(doc, stampX, stampY, visionAiStamp, stampSize, stampSize);
+            await addStaticStampToPdf(doc, stampX, stampY, visionAiStamp, stampSize, stampSize);
+        }
 
         await addTextToPdf(doc, 'Authorised Signature', stampX, bankY + 24, {
             fontSize: 10, fontStyle: 'bold', align: 'left'
