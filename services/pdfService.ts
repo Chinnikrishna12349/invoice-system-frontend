@@ -410,7 +410,19 @@ const drawInvoiceContent = async (
     // Add logo at top left
     // Fallback to base64-encoded Vision AI logo if no custom logo uploaded
     const isVisionAI = companyInfoToUse?.companyName === 'Vision AI LLC';
-    const logoToUse = isVisionAI ? (companyInfoToUse?.companyLogoUrl || VISION_AI_LOGO_BASE64) : null;
+    let logoToUse: string | null = null;
+
+    if (isVisionAI) {
+        const logoUrl = companyInfoToUse?.companyLogoUrl;
+        // Only use companyLogoUrl if it's a data URL or absolute HTTP URL
+        // Otherwise, use the base64 constant to avoid fetch errors
+        if (logoUrl && (logoUrl.startsWith('data:') || logoUrl.startsWith('http://') || logoUrl.startsWith('https://'))) {
+            logoToUse = logoUrl;
+        } else {
+            logoToUse = VISION_AI_LOGO_BASE64;
+        }
+    }
+
     await addLogoToPdf(doc, 14, yPosition, logoToUse, 50);
 
     // Right Column Start Position (Aligned for Header and Bill To)
