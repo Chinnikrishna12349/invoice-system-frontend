@@ -5,7 +5,6 @@ import i18n from '../src/i18n/i18n';
 import { configureJapaneseFont, renderJapaneseText } from './japaneseFontSupport';
 import { getCompanyInfo } from './authService';
 import visionAiStamp from '../src/assets/visionai-stamp.png';
-import visionAiLogo from '../src/assets/vision-ai-logo.png';
 import placeholderLogo from '../src/assets/oryfolks-logo.svg';
 
 // Helper function to add text to PDF (handles Japanese properly using html2canvas)
@@ -408,9 +407,10 @@ const drawInvoiceContent = async (
     };
 
     // Add logo at top left
-    // Fallback to placeholderLogo if companyLogoUrl is missing
+    // Fallback to Vision AI logo from public folder if no custom logo uploaded
     const isVisionAI = companyInfoToUse?.companyName === 'Vision AI LLC';
-    const logoToUse = isVisionAI ? (companyInfoToUse?.companyLogoUrl || visionAiLogo) : null;
+    const logoToUse = isVisionAI ? (companyInfoToUse?.companyLogoUrl || '/vision-ai-logo.png') : null;
+    console.log('PDF Logo Debug:', { isVisionAI, companyName: companyInfoToUse?.companyName, companyLogoUrl: companyInfoToUse?.companyLogoUrl, logoToUse });
     await addLogoToPdf(doc, 14, yPosition, logoToUse, 50);
 
     // Right Column Start Position (Aligned for Header and Bill To)
