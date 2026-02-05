@@ -14,11 +14,9 @@ interface InvoiceFormProps {
     clearSelection: () => void;
     invoices: Invoice[];
 }
-
 export const InvoiceForm: React.FC<InvoiceFormProps> = ({
     onSave,
     selectedInvoice,
-    clearSelection,
     clearSelection,
     invoices
 }) => {
