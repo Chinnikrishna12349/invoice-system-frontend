@@ -76,5 +76,23 @@ export const TO_COMPANIES: DummyClient[] = [
         email: 'soumu@blue-arbaro.tokyo',
         phone: '+81-3-6555-2183',
         country: 'japan'
+    },
+    {
+        id: 'client_ideal_folks',
+        companyName: 'Ideal Folks LLC',
+        address: '106-0044, Tokyo, Minato-Ku, Highashiazabu 3-4-17, Higashi Azabu K Building 3F',
+        contactPerson: 'Manager',
+        email: 'info@idealfolks.com',
+        phone: '+81-3-6876-0591',
+        country: 'japan'
+    },
+    {
+        id: 'client_vcas',
+        companyName: 'VCAS Consulting LLC',
+        address: '210-0025, Kanagawa-Ken, Kawasaki-Shi, Kawasaki-Ku, Shimonamiki 11-5, Kawasaki Sight City 4-809',
+        contactPerson: 'Manager',
+        email: 'business@vcasconsulting.com',
+        phone: '+81-4-4400-1821',
+        country: 'japan'
     }
 ];

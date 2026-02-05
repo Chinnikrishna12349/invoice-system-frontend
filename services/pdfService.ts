@@ -869,11 +869,19 @@ export const generateInvoicePDF = async (invoice: Invoice, language: 'en' | 'ja'
 
         await drawInvoiceContent(doc, invoice, language, t, companyInfoParam || getCompanyInfo());
 
+        // Resource name from first service item
+        const resourceName = invoice.services && invoice.services.length > 0
+            ? invoice.services[0].description
+                .split('\n')[0]
+                .replace(/[^a-zA-Z0-9 ]/g, '')
+                .trim()
+                .substring(0, 30)
+            : '';
+
         // Save
-        const langSuffix = language === 'ja' ? '_ja' : '';
-        const fileName = language === 'ja'
-            ? `請求書_${invoice.invoiceNumber}.pdf`
-            : `invoice_${invoice.invoiceNumber}.pdf`;
+        const fileName = resourceName
+            ? `${invoice.invoiceNumber} ${resourceName}.pdf`
+            : `${invoice.invoiceNumber}.pdf`;
 
         const pdfData = doc.output('blob');
         const pdfUrl = URL.createObjectURL(pdfData);

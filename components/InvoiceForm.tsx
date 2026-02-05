@@ -28,6 +28,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
     // Dropdown States
     const [selectedFromId, setSelectedFromId] = useState<string>('');
     const [selectedToId, setSelectedToId] = useState<string>('');
+    const [isOtherFrom, setIsOtherFrom] = useState(false);
+    const [isOtherTo, setIsOtherTo] = useState(false);
 
     // Bank Details State (Editable, defaults to From Company's bank)
     const [bankDetails, setBankDetails] = useState<BankDetails>({
@@ -108,6 +110,32 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
     // Handle "From" Company Change
     const handleFromCompanyChange = (companyId: string) => {
+        if (companyId === 'other') {
+            setIsOtherFrom(true);
+            setSelectedFromId('other');
+            setFormData(prev => ({
+                ...prev,
+                company: '',
+                companyInfo: {
+                    ...prev.companyInfo,
+                    companyName: '',
+                    companyAddress: '',
+                    companyLogoUrl: '',
+                    invoiceFormat: 'INV-',
+                    bankDetails: {
+                        bankName: '',
+                        accountNumber: '',
+                        accountHolderName: '',
+                        ifscCode: '',
+                        branchName: '',
+                        accountType: ''
+                    }
+                }
+            }));
+            return;
+        }
+
+        setIsOtherFrom(false);
         setSelectedFromId(companyId);
         const company = FROM_COMPANIES.find(c => c.id === companyId);
         if (company) {
@@ -149,6 +177,20 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
     // Handle "To" Client Change
     const handleToClientChange = (clientId: string) => {
+        if (clientId === 'other') {
+            setIsOtherTo(true);
+            setSelectedToId('other');
+            setFormData(prev => ({
+                ...prev,
+                employeeName: '',
+                employeeEmail: '',
+                employeeAddress: '',
+                employeeMobile: '',
+            }));
+            return;
+        }
+
+        setIsOtherTo(false);
         setSelectedToId(clientId);
         const client = TO_COMPANIES.find(c => c.id === clientId);
         if (client) {
@@ -307,7 +349,53 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             {FROM_COMPANIES.map(c => (
                                 <option key={c.id} value={c.id}>{c.companyName} ({c.currency})</option>
                             ))}
+                            <option value="other">Others...</option>
                         </select>
+
+                        {/* Manual entry for FROM if "Other" is selected */}
+                        {isOtherFrom && (
+                            <div className="mt-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-500 mb-1">Company Name</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Enter company name"
+                                        className={inputClasses(false)}
+                                        value={formData.company}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                company: val,
+                                                companyInfo: {
+                                                    ...prev.companyInfo!,
+                                                    companyName: val
+                                                }
+                                            }));
+                                        }}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-500 mb-1">Company Address</label>
+                                    <textarea
+                                        placeholder="Enter company address"
+                                        className={inputClasses(false)}
+                                        rows={2}
+                                        value={formData.companyInfo?.companyAddress}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                companyInfo: {
+                                                    ...prev.companyInfo!,
+                                                    companyAddress: val
+                                                }
+                                            }));
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        )}
                         {/* Company Info & Logo Preview */}
                         {selectedFromId && (() => {
                             const selectedCompany = FROM_COMPANIES.find(c => c.id === selectedFromId);
@@ -347,8 +435,61 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             {TO_COMPANIES.map(c => (
                                 <option key={c.id} value={c.id}>{c.companyName} ({c.country})</option>
                             ))}
+                            <option value="other">Others...</option>
                         </select>
-                        {formData.employeeName && (
+
+                        {/* Manual entry for TO if "Other" is selected */}
+                        {isOtherTo && (
+                            <div className="mt-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-500 mb-1">Client Name</label>
+                                    <input
+                                        type="text"
+                                        name="employeeName"
+                                        placeholder="Enter client name"
+                                        className={inputClasses(!!errors.employeeName)}
+                                        value={formData.employeeName}
+                                        onChange={handleChange}
+                                    />
+                                    {errors.employeeName && <p className="mt-1 text-xs text-red-500">{errors.employeeName}</p>}
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-500 mb-1">Client Email</label>
+                                    <input
+                                        type="email"
+                                        name="employeeEmail"
+                                        placeholder="Enter client email"
+                                        className={inputClasses(!!errors.employeeEmail)}
+                                        value={formData.employeeEmail}
+                                        onChange={handleChange}
+                                    />
+                                    {errors.employeeEmail && <p className="mt-1 text-xs text-red-500">{errors.employeeEmail}</p>}
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-500 mb-1">Client Address</label>
+                                    <textarea
+                                        name="employeeAddress"
+                                        placeholder="Enter client address"
+                                        className={inputClasses(false)}
+                                        rows={2}
+                                        value={formData.employeeAddress}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-500 mb-1">Client Phone</label>
+                                    <input
+                                        type="text"
+                                        name="employeeMobile"
+                                        placeholder="Enter client phone"
+                                        className={inputClasses(false)}
+                                        value={formData.employeeMobile}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+                            </div>
+                        )}
+                        {formData.employeeName && !isOtherTo && (
                             <div className="mt-3 space-y-3">
                                 <p className="text-xs text-gray-500 px-1">
                                     {formData.employeeAddress}
