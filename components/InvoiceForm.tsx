@@ -12,14 +12,15 @@ interface InvoiceFormProps {
     onSave: (invoice: Invoice) => void;
     selectedInvoice?: Invoice | null;
     clearSelection: () => void;
-    invoicesCount: number;
+    invoices: Invoice[];
 }
 
 export const InvoiceForm: React.FC<InvoiceFormProps> = ({
     onSave,
     selectedInvoice,
     clearSelection,
-    invoicesCount
+    clearSelection,
+    invoices
 }) => {
     const { t } = useTranslation();
     const { country, setCountry } = useCountry();
@@ -81,32 +82,31 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
     // Generate invoice number
     useEffect(() => {
-        const fetchNextNumber = async () => {
-            if (!selectedInvoice && user?.id) {
-                try {
-                    const nextNum = await getNextInvoiceNumber(user.id);
-                    setFormData(prev => {
-                        let finalNum = nextNum;
-                        // If we have a selected company with a specific format, try to apply it
-                        if (prev.companyInfo?.invoiceFormat) {
-                            const match = nextNum.match(/\d+$/);
-                            if (match) {
-                                finalNum = `${prev.companyInfo.invoiceFormat}${match[0]}`;
-                            }
-                        }
-                        return { ...prev, invoiceNumber: finalNum };
+        const fetchNextNumber = () => {
+            if (!selectedInvoice) {
+                const prefix = formData.companyInfo?.invoiceFormat || 'INV-';
+
+                // Find all invoices with this prefix
+                const relevantInvoices = invoices.filter(inv =>
+                    inv.invoiceNumber && inv.invoiceNumber.startsWith(prefix)
+                );
+
+                let nextNum = 1;
+                if (relevantInvoices.length > 0) {
+                    // Extract numbers and find the max
+                    const numbers = relevantInvoices.map(inv => {
+                        const match = inv.invoiceNumber.match(/\d+$/);
+                        return match ? parseInt(match[0], 10) : 0;
                     });
-                } catch (error) {
-                    setFormData(prev => {
-                        const prefix = prev.companyInfo?.invoiceFormat || 'INV-';
-                        const num = String(invoicesCount + 1).padStart(4, '0');
-                        return { ...prev, invoiceNumber: `${prefix}${num}` };
-                    });
+                    nextNum = Math.max(...numbers) + 1;
                 }
+
+                const finalNum = `${prefix}${nextNum}`;
+                setFormData(prev => ({ ...prev, invoiceNumber: finalNum }));
             }
         };
         fetchNextNumber();
-    }, [selectedInvoice, user?.id, invoicesCount]);
+    }, [selectedInvoice, invoices, formData.companyInfo?.invoiceFormat]);
 
     // Handle "From" Company Change
     const handleFromCompanyChange = (companyId: string) => {

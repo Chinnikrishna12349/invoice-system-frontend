@@ -12,33 +12,33 @@ export const HomePage: React.FC = () => {
     const { t } = useTranslation();
     const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [invoicesCount, setInvoicesCount] = useState(0);
+    const [invoices, setInvoices] = useState<Invoice[]>([]);
 
-    // Load invoice count
+    // Load invoices
     React.useEffect(() => {
         getAllInvoices()
-            .then(invoices => setInvoicesCount(invoices.length))
-            .catch(() => setInvoicesCount(0));
+            .then(data => setInvoices(data || []))
+            .catch(() => setInvoices([]));
     }, []);
 
     const handleSaveInvoice = useCallback(async (invoice: Invoice) => {
         try {
             if (selectedInvoice) {
-                const updatedInvoice = await updateInvoice(selectedInvoice.id, invoice);
-                setInvoicesCount(prev => prev + (prev === invoicesCount ? 0 : 0));
+                await updateInvoice(selectedInvoice.id, invoice);
             } else {
                 await createInvoice(invoice);
-                setInvoicesCount(prev => prev + 1);
             }
             setSelectedInvoice(null);
             setError(null);
             alert('Invoice saved successfully!');
+            // Reload to update numbering
+            window.location.reload();
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Failed to save invoice';
             setError(errorMessage);
             alert(errorMessage);
         }
-    }, [selectedInvoice, invoicesCount]);
+    }, [selectedInvoice]);
 
     const handleClearSelection = useCallback(() => {
         setSelectedInvoice(null);
@@ -51,7 +51,7 @@ export const HomePage: React.FC = () => {
                     <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
                         <div className="flex items-center justify-between">
                             <p className="text-red-700 font-medium">{error}</p>
-                            <button 
+                            <button
                                 onClick={() => setError(null)}
                                 className="text-red-600 text-sm hover:underline ml-4"
                             >
@@ -67,11 +67,11 @@ export const HomePage: React.FC = () => {
                         <h2 className="text-2xl font-bold text-gray-900 mb-2">Create New Invoice</h2>
                         <p className="text-gray-600">Fill in the form below to create a new invoice</p>
                     </div>
-                    <InvoiceForm 
-                        onSave={handleSaveInvoice} 
-                        selectedInvoice={selectedInvoice} 
+                    <InvoiceForm
+                        onSave={handleSaveInvoice}
+                        selectedInvoice={selectedInvoice}
                         clearSelection={handleClearSelection}
-                        invoicesCount={invoicesCount}
+                        invoices={invoices}
                     />
                 </div>
             </main>

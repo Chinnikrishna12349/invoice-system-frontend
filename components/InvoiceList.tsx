@@ -50,7 +50,31 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({ invoices, onEdit, onDe
         );
     }, [invoices, searchQuery]);
 
-    const sortedInvoices = filteredInvoices.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const sortedInvoices = useMemo(() => {
+        return [...filteredInvoices].sort((a, b) => {
+            const aNum = a.invoiceNumber || '';
+            const bNum = b.invoiceNumber || '';
+
+            // Extract prefix and number
+            const aMatch = aNum.match(/^([a-zA-Z-]*?)(\d+)$/);
+            const bMatch = bNum.match(/^([a-zA-Z-]*?)(\d+)$/);
+
+            if (aMatch && bMatch) {
+                const aPrefix = aMatch[1];
+                const bPrefix = bMatch[1];
+                const aSuffix = parseInt(aMatch[2], 10);
+                const bSuffix = parseInt(bMatch[2], 10);
+
+                if (aPrefix !== bPrefix) {
+                    return aPrefix.localeCompare(bPrefix);
+                }
+                return aSuffix - bSuffix;
+            }
+
+            // Fallback to simple locale compare
+            return aNum.localeCompare(bNum);
+        });
+    }, [filteredInvoices]);
 
     const calculateTotal = (invoice: Invoice) => {
         const subTotal = invoice.services?.reduce((acc, service) =>

@@ -148,7 +148,7 @@ export const Dashboard: React.FC = () => {
                         onSave={handleSaveInvoice}
                         selectedInvoice={selectedInvoice}
                         clearSelection={handleClearSelection}
-                        invoicesCount={invoices.length}
+                        invoices={invoices}
                     />
                 </div>
             </main>

@@ -26,6 +26,7 @@ export const InvoicesPage: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedDate, setSelectedDate] = useState<string>('');
     const [dateFilterType, setDateFilterType] = useState<'day' | 'month'>('day');
+    const [downloadedIds, setDownloadedIds] = useState<Set<string>>(new Set());
 
     const loadInvoices = useCallback(async () => {
         try {
@@ -70,16 +71,22 @@ export const InvoicesPage: React.FC = () => {
     }, [invoiceToDelete]);
 
     const handleDownloadClick = useCallback((invoice: Invoice) => {
+        if (downloadedIds.has(invoice.id)) {
+            const confirmAgain = window.confirm("the pdf is getting downloaded.do you want to download it again?");
+            if (!confirmAgain) return;
+        }
         setSelectedLangInvoice(invoice);
         setShowLanguageModal(true);
-    }, []);
+    }, [downloadedIds]);
 
     const handleDownload = useCallback((language: 'en' | 'ja') => {
         if (selectedLangInvoice) {
             // Use the snapshot company info from the invoice if available, otherwise fall back to user's current company info
             const invoiceCompanyInfo = selectedLangInvoice.companyInfo || companyInfo;
 
-            generateInvoicePDF(selectedLangInvoice, language, invoiceCompanyInfo).catch((error) => {
+            generateInvoicePDF(selectedLangInvoice, language, invoiceCompanyInfo).then(() => {
+                setDownloadedIds(prev => new Set([...prev, selectedLangInvoice.id]));
+            }).catch((error) => {
                 console.error('Error generating PDF:', error);
                 alert('Failed to generate PDF. Please try again.');
             });
