@@ -627,7 +627,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                 ...visibleDynamicClients.map(c => ({
                                     id: c.id,
                                     label: c.companyName,
-                                    group: 'Manually Entered Clients'
+                                    group: undefined
                                 })),
                                 { id: 'other', label: 'Others...', group: undefined }
                             ]}
