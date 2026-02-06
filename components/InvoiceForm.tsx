@@ -196,12 +196,16 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         if (dynamicCompany) {
             setIsOtherFrom(false);
             setSelectedFromId(companyId);
+            const dynamicPrefix = generateDynamicPrefix(dynamicCompany.companyName);
             setBankDetails({ ...dynamicCompany.bankDetails });
             setFormData(prev => ({
                 ...prev,
                 company: dynamicCompany.companyName,
                 country: dynamicCompany.bankDetails.ifscCode ? 'india' : 'japan', // Guess based on IFSC
-                companyInfo: { ...dynamicCompany }
+                companyInfo: {
+                    ...dynamicCompany,
+                    invoiceFormat: dynamicPrefix
+                }
             }));
             return;
         }
