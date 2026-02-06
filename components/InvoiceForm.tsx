@@ -9,7 +9,7 @@ import { FROM_COMPANIES, TO_COMPANIES, DummyCompany, DummyClient } from '../src/
 import { BankDetailsForm } from './BankDetailsForm';
 
 interface InvoiceFormProps {
-    onSave: (invoice: Invoice) => void;
+    onSave: (invoice: Invoice) => Promise<void>;
     selectedInvoice?: Invoice | null;
     clearSelection: () => void;
     invoices: Invoice[];
@@ -58,6 +58,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
     });
 
     const [showTaxToggle, setShowTaxToggle] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -84,9 +85,10 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             if (!selectedInvoice) {
                 const prefix = formData.companyInfo?.invoiceFormat || 'INV-';
 
-                // Find all invoices with this prefix
+                // Find all invoices with this prefix (exact match, no sub-prefixes)
+                const regex = new RegExp(`^${prefix}\\d+$`);
                 const relevantInvoices = invoices.filter(inv =>
-                    inv.invoiceNumber && inv.invoiceNumber.startsWith(prefix)
+                    inv.invoiceNumber && regex.test(inv.invoiceNumber)
                 );
 
                 let nextNum = 1;
@@ -270,9 +272,17 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
     };
 
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (isSaving) {
+            alert("invoice is getting created,please wait.");
+            return;
+        }
+
         if (!validate()) return;
+
+        setIsSaving(true);
 
         const invoiceDate = new Date(formData.date || new Date().toISOString().split('T')[0]);
         const dueDate = new Date(invoiceDate);
@@ -292,7 +302,12 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             } : undefined
         };
 
-        onSave(invoice);
+        try {
+            await onSave(invoice);
+        } catch (error) {
+            setIsSaving(false);
+            console.error("Save error:", error);
+        }
     };
 
     // Calculation Logic
@@ -324,7 +339,12 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 </div>
                 <div>
                     <label className={labelClasses}>Due Date</label>
-                    <input type="text" value={formData.date ? new Date(new Date(formData.date).setDate(new Date(formData.date).getDate() + 45)).toISOString().split('T')[0] : ''} readOnly className={`${inputClasses(false)} bg-gray-100 text-gray-500`} />
+                    <input
+                        type="date"
+                        value={formData.date ? new Date(new Date(formData.date).setDate(new Date(formData.date).getDate() + 45)).toISOString().split('T')[0] : ''}
+                        readOnly
+                        className={`${inputClasses(false)} bg-gray-100 text-gray-500`}
+                    />
                 </div>
             </div>
 
