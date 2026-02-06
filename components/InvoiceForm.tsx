@@ -7,6 +7,8 @@ import { calculateTax, getCurrencySymbol, formatCurrency } from '../services/cou
 import { useAuth } from '../contexts/AuthContext';
 import { FROM_COMPANIES, TO_COMPANIES, DummyCompany, DummyClient } from '../src/data/dummyCompanies';
 import { BankDetailsForm } from './BankDetailsForm';
+import { CustomDropdown } from './CustomDropdown';
+import { getHiddenSenders, getHiddenClients, hideSender, hideClient } from '../src/utils/companyStorage';
 
 interface InvoiceFormProps {
     onSave: (invoice: Invoice) => Promise<void>;
@@ -57,6 +59,16 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         showConsumptionTax: false
     });
 
+    // Track hidden companies
+    const [hiddenSenderIds, setHiddenSenderIds] = useState<string[]>([]);
+    const [hiddenClientIds, setHiddenClientIds] = useState<string[]>([]);
+
+    // Load hidden companies on mount
+    useEffect(() => {
+        setHiddenSenderIds(getHiddenSenders());
+        setHiddenClientIds(getHiddenClients());
+    }, []);
+
     // Derive Dynamic Lists from existing invoices
     const dynamicSenders = useMemo(() => {
         const senders: CompanyInfo[] = [];
@@ -97,6 +109,23 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         });
         return clients;
     }, [invoices]);
+
+    // Filter out hidden companies
+    const visibleFromCompanies = useMemo(() => {
+        return FROM_COMPANIES.filter(c => !hiddenSenderIds.includes(c.id));
+    }, [hiddenSenderIds]);
+
+    const visibleDynamicSenders = useMemo(() => {
+        return dynamicSenders.filter(c => !hiddenSenderIds.includes(`dynamic-from-${c.companyName}`));
+    }, [dynamicSenders, hiddenSenderIds]);
+
+    const visibleToCompanies = useMemo(() => {
+        return TO_COMPANIES.filter(c => !hiddenClientIds.includes(c.id));
+    }, [hiddenClientIds]);
+
+    const visibleDynamicClients = useMemo(() => {
+        return dynamicClients.filter(c => !hiddenClientIds.includes(c.id));
+    }, [dynamicClients, hiddenClientIds]);
 
     const [showTaxToggle, setShowTaxToggle] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -247,6 +276,39 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                     }
                 };
             });
+        }
+    };
+
+    // Delete Handlers
+    const handleDeleteSender = (id: string) => {
+        hideSender(id);
+        setHiddenSenderIds(prev => [...prev, id]);
+        // If currently selected, reset to empty
+        if (selectedFromId === id) {
+            setSelectedFromId('');
+            setIsOtherFrom(false);
+            setFormData(prev => ({
+                ...prev,
+                company: '',
+                companyInfo: undefined
+            }));
+        }
+    };
+
+    const handleDeleteClient = (id: string) => {
+        hideClient(id);
+        setHiddenClientIds(prev => [...prev, id]);
+        // If currently selected, reset to empty
+        if (selectedToId === id) {
+            setSelectedToId('');
+            setIsOtherTo(false);
+            setFormData(prev => ({
+                ...prev,
+                employeeName: '',
+                employeeEmail: '',
+                employeeAddress: '',
+                employeeMobile: ''
+            }));
         }
     };
 
@@ -449,24 +511,30 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                     {/* FROM Dropdown */}
                     <div>
                         <label className={labelClasses}>From (Sender Company) <span className="text-red-500">*</span></label>
-                        <select
+                        <CustomDropdown
                             value={selectedFromId}
-                            onChange={(e) => handleFromCompanyChange(e.target.value)}
+                            onChange={handleFromCompanyChange}
+                            onDelete={handleDeleteSender}
+                            placeholder="Select Company..."
                             className={inputClasses(!!errors.fromCompany)}
-                        >
-                            <option value="">Select Company...</option>
-                            {FROM_COMPANIES.map(c => (
-                                <option key={c.id} value={c.id}>{c.companyName} ({c.currency})</option>
-                            ))}
-                            {dynamicSenders.length > 0 && (
-                                <optgroup label="Manually Entered Senders">
-                                    {dynamicSenders.map(c => (
-                                        <option key={`dynamic-from-${c.companyName}`} value={`dynamic-from-${c.companyName}`}>{c.companyName}</option>
-                                    ))}
-                                </optgroup>
-                            )}
-                            <option value="other">Others...</option>
-                        </select>
+                            options={[
+                                ...visibleFromCompanies.map(c => ({
+                                    id: c.id,
+                                    label: `${c.companyName} (${c.currency})`,
+                                    group: undefined
+                                })),
+                                ...visibleDynamicSenders.map(c => ({
+                                    id: `dynamic-from-${c.companyName}`,
+                                    label: c.companyName,
+                                    group: 'Manually Entered Senders'
+                                })),
+                                { id: 'other', label: 'Others...', group: undefined }
+                            ]}
+                            canDeleteIds={[
+                                ...visibleFromCompanies.map(c => c.id),
+                                ...visibleDynamicSenders.map(c => `dynamic-from-${c.companyName}`)
+                            ]}
+                        />
 
                         {/* Manual entry for FROM if "Other" is selected */}
                         {isOtherFrom && (
@@ -544,24 +612,30 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                     {/* TO Dropdown */}
                     <div>
                         <label className={labelClasses}>To (Client) <span className="text-red-500">*</span></label>
-                        <select
+                        <CustomDropdown
                             value={selectedToId}
-                            onChange={(e) => handleToClientChange(e.target.value)}
+                            onChange={handleToClientChange}
+                            onDelete={handleDeleteClient}
+                            placeholder="Select Client..."
                             className={inputClasses(false)}
-                        >
-                            <option value="">Select Client...</option>
-                            {TO_COMPANIES.map(c => (
-                                <option key={c.id} value={c.id}>{c.companyName} ({c.country})</option>
-                            ))}
-                            {dynamicClients.length > 0 && (
-                                <optgroup label="Manually Entered Clients">
-                                    {dynamicClients.map(c => (
-                                        <option key={c.id} value={c.id}>{c.companyName}</option>
-                                    ))}
-                                </optgroup>
-                            )}
-                            <option value="other">Others...</option>
-                        </select>
+                            options={[
+                                ...visibleToCompanies.map(c => ({
+                                    id: c.id,
+                                    label: `${c.companyName} (${c.country})`,
+                                    group: undefined
+                                })),
+                                ...visibleDynamicClients.map(c => ({
+                                    id: c.id,
+                                    label: c.companyName,
+                                    group: 'Manually Entered Clients'
+                                })),
+                                { id: 'other', label: 'Others...', group: undefined }
+                            ]}
+                            canDeleteIds={[
+                                ...visibleToCompanies.map(c => c.id),
+                                ...visibleDynamicClients.map(c => c.id)
+                            ]}
+                        />
 
                         {/* Manual entry for TO if "Other" is selected */}
                         {isOtherTo && (
