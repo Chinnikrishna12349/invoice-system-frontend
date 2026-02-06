@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getNextInvoiceNumber } from '../services/apiService';
-import { Invoice, ServiceItem, BankDetails } from '../types';
+import { Invoice, ServiceItem, BankDetails, CompanyInfo } from '../types';
 import { useCountry } from '../contexts/CountryContext';
 import { calculateTax, getCurrencySymbol, formatCurrency } from '../services/countryPreferenceService';
 import { useAuth } from '../contexts/AuthContext';
@@ -56,6 +56,47 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         country: country,
         showConsumptionTax: false
     });
+
+    // Derive Dynamic Lists from existing invoices
+    const dynamicSenders = useMemo(() => {
+        const senders: CompanyInfo[] = [];
+        const seenNames = new Set(FROM_COMPANIES.map(c => c.companyName.toLowerCase()));
+
+        invoices.forEach(inv => {
+            if (inv.companyInfo && inv.companyInfo.companyName) {
+                const nameLower = inv.companyInfo.companyName.toLowerCase();
+                if (!seenNames.has(nameLower)) {
+                    senders.push(inv.companyInfo);
+                    seenNames.add(nameLower);
+                }
+            }
+        });
+        return senders;
+    }, [invoices]);
+
+    const dynamicClients = useMemo(() => {
+        const clients: DummyClient[] = [];
+        const seenNames = new Set(TO_COMPANIES.map(c => c.companyName.toLowerCase()));
+
+        invoices.forEach(inv => {
+            if (inv.employeeName) {
+                const nameLower = inv.employeeName.toLowerCase();
+                if (!seenNames.has(nameLower)) {
+                    clients.push({
+                        id: `dynamic-client-${nameLower}`,
+                        companyName: inv.employeeName,
+                        address: inv.employeeAddress || '',
+                        email: inv.employeeEmail || '',
+                        phone: inv.employeeMobile || '',
+                        contactPerson: '',
+                        country: (inv.country || 'india') as 'india' | 'japan'
+                    });
+                    seenNames.add(nameLower);
+                }
+            }
+        });
+        return clients;
+    }, [invoices]);
 
     const [showTaxToggle, setShowTaxToggle] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -150,6 +191,21 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             return;
         }
 
+        // Check if it's a dynamic company
+        const dynamicCompany = dynamicSenders.find(c => `dynamic-from-${c.companyName}` === companyId);
+        if (dynamicCompany) {
+            setIsOtherFrom(false);
+            setSelectedFromId(companyId);
+            setBankDetails({ ...dynamicCompany.bankDetails });
+            setFormData(prev => ({
+                ...prev,
+                company: dynamicCompany.companyName,
+                country: dynamicCompany.bankDetails.ifscCode ? 'india' : 'japan', // Guess based on IFSC
+                companyInfo: { ...dynamicCompany }
+            }));
+            return;
+        }
+
         setIsOtherFrom(false);
         setSelectedFromId(companyId);
         const company = FROM_COMPANIES.find(c => c.id === companyId);
@@ -201,6 +257,22 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 employeeEmail: '',
                 employeeAddress: '',
                 employeeMobile: '',
+            }));
+            return;
+        }
+
+        // Check if it's a dynamic client
+        const dynamicClient = dynamicClients.find(c => c.id === clientId);
+        if (dynamicClient) {
+            setIsOtherTo(false);
+            setSelectedToId(clientId);
+            setFormData(prev => ({
+                ...prev,
+                employeeName: dynamicClient.companyName,
+                employeeEmail: dynamicClient.email,
+                employeeAddress: dynamicClient.address,
+                employeeMobile: dynamicClient.phone,
+                country: dynamicClient.country || prev.country
             }));
             return;
         }
@@ -382,6 +454,13 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             {FROM_COMPANIES.map(c => (
                                 <option key={c.id} value={c.id}>{c.companyName} ({c.currency})</option>
                             ))}
+                            {dynamicSenders.length > 0 && (
+                                <optgroup label="Manually Entered Senders">
+                                    {dynamicSenders.map(c => (
+                                        <option key={`dynamic-from-${c.companyName}`} value={`dynamic-from-${c.companyName}`}>{c.companyName}</option>
+                                    ))}
+                                </optgroup>
+                            )}
                             <option value="other">Others...</option>
                         </select>
 
@@ -470,6 +549,13 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             {TO_COMPANIES.map(c => (
                                 <option key={c.id} value={c.id}>{c.companyName} ({c.country})</option>
                             ))}
+                            {dynamicClients.length > 0 && (
+                                <optgroup label="Manually Entered Clients">
+                                    {dynamicClients.map(c => (
+                                        <option key={c.id} value={c.id}>{c.companyName}</option>
+                                    ))}
+                                </optgroup>
+                            )}
                             <option value="other">Others...</option>
                         </select>
 
