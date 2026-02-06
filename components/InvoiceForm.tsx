@@ -526,7 +526,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                 ...visibleDynamicSenders.map(c => ({
                                     id: `dynamic-from-${c.companyName}`,
                                     label: c.companyName,
-                                    group: 'Manually Entered Senders'
+                                    group: undefined
                                 })),
                                 { id: 'other', label: 'Others...', group: undefined }
                             ]}
