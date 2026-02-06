@@ -79,6 +79,21 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         }
     }, [selectedInvoice]);
 
+    // Generate dynamic prefix based on company name
+    const generateDynamicPrefix = (name: string): string => {
+        if (!name.trim()) return 'INV-';
+        const words = name.trim().split(/\s+/);
+        let prefix = '';
+        if (words.length >= 2) {
+            // Take first letter of first two words
+            prefix = (words[0][0] + words[1][0]).toUpperCase();
+        } else {
+            // Take first 3 letters
+            prefix = name.trim().substring(0, 3).toUpperCase();
+        }
+        return `INV-${prefix}-`;
+    };
+
     // Generate invoice number
     useEffect(() => {
         const fetchNextNumber = () => {
@@ -382,12 +397,14 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                         value={formData.company}
                                         onChange={(e) => {
                                             const val = e.target.value;
+                                            const dynamicPrefix = generateDynamicPrefix(val);
                                             setFormData(prev => ({
                                                 ...prev,
                                                 company: val,
                                                 companyInfo: {
                                                     ...prev.companyInfo!,
-                                                    companyName: val
+                                                    companyName: val,
+                                                    invoiceFormat: dynamicPrefix
                                                 }
                                             }));
                                         }}

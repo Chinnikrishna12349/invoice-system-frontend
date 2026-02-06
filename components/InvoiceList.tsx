@@ -15,7 +15,6 @@ interface InvoiceListProps {
 
 export const InvoiceList: React.FC<InvoiceListProps> = ({ invoices, onEdit, onDelete, onDownload }) => {
     const { t } = useTranslation();
-    const [searchQuery, setSearchQuery] = useState('');
 
     const handleSendEmail = async (id: string) => {
         try {
@@ -40,18 +39,9 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({ invoices, onEdit, onDe
         }
     };
 
-    const filteredInvoices = useMemo(() => {
-        if (!searchQuery.trim()) return invoices;
-        const query = searchQuery.toLowerCase().trim();
-        return invoices.filter(invoice =>
-            invoice.invoiceNumber.toLowerCase().includes(query) ||
-            invoice.employeeName.toLowerCase().includes(query) ||
-            invoice.employeeEmail.toLowerCase().includes(query)
-        );
-    }, [invoices, searchQuery]);
 
     const sortedInvoices = useMemo(() => {
-        return [...filteredInvoices].sort((a, b) => {
+        return [...invoices].sort((a, b) => {
             const aNum = a.invoiceNumber || '';
             const bNum = b.invoiceNumber || '';
 
@@ -74,7 +64,7 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({ invoices, onEdit, onDe
             // Fallback to simple locale compare
             return aNum.localeCompare(bNum);
         });
-    }, [filteredInvoices]);
+    }, [invoices]);
 
     const calculateTotal = (invoice: Invoice) => {
         const subTotal = invoice.services?.reduce((acc, service) =>
@@ -102,23 +92,6 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({ invoices, onEdit, onDe
 
     return (
         <div className="space-y-4">
-            {/* Search Bar - Could be moved to parent or kept here */}
-            {invoices.length > 0 && (
-                <div className="relative">
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                        <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clipRule="evenodd" />
-                        </svg>
-                    </div>
-                    <input
-                        type="text"
-                        className="block w-full rounded-lg border-0 py-2.5 pl-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
-                        placeholder="Search invoices..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                </div>
-            )}
 
             <div className="bg-white/80 backdrop-blur-xl shadow-xl ring-1 ring-white/60 sm:rounded-3xl overflow-hidden border border-white/40">
                 <div className="overflow-x-auto">
@@ -189,17 +162,6 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({ invoices, onEdit, onDe
                         </tbody>
                     </table>
                 </div>
-                {sortedInvoices.length === 0 && searchQuery && (
-                    <div className="text-center py-12">
-                        <p className="text-gray-500">{t('app.status.noResults')}</p>
-                        <button
-                            onClick={() => setSearchQuery('')}
-                            className="mt-2 text-blue-600 hover:text-blue-500 text-sm font-medium"
-                        >
-                            Clear search
-                        </button>
-                    </div>
-                )}
             </div>
         </div>
     );
