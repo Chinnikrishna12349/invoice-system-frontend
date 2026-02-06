@@ -521,14 +521,14 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                 ...visibleFromCompanies.map(c => ({
                                     id: c.id,
                                     label: `${c.companyName} (${c.currency})`,
-                                    group: undefined
+                                    group: ''
                                 })),
                                 ...visibleDynamicSenders.map(c => ({
                                     id: `dynamic-from-${c.companyName}`,
                                     label: c.companyName,
-                                    group: undefined
+                                    group: ''
                                 })),
-                                { id: 'other', label: 'Others...', group: undefined }
+                                { id: 'other', label: 'Others...', group: '' }
                             ]}
                             canDeleteIds={[
                                 ...visibleFromCompanies.map(c => c.id),
@@ -622,14 +622,14 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                 ...visibleToCompanies.map(c => ({
                                     id: c.id,
                                     label: `${c.companyName} (${c.country})`,
-                                    group: undefined
+                                    group: ''
                                 })),
                                 ...visibleDynamicClients.map(c => ({
                                     id: c.id,
                                     label: c.companyName,
-                                    group: undefined
+                                    group: ''
                                 })),
-                                { id: 'other', label: 'Others...', group: undefined }
+                                { id: 'other', label: 'Others...', group: '' }
                             ]}
                             canDeleteIds={[
                                 ...visibleToCompanies.map(c => c.id),
