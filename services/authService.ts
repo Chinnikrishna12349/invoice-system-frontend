@@ -253,9 +253,9 @@ export const fetchCompanyInfo = async (): Promise<CompanyInfo | null> => {
  * Specifically designed for Render Free Tier: tries multiple times for up to 45 seconds
  * to allow server to wake up from sleep.
  */
-export const checkBackendHealth = async (maxRetries = 5): Promise<boolean> => {
+export const checkBackendHealth = async (maxRetries = 10): Promise<boolean> => {
     const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
-    const timeoutPerTry = 8000; // 8 seconds per individual attempt
+    const timeoutPerTry = 12000; // 12 seconds per individual attempt
 
     console.log(`Backend Health: Starting check (max retries: ${maxRetries})...`);
 
@@ -307,9 +307,8 @@ export const signup = async (credentials: SignupCredentials): Promise<{ token: s
     const isBackendHealthy = await checkBackendHealth();
     if (!isBackendHealthy) {
         throw new Error(
-            `Cannot connect to backend server at ${AUTH_API_URL}. ` +
-            `Please make sure the backend is running. ` +
-            `To start: cd backend && mvn spring-boot:run`
+            `Waking up server... please wait a moment and try again. ` +
+            `This takes about 30-60 seconds on the first load of the day.`
         );
     }
     // Validate inputs (client-side validation is for UX only, backend validates strictly)

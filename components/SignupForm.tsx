@@ -28,6 +28,14 @@ export const SignupForm: React.FC = () => {
             setBackendStatus('checking');
             const isHealthy = await checkBackendHealth();
             setBackendStatus(isHealthy ? 'online' : 'offline');
+
+            // Auto-retrying if offline to provide smoother experience
+            if (!isHealthy) {
+                console.log("Backend offline, scheduling auto-retry...");
+                setTimeout(() => {
+                    checkBackend();
+                }, 15000); // Retry after 15 seconds
+            }
         };
         checkBackend();
     }, []);
@@ -114,7 +122,7 @@ export const SignupForm: React.FC = () => {
                             <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-600"></div>
                             <div>
                                 <p className="text-blue-800 font-medium text-sm">Waking up backend server...</p>
-                                <p className="text-blue-600 text-xs">This can take up to 45 seconds on the first load. Please wait.</p>
+                                <p className="text-blue-600 text-xs">Since we are on a free tier, the server takes about 30-45 seconds to wake up for the first time. Please stay on this page.</p>
                             </div>
                         </div>
                     </div>
@@ -128,13 +136,13 @@ export const SignupForm: React.FC = () => {
                                 </svg>
                             </div>
                             <div className="flex-1">
-                                <h4 className="text-red-800 font-bold text-sm">Backend Connectivity Error</h4>
-                                <p className="text-red-700 text-sm mt-1">We couldn't reach the server at <span className="font-mono text-xs">{API_URL}</span>. </p>
+                                <h4 className="text-red-800 font-bold text-sm">Server Taking Longer Than Usual to Wake</h4>
+                                <p className="text-red-700 text-sm mt-1">Render (our hosting provider) is still spinning up the server. We will keep trying automatically.</p>
                                 <button
                                     type="button"
                                     onClick={async () => {
                                         setBackendStatus('checking');
-                                        const isHealthy = await checkBackendHealth(8);
+                                        const isHealthy = await checkBackendHealth(12); // Extra persistence for manual retry
                                         setBackendStatus(isHealthy ? 'online' : 'offline');
                                     }}
                                     className="mt-4 w-full sm:w-auto bg-red-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-red-700 transition-all shadow-md active:scale-95"

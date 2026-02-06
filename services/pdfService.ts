@@ -410,7 +410,19 @@ const drawInvoiceContent = async (
     // Add logo at top left
     // Fallback to base64-encoded Vision AI logo if no custom logo uploaded
     const isVisionAI = companyInfoToUse?.companyName === 'Vision AI LLC';
-    const logoToUse = isVisionAI ? (companyInfoToUse?.companyLogoUrl || VISION_AI_LOGO_BASE64) : null;
+    let logoToUse: string | null = null;
+
+    if (isVisionAI) {
+        const logoUrl = companyInfoToUse?.companyLogoUrl;
+        // Only use companyLogoUrl if it's a data URL or absolute HTTP URL
+        // Otherwise, use the base64 constant to avoid fetch errors
+        if (logoUrl && (logoUrl.startsWith('data:') || logoUrl.startsWith('http://') || logoUrl.startsWith('https://'))) {
+            logoToUse = logoUrl;
+        } else {
+            logoToUse = VISION_AI_LOGO_BASE64;
+        }
+    }
+
     await addLogoToPdf(doc, 14, yPosition, logoToUse, 50);
 
     // Right Column Start Position (Aligned for Header and Bill To)
@@ -753,8 +765,10 @@ const drawInvoiceContent = async (
     yPosition += 15;
 
     // Footer: Bank Details (Left) and Signature (Right)
+    const hasBankDetails = companyInfoToUse?.bankDetails &&
+        Object.values(companyInfoToUse.bankDetails).some(v => v && v.toString().trim().length > 0);
 
-    if (isVisionAI) {
+    if (hasBankDetails) {
         const bankY = yPosition;
 
         await addTextToPdf(doc, 'Bank Details:', 14, bankY, { fontSize: 10, fontStyle: 'bold' });
@@ -779,12 +793,14 @@ const drawInvoiceContent = async (
             curY += 7;
         }
 
-        // Add Static VisionAI Logo/Stamp above Signature
         const stampX = 160;
-        const stampY = bankY - 8;
-        const stampSize = 25;
+        if (isVisionAI) {
+            // Add Static VisionAI Logo/Stamp above Signature
+            const stampY = bankY - 8;
+            const stampSize = 25;
 
-        await addStaticStampToPdf(doc, stampX, stampY, visionAiStamp, stampSize, stampSize);
+            await addStaticStampToPdf(doc, stampX, stampY, visionAiStamp, stampSize, stampSize);
+        }
 
         await addTextToPdf(doc, 'Authorised Signature', stampX, bankY + 24, {
             fontSize: 10, fontStyle: 'bold', align: 'left'
