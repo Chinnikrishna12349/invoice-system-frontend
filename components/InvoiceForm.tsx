@@ -536,8 +536,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             ]}
                         />
 
-                        {/* Manual entry for FROM if "Other" is selected */}
-                        {isOtherFrom && (
+                        {/* Manual entry for FROM if "Other" or dynamic company is selected */}
+                        {(isOtherFrom || (selectedFromId && selectedFromId.startsWith('dynamic-from-'))) && (
                             <div className="mt-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-500 mb-1">Company Name</label>
@@ -637,8 +637,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             ]}
                         />
 
-                        {/* Manual entry for TO if "Other" is selected */}
-                        {isOtherTo && (
+                        {/* Manual entry for TO if "Other" or dynamic client is selected */}
+                        {(isOtherTo || (selectedToId && selectedToId.startsWith('dynamic-client-'))) && (
                             <div className="mt-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-500 mb-1">Client Name</label>
