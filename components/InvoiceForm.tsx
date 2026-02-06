@@ -481,7 +481,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         <form onSubmit={handleSubmit} className="space-y-8">
 
             {/* 0. Invoice Meta (Date, Number) - Moved to Top */}
-            <div className="bg-white rounded-3xl border border-gray-100 p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white rounded-3xl border border-gray-100 p-6 grid grid-cols-1 md:grid-cols-3 gap-6 relative z-40">
                 <div>
                     <label className={labelClasses}>Invoice Number</label>
                     <input type="text" value={formData.invoiceNumber || ''} readOnly className={`${inputClasses(false)} bg-gray-100 text-gray-500`} />
@@ -502,7 +502,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             </div>
 
             {/* 1. Header & Configuration */}
-            <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-gray-100">
+            <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-gray-100 relative z-30">
                 <div className="px-8 py-5 border-b border-gray-100 flex items-center gap-3">
                     <div className="h-8 w-1 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full"></div>
                     <h3 className="text-lg font-bold text-gray-900">Invoice Configuration</h3>
@@ -712,7 +712,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             </div>
 
             {/* 2. Bank Details (Editable) */}
-            <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-gray-100">
+            <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-gray-100 relative z-20">
                 <div className="px-8 py-5 border-b border-gray-100 flex items-center gap-3">
                     <div className="h-8 w-1 bg-gradient-to-b from-green-500 to-emerald-600 rounded-full"></div>
                     <h3 className="text-lg font-bold text-gray-900">Bank Details</h3>
@@ -736,7 +736,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
 
             {/* 4. Services */}
-            <div className="bg-white rounded-3xl border border-gray-100 p-6">
+            <div className="bg-white rounded-3xl border border-gray-100 p-6 relative z-10">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-lg font-bold text-gray-900">Services</h3>
                     <button type="button" onClick={addService} className="text-blue-600 font-semibold text-sm hover:underline">+ Add Item</button>
