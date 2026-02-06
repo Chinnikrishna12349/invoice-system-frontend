@@ -502,7 +502,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             </div>
 
             {/* 1. Header & Configuration */}
-            <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-gray-100">
                 <div className="px-8 py-5 border-b border-gray-100 flex items-center gap-3">
                     <div className="h-8 w-1 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full"></div>
                     <h3 className="text-lg font-bold text-gray-900">Invoice Configuration</h3>
@@ -712,7 +712,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             </div>
 
             {/* 2. Bank Details (Editable) */}
-            <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-gray-100">
                 <div className="px-8 py-5 border-b border-gray-100 flex items-center gap-3">
                     <div className="h-8 w-1 bg-gradient-to-b from-green-500 to-emerald-600 rounded-full"></div>
                     <h3 className="text-lg font-bold text-gray-900">Bank Details</h3>
