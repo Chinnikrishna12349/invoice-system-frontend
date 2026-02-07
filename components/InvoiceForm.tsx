@@ -433,7 +433,10 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             return;
         }
 
-        if (!validate()) return;
+        if (!validate()) {
+            alert("Please fill all the mandatory (*) fields.");
+            return;
+        }
 
         setIsSaving(true);
 
