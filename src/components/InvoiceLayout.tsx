@@ -212,7 +212,7 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
             )}
             <tr className="border-b border-gray-900">
               <td colSpan={4} className="border-r border-gray-900 p-2 text-left font-bold text-[10pt]">Grand Total ({currencyCode})</td>
-              <td className="p-2 text-right text-[10pt] pr-4 font-bold">{formatCurrency(grandTotal, country, false)}</td>
+              <td className="p-2 text-right text-[10pt] pr-4 font-bold">{formatCurrency(grandTotal, country, true, false)}</td>
             </tr>
           </tbody>
         </table>
