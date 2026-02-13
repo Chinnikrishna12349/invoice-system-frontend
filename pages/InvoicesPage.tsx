@@ -175,7 +175,7 @@ export const InvoicesPage: React.FC = () => {
                                 </svg>
                             </button>
                             <div>
-                                <h1 className="text-3xl font-bold text-gray-900 mb-2">All Invoices (DEBUG v1)</h1>
+                                <h1 className="text-3xl font-bold text-gray-900 mb-2">All Invoices</h1>
                                 <p className="text-gray-600">View and manage all your invoices</p>
                             </div>
                         </div>
@@ -203,7 +203,25 @@ export const InvoicesPage: React.FC = () => {
                             </div>
 
                             {/* Date Filter - Calendar Icon in Right Corner */}
-                            {/* Date Filter Removed per User Request */}
+                            {/* Date Filter - Standard Input */}
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="date"
+                                    value={selectedDate}
+                                    onChange={(e) => setSelectedDate(e.target.value)}
+                                    className="border border-gray-300 rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
+                                    title="Filter invoices by date"
+                                />
+                                {selectedDate && (
+                                    <button
+                                        onClick={() => setSelectedDate('')}
+                                        className="text-gray-500 hover:text-red-600 px-2 transition-colors duration-200"
+                                        title="Clear date"
+                                    >
+                                        Clear
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
                         {(searchTerm || selectedDate) && (
