@@ -100,6 +100,32 @@ export const InvoicesPage: React.FC = () => {
         setSelectedLangInvoice(null);
     }, []);
 
+    // Helper to normalize any date string to YYYY-MM-DD
+    const normalizeToYYYYMMDD = (dateStr: string): string => {
+        if (!dateStr) return '';
+        const trimmed = dateStr.trim();
+
+        // 1. Check for YYYY-MM-DD (standard)
+        if (trimmed.match(/^\d{4}-\d{2}-\d{2}/)) {
+            return trimmed.split('T')[0];
+        }
+
+        // 2. Check for MM/DD/YYYY (en-US output from sample data)
+        const slashMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (slashMatch) {
+            const [_, month, day, year] = slashMatch;
+            return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        }
+
+        // 3. Fallback: Try Date parsing (risky due to timezone, but better than nothing)
+        const d = new Date(trimmed);
+        if (!isNaN(d.getTime())) {
+            return d.toISOString().split('T')[0];
+        }
+
+        return trimmed;
+    };
+
     // Filter invoices based on search term and date
     const filteredInvoices = invoices.filter(invoice => {
         // Text search filter
@@ -114,19 +140,16 @@ export const InvoicesPage: React.FC = () => {
         let matchesDate = true;
         if (selectedDate) {
             try {
-                const invoiceDate = new Date(invoice.date);
-                const filterDate = new Date(selectedDate);
+                const normalizedInvoiceDate = normalizeToYYYYMMDD(invoice.date || '');
+                const normalizedFilterDate = selectedDate; // Always YYYY-MM-DD from input
 
                 if (dateFilterType === 'day') {
-                    // Filter by specific day
-                    matchesDate = invoiceDate.toDateString() === filterDate.toDateString();
+                    matchesDate = normalizedInvoiceDate === normalizedFilterDate;
                 } else if (dateFilterType === 'month') {
-                    // Filter by month and year
-                    matchesDate = invoiceDate.getMonth() === filterDate.getMonth() &&
-                        invoiceDate.getFullYear() === filterDate.getFullYear();
+                    matchesDate = normalizedInvoiceDate.substring(0, 7) === normalizedFilterDate.substring(0, 7);
                 }
             } catch (error) {
-                // If date parsing fails, don't filter by date
+                console.error("Date filter error", error);
                 matchesDate = true;
             }
         }
@@ -152,7 +175,7 @@ export const InvoicesPage: React.FC = () => {
                                 </svg>
                             </button>
                             <div>
-                                <h1 className="text-3xl font-bold text-gray-900 mb-2">All Invoices</h1>
+                                <h1 className="text-3xl font-bold text-gray-900 mb-2">All Invoices (DEBUG v1)</h1>
                                 <p className="text-gray-600">View and manage all your invoices</p>
                             </div>
                         </div>
@@ -180,40 +203,7 @@ export const InvoicesPage: React.FC = () => {
                             </div>
 
                             {/* Date Filter - Calendar Icon in Right Corner */}
-                            <div className="flex items-center gap-2">
-                                {selectedDate && (
-                                    <button
-                                        onClick={() => setSelectedDate('')}
-                                        className="px-2 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-                                        title="Clear date filter"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                    </button>
-                                )}
-                                <div className="relative">
-                                    <input
-                                        type="date"
-                                        value={selectedDate}
-                                        onChange={(e) => setSelectedDate(e.target.value)}
-                                        className="hidden"
-                                        id="date-picker-input"
-                                    />
-                                    <label
-                                        htmlFor="date-picker-input"
-                                        className={`flex items-center justify-center w-10 h-10 rounded-lg border transition-all cursor-pointer ${selectedDate
-                                            ? 'bg-blue-50 border-blue-500 text-blue-600'
-                                            : 'border-gray-300 text-gray-400 hover:border-gray-400 hover:text-gray-500'
-                                            }`}
-                                        title="Select date"
-                                    >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                        </svg>
-                                    </label>
-                                </div>
-                            </div>
+                            {/* Date Filter Removed per User Request */}
                         </div>
 
                         {(searchTerm || selectedDate) && (
