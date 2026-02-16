@@ -71,8 +71,9 @@ export const calculateTax = (
         const cgstRate = cgstRateManual !== undefined ? cgstRateManual : taxRate / 2;
         const sgstRate = sgstRateManual !== undefined ? sgstRateManual : taxRate / 2;
 
-        const cgstAmount = subTotal * (cgstRate / 100);
-        const sgstAmount = subTotal * (sgstRate / 100);
+        // Round each component to 2 decimal places to ensure displayed sum matches total
+        const cgstAmount = Math.round((subTotal * (cgstRate / 100)) * 100) / 100;
+        const sgstAmount = Math.round((subTotal * (sgstRate / 100)) * 100) / 100;
         const grandTotal = subTotal + cgstAmount + sgstAmount;
 
         return {
@@ -84,6 +85,7 @@ export const calculateTax = (
             cgstAmount,
             sgstAmount,
         };
+
     }
 };
 

@@ -394,6 +394,12 @@ const drawInvoiceContent = async (
 
     // Format date as DD/MM/YYYY
     const formatDate = (dateString: string) => {
+        if (!dateString) return '';
+        // Handle YYYY-MM-DD string directly to avoid timezone issues
+        if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            const [year, month, day] = dateString.split('-');
+            return `${day}/${month}/${year}`;
+        }
         const date = new Date(dateString);
         const day = String(date.getDate()).padStart(2, '0');
         const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -688,7 +694,7 @@ const drawInvoiceContent = async (
 
     // Use for..of loop to support await inside
     for (const [index, service] of invoice.services.entries()) {
-        const amount = service.hours * service.rate;
+        const amount = Math.round((service.hours * service.rate) * 100) / 100;
         const descWidth = colX[2] - colX[1] - 4;
         const descLines = doc.splitTextToSize(service.description || '-', descWidth);
         const rowHeight = Math.max(12, descLines.length * 5 + 4);
@@ -732,14 +738,16 @@ const drawInvoiceContent = async (
         });
 
         // Amount WITH CURRENCY (Right Aligned)
-        const formattedAmount = formatAmount(amount, false);
-        await addTextToPdf(doc, formattedAmount, colX[5] - 4, rowTextY, {
+        // Use the same rounded amount for consistency
+        const formattedItemAmount = formatAmount(amount, false);
+        await addTextToPdf(doc, formattedItemAmount, colX[5] - 4, rowTextY, {
             align: 'right', language, fontSize: 10, maxWidth: (colX[5] - colX[4]) - 2
         });
 
         doc.line(colX[0], yPosition + rowHeight, colX[5], yPosition + rowHeight);
 
         yPosition += rowHeight;
+
 
         if (yPosition > 250) {
             doc.addPage();
@@ -749,7 +757,7 @@ const drawInvoiceContent = async (
     }
 
     // Totals Section
-    const subTotal = invoice.services.reduce((acc, s) => acc + (s.hours * s.rate), 0);
+    const subTotal = invoice.services.reduce((acc, s) => acc + Math.round((s.hours * s.rate) * 100) / 100, 0);
     const taxRate = invoice.taxRate || 0;
 
     // Only calculate tax if it's India OR Japanese Consumption Tax toggle is ON
@@ -794,8 +802,8 @@ const drawInvoiceContent = async (
         const effectiveCgstRate = invoice.cgstRate ?? cgstRate;
         const effectiveSgstRate = invoice.sgstRate ?? sgstRate;
 
-        const effectiveCgstAmount = invoice.cgstRate !== undefined ? (subTotal * (invoice.cgstRate / 100)) : (cgstAmount || 0);
-        const effectiveSgstAmount = invoice.sgstRate !== undefined ? (subTotal * (invoice.sgstRate / 100)) : (sgstAmount || 0);
+        const effectiveCgstAmount = invoice.cgstRate !== undefined ? Math.round((subTotal * (invoice.cgstRate / 100)) * 100) / 100 : (cgstAmount || 0);
+        const effectiveSgstAmount = invoice.sgstRate !== undefined ? Math.round((subTotal * (invoice.sgstRate / 100)) * 100) / 100 : (sgstAmount || 0);
 
         if (effectiveCgstRate) await drawTotalRow(`CGST (${effectiveCgstRate}%)`, formatAmount(effectiveCgstAmount, false, false), true);
         if (effectiveSgstRate) await drawTotalRow(`SGST (${effectiveSgstRate}%)`, formatAmount(effectiveSgstAmount, false, false), true);

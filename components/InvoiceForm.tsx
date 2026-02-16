@@ -168,24 +168,46 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
     // Initialize/Reset Logic
     useEffect(() => {
         if (!selectedInvoice) {
-            // Explicitly reset form when clearing selection (e.g. from Edit to New)
-            setFormData(getInitialFormData(country));
-            setBankDetails({
-                bankName: '',
-                accountNumber: '',
-                accountHolderName: '',
-                ifscCode: '',
-                branchName: '',
-                accountType: ''
-            });
-            setSelectedFromId('');
-            setSelectedToId('');
-            setIsOtherFrom(false);
-            setIsOtherTo(false);
+            // Try enabling auto-load from localStorage
+            const savedData = localStorage.getItem('dashboard_autosave');
+            if (savedData) {
+                try {
+                    const parsed = JSON.parse(savedData);
+                    setFormData(parsed.formData);
+                    // Ensure dates are valid if needed, though strings work fine for inputs
+                    setBankDetails(parsed.bankDetails);
+                    setSelectedFromId(parsed.selectedFromId);
+                    setSelectedToId(parsed.selectedToId);
+                    setIsOtherFrom(parsed.isOtherFrom);
+                    setIsOtherTo(parsed.isOtherTo);
+                    setClientType(parsed.clientType || 'company');
+                    if (parsed.showTaxToggle !== undefined) setShowTaxToggle(parsed.showTaxToggle);
+                } catch (e) {
+                    console.error("Failed to parse autosave data", e);
+                    // Fallback to reset if corrupt
+                    localStorage.removeItem('dashboard_autosave');
+                }
+            } else {
+                // Explicitly reset form when clearing selection (e.g. from Edit to New)
+                setFormData(getInitialFormData(country));
+                setBankDetails({
+                    bankName: '',
+                    accountNumber: '',
+                    accountHolderName: '',
+                    ifscCode: '',
+                    branchName: '',
+                    accountType: ''
+                });
+                setSelectedFromId('');
+                setSelectedToId('');
+                setIsOtherFrom(false);
+                setIsOtherTo(false);
+                setClientType('company');
 
-            // Default to first companies if available
-            if (FROM_COMPANIES.length > 0) {
-                handleFromCompanyChange(FROM_COMPANIES[0].id);
+                // Default to first companies if available
+                if (FROM_COMPANIES.length > 0) {
+                    handleFromCompanyChange(FROM_COMPANIES[0].id);
+                }
             }
         } else {
             // Load from selected invoice
@@ -196,11 +218,49 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 if (selectedInvoice.companyInfo.id) setSelectedFromId(selectedInvoice.companyInfo.id);
             }
             // Attempt to match the "To" select if possible (rough match)
+            // Fix: ensure correct client type is set
+            const employeeMatch = TO_EMPLOYEES.find(c => c.companyName === selectedInvoice.employeeName);
+            if (employeeMatch) {
+                setClientType('employee');
+                setSelectedToId(employeeMatch.id);
+            } else {
+                const companyMatch = TO_COMPANIES.find(c => c.companyName === selectedInvoice.employeeName);
+                if (companyMatch) {
+                    setClientType('company');
+                    setSelectedToId(companyMatch.id);
+                } else {
+                    // Fallback for custom entries (Others)
+                    setClientType(selectedInvoice.clientType || 'company');
+                    // Check dynamic lists too if needed, but 'other' logic handles new ones
+                    if (!selectedInvoice.clientType) {
+                        // Guess based on saved data structure or default
+                        setClientType('company');
+                    }
+                }
+            }
+
             const toId = TO_COMPANIES.find(c => c.companyName === selectedInvoice.employeeName)?.id ||
                 TO_EMPLOYEES.find(c => c.companyName === selectedInvoice.employeeName)?.id;
             if (toId) setSelectedToId(toId);
         }
     }, [selectedInvoice]); // Removed country to prevent reset on toggle
+
+    // Auto-Save Effect
+    useEffect(() => {
+        if (!selectedInvoice) {
+            const dataToSave = {
+                formData,
+                bankDetails,
+                selectedFromId,
+                selectedToId,
+                isOtherFrom,
+                isOtherTo,
+                clientType,
+                showTaxToggle
+            };
+            localStorage.setItem('dashboard_autosave', JSON.stringify(dataToSave));
+        }
+    }, [formData, bankDetails, selectedFromId, selectedToId, isOtherFrom, isOtherTo, clientType, showTaxToggle, selectedInvoice]);
 
     // Sync formData.country when global country changes (without resetting form)
     useEffect(() => {
@@ -544,13 +604,15 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         dueDate.setDate(dueDate.getDate() + 45);
 
         // Calculate Round Off and Final Amount
-        const subTotal = (formData.services || []).reduce((sum, s) => sum + (s.hours * s.rate), 0);
+        const subTotal = (formData.services || []).reduce((sum, s) => sum + Math.round((s.hours * s.rate) * 100) / 100, 0);
 
         let taxAmount = 0;
         if (country === 'india') {
-            taxAmount = subTotal * ((formData.cgstRate || 0) + (formData.sgstRate || 0)) / 100;
+            const cgst = Math.round((subTotal * (formData.cgstRate || 0) / 100) * 100) / 100;
+            const sgst = Math.round((subTotal * (formData.sgstRate || 0) / 100) * 100) / 100;
+            taxAmount = cgst + sgst;
         } else if (country === 'japan' && (formData.showConsumptionTax || showTaxToggle)) { // Check both state and toggle
-            taxAmount = subTotal * ((formData.taxRate || 0) / 100);
+            taxAmount = Math.round((subTotal * ((formData.taxRate || 0) / 100)) * 100) / 100;
         }
 
         const totalBeforeRound = subTotal + taxAmount;
@@ -592,12 +654,30 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
             // Reset Form Data after successful save (as requested)
             if (!selectedInvoice) {
+                localStorage.removeItem('dashboard_autosave');
                 setFormData(getInitialFormData(country));
                 // Reset specialized states
                 setSelectedToId('');
                 setIsOtherTo(false);
                 setSelectedFromId('');
                 setIsOtherFrom(false);
+                setClientType('company');
+                setBankDetails({
+                    bankName: '',
+                    accountNumber: '',
+                    accountHolderName: '',
+                    ifscCode: '',
+                    branchName: '',
+                    accountType: ''
+                });
+
+                // Re-default From Company
+                if (FROM_COMPANIES.length > 0) {
+                    handleFromCompanyChange(FROM_COMPANIES[0].id);
+                }
+            } else {
+                // If editing, clear selection to go back to "New" mode
+                clearSelection();
             }
             setPreviewInvoice(null);
             setIsSaving(false);
@@ -610,7 +690,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
     };
 
     // Calculation Logic
-    const subTotal = (formData.services || []).reduce((sum, s) => sum + (s.hours * s.rate), 0);
+    const subTotal = (formData.services || []).reduce((sum, s) => sum + Math.round((s.hours * s.rate) * 100) / 100, 0);
     const taxCalculation = calculateTax(
         subTotal,
         formData.taxRate || 0,
@@ -1007,7 +1087,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             {/* 4. Services */}
             <div className="bg-white rounded-3xl border border-gray-100 p-6 relative z-10">
                 <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-bold text-gray-900">Services</h3>
+                    <h3 className="text-lg font-bold text-gray-900">Services <span className="text-red-500">*</span></h3>
                     <button type="button" onClick={addService} className="text-blue-600 font-semibold text-sm hover:underline">+ Add Item</button>
                 </div>
                 {formData.services?.map((service, index) => (
@@ -1097,9 +1177,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                         )}
                         <div className="border-t pt-2 mt-2">
                             {(() => {
+                                const cgst = country === 'india' ? Math.round((subTotal * (formData.cgstRate || 0) / 100) * 100) / 100 : 0;
+                                const sgst = country === 'india' ? Math.round((subTotal * (formData.sgstRate || 0) / 100) * 100) / 100 : 0;
                                 const taxAmount = country === 'india'
-                                    ? (subTotal * ((formData.cgstRate || 0) + (formData.sgstRate || 0)) / 100)
-                                    : (showTaxToggle ? (subTotal * ((formData.taxRate || 0) / 100)) : 0);
+                                    ? (cgst + sgst)
+                                    : (showTaxToggle ? Math.round((subTotal * ((formData.taxRate || 0) / 100)) * 100) / 100 : 0);
                                 const totalBeforeRound = subTotal + taxAmount;
                                 const roundedTotal = Math.round(totalBeforeRound);
                                 const roundOff = roundedTotal - totalBeforeRound;

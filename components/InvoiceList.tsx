@@ -124,7 +124,15 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({ invoices, onEdit, onDe
                                         <div className="text-gray-500 text-xs">{invoice.employeeEmail}</div>
                                     </td>
                                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                        {new Date(invoice.date).toLocaleDateString()}
+                                        {(() => {
+                                            if (!invoice.date) return '';
+                                            // Handle YYYY-MM-DD directly
+                                            if (invoice.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                                                const [year, month, day] = invoice.date.split('-');
+                                                return `${day}/${month}/${year}`;
+                                            }
+                                            return new Date(invoice.date).toLocaleDateString();
+                                        })()}
                                     </td>
                                     <td className="whitespace-nowrap px-3 py-4 text-sm text-right font-medium text-gray-900">
                                         {formatCurrency(calculateTotal(invoice), invoice.country, false)}

@@ -75,6 +75,11 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
   // Format date as DD/MM/YYYY to match PDF
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
+    // Handle YYYY-MM-DD string directly to avoid timezone issues
+    if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const [year, month, day] = dateString.split('-');
+      return `${day}/${month}/${year}`;
+    }
     const date = new Date(dateString);
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -93,10 +98,7 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
           {logoUrl ? (
             <img src={logoUrl} alt="Logo" className="max-w-[50mm] max-h-[25mm] object-contain" />
           ) : (
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800">ORY FOLKS</h1>
-              <p className="text-gray-600">ASPIRING INTELLIGENCE</p>
-            </div>
+            null
           )}
         </div>
         <div className="w-1/2 text-left pl-[26mm] relative">
@@ -189,12 +191,13 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
               <>
                 <tr className="border-b border-gray-900">
                   <td colSpan={4} className="border-r border-gray-900 p-2 text-left font-bold text-[10pt]">CGST ({cgstRate ?? (taxRate / 2)}%)</td>
-                  <td className="p-2 text-right text-[10pt] pr-4 font-bold">{formatCurrency(subtotal * ((cgstRate ?? (taxRate / 2)) / 100), country, true, false)}</td>
+                  <td className="p-2 text-right text-[10pt] pr-4 font-bold">{formatCurrency(Math.round((subtotal * ((cgstRate ?? (taxRate / 2)) / 100)) * 100) / 100, country, true, false)}</td>
                 </tr>
                 <tr className="border-b border-gray-900">
                   <td colSpan={4} className="border-r border-gray-900 p-2 text-left font-bold text-[10pt]">SGST ({sgstRate ?? (taxRate / 2)}%)</td>
-                  <td className="p-2 text-right text-[10pt] pr-4 font-bold">{formatCurrency(subtotal * ((sgstRate ?? (taxRate / 2)) / 100), country, true, false)}</td>
+                  <td className="p-2 text-right text-[10pt] pr-4 font-bold">{formatCurrency(Math.round((subtotal * ((sgstRate ?? (taxRate / 2)) / 100)) * 100) / 100, country, true, false)}</td>
                 </tr>
+
               </>
             ) : (
               taxAmount > 0 && (
