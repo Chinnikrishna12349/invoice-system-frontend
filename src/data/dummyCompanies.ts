@@ -30,9 +30,10 @@ export const FROM_COMPANIES: DummyCompany[] = [
         bankDetails: {
             bankName: 'ＧＭＯあおぞらネット銀行',
             accountNumber: '2165551',
-            accountHolderName: 'ヴイシオン　エイ',
+            accountHolderName: 'VISION AI',
             ifscCode: '',
             branchName: '法人第二営業部',
+            branchCode: '002',
             accountType: '普通口座'
         }
     },
@@ -45,12 +46,13 @@ export const FROM_COMPANIES: DummyCompany[] = [
         currency: 'JPY',
         fromEmail: 'accounts@idealfolks.com',
         bankDetails: {
-            bankName: '',
-            accountNumber: '',
-            accountHolderName: '',
+            bankName: 'Sumitomo Mitsui Banking Corporation',
+            accountNumber: '1234567',
+            accountHolderName: 'IDEAL FOLKS',
             ifscCode: '',
-            branchName: '',
-            accountType: ''
+            branchName: 'Azabu Branch',
+            branchCode: '123',
+            accountType: 'Savings'
         }
     },
     {
@@ -62,14 +64,16 @@ export const FROM_COMPANIES: DummyCompany[] = [
         currency: 'JPY',
         fromEmail: 'finance@vcasconsulting.com',
         bankDetails: {
-            bankName: '',
-            accountNumber: '',
-            accountHolderName: '',
+            bankName: 'Mizuho Bank',
+            accountNumber: '7654321',
+            accountHolderName: 'VCAS CONSULTING',
             ifscCode: '',
-            branchName: '',
-            accountType: ''
+            branchName: 'Kawasaki Branch',
+            branchCode: '456',
+            accountType: 'Current'
         }
     }
+
 ];
 
 export const TO_COMPANIES: DummyClient[] = [

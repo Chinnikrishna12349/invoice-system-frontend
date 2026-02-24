@@ -513,7 +513,19 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        let processedValue = value;
+
+        // Bug 7: Employee Phone validation (Japan: Numeric only, 11 digits)
+        if (name === 'employeeMobile') {
+            processedValue = value.replace(/\D/g, '');
+            if (country === 'japan') {
+                processedValue = processedValue.slice(0, 11);
+            } else {
+                processedValue = processedValue.slice(0, 15); // Reasonable limit for India/Others
+            }
+        }
+
+        setFormData(prev => ({ ...prev, [name]: processedValue }));
         if (errors[name]) {
             setErrors(prev => {
                 const newErrors = { ...prev };
@@ -738,7 +750,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                     <div className="h-8 w-1 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full"></div>
                     <h3 className="text-lg font-bold text-gray-900">Invoice Configuration</h3>
                 </div>
-                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
                     {/* FROM Dropdown */}
                     <div>
                         <label className={labelClasses}>From (Sender Company) <span className="text-red-500">*</span></label>
@@ -1098,11 +1110,25 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                         </div>
                         <div className="col-span-2">
                             <label className={labelClasses}>Hours</label>
-                            <input type="number" step="0.01" value={service.hours} onChange={(e) => handleServiceChange(index, 'hours', parseFloat(e.target.value))} className={inputClasses(!!errors[`service-${index}-hours`])} />
+                            <input
+                                type="number"
+                                step="0.01"
+                                value={service.hours}
+                                onWheel={(e) => (e.target as HTMLElement).blur()}
+                                onChange={(e) => handleServiceChange(index, 'hours', parseFloat(e.target.value))}
+                                className={inputClasses(!!errors[`service-${index}-hours`])}
+                            />
                         </div>
                         <div className="col-span-3">
                             <label className={labelClasses}>Rate ({getCurrencySymbol(country)})</label>
-                            <input type="number" step="0.01" value={service.rate} onChange={(e) => handleServiceChange(index, 'rate', parseFloat(e.target.value))} className={inputClasses(!!errors[`service-${index}-rate`])} />
+                            <input
+                                type="number"
+                                step="0.01"
+                                value={service.rate}
+                                onWheel={(e) => (e.target as HTMLElement).blur()}
+                                onChange={(e) => handleServiceChange(index, 'rate', parseFloat(e.target.value))}
+                                className={inputClasses(!!errors[`service-${index}-rate`])}
+                            />
                         </div>
                         <div className="col-span-1 pb-2">
                             <button type="button" onClick={() => removeService(index)} className="text-red-500 hover:bg-red-50 p-2 rounded-full">🗑️</button>
@@ -1120,11 +1146,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             <>
                                 <div>
                                     <label className={labelClasses}>CGST (%)</label>
-                                    <input type="number" name="cgstRate" value={formData.cgstRate} onChange={handleChange} className={inputClasses(false)} />
+                                    <input type="number" name="cgstRate" value={formData.cgstRate} onWheel={(e) => (e.target as HTMLElement).blur()} onChange={handleChange} className={inputClasses(false)} />
                                 </div>
                                 <div>
                                     <label className={labelClasses}>SGST (%)</label>
-                                    <input type="number" name="sgstRate" value={formData.sgstRate} onChange={handleChange} className={inputClasses(false)} />
+                                    <input type="number" name="sgstRate" value={formData.sgstRate} onWheel={(e) => (e.target as HTMLElement).blur()} onChange={handleChange} className={inputClasses(false)} />
                                 </div>
                             </>
                         ) : (
@@ -1154,6 +1180,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                             type="number"
                                             name="taxRate"
                                             value={formData.taxRate}
+                                            onWheel={(e) => (e.target as HTMLElement).blur()}
                                             onChange={handleChange}
                                             className={inputClasses(false)}
                                             placeholder="Enter tax rate manually"

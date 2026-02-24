@@ -20,8 +20,45 @@ interface BankDetailsFormProps {
 
 export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange, errors = {}, country = 'india' }) => {
     const updateField = (field: keyof BankDetailsFormData, value: string) => {
-        onChange({ ...data, [field]: value });
+        let processedValue = value;
+
+        // Bug 1 & 9: Account Number Validation (Numeric only)
+        if (field === 'accountNumber') {
+            processedValue = value.replace(/\D/g, '');
+            if (country === 'japan') {
+                processedValue = processedValue.slice(0, 7);
+            } else {
+                processedValue = processedValue.slice(0, 18);
+            }
+        }
+
+        // Bug 2 & 10: Account Name Validation (Alphabets and spaces only)
+        if (field === 'accountHolderName') {
+            processedValue = value.replace(/[^a-zA-Z\s]/g, '');
+            // Limit to reasonable length
+            processedValue = processedValue.slice(0, 50);
+        }
+
+        // Bug 3: SWIFT Code Validation (Alpha-numeric, max 11)
+        if (field === 'swiftCode' || field === 'ifscCode') {
+            if (country === 'japan') {
+                processedValue = value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 11);
+            } else {
+                processedValue = value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 11);
+            }
+        }
+
+        // Bug 4: Branch Code Validation (Numeric only, max 3 for Japan)
+        if (field === 'branchCode') {
+            processedValue = value.replace(/\D/g, '');
+            if (country === 'japan') {
+                processedValue = processedValue.slice(0, 3);
+            }
+        }
+
+        onChange({ ...data, [field]: processedValue });
     };
+
 
     const inputClasses = (hasError: boolean) => `
         block w-full rounded-lg border-0 py-2.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset 
