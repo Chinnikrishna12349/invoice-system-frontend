@@ -10,6 +10,7 @@ import { BankDetailsForm } from './BankDetailsForm';
 import { CustomDropdown } from './CustomDropdown';
 import { getHiddenSenders, getHiddenClients, hideSender, hideClient } from '../src/utils/companyStorage';
 import InvoiceLayout from '../src/components/InvoiceLayout';
+import { ImageUpload } from './ImageUpload';
 import visionAiStamp from '../src/assets/visionai-stamp.png';
 import { VISION_AI_LOGO_BASE64 } from '../src/assets/visionAiLogoBase64';
 
@@ -163,18 +164,42 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
     const [errors, setErrors] = useState<Record<string, string>>({});
 
-    // Auto-generate PO Number removed as per request
+    // State for custom logo and signature files
+    const [customLogoFile, setCustomLogoFile] = useState<File | null>(null);
+    const [customSignatureFile, setCustomSignatureFile] = useState<File | null>(null);
+
+    // Load draft from localStorage on mount
+    useEffect(() => {
+        const savedDraft = localStorage.getItem('invoice_draft');
+        if (savedDraft && !selectedInvoice) {
+            try {
+                const parsed = JSON.parse(savedDraft);
+                setFormData(prev => ({ ...prev, ...parsed }));
+            } catch (e) {
+                console.error("Failed to load draft", e);
+            }
+        }
+    }, [selectedInvoice]);
+
+    // Save draft to localStorage on change
+    useEffect(() => {
+        if (!selectedInvoice) {
+            const timer = setTimeout(() => {
+                const { companyLogoUrl, signatureUrl, ...rest } = formData as any;
+                localStorage.setItem('invoice_draft', JSON.stringify(rest));
+            }, 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [formData, selectedInvoice]);
 
     // Initialize/Reset Logic
     useEffect(() => {
         if (!selectedInvoice) {
-            // Try enabling auto-load from localStorage
             const savedData = localStorage.getItem('dashboard_autosave');
             if (savedData) {
                 try {
                     const parsed = JSON.parse(savedData);
                     setFormData(parsed.formData);
-                    // Ensure dates are valid if needed, though strings work fine for inputs
                     setBankDetails(parsed.bankDetails);
                     setSelectedFromId(parsed.selectedFromId);
                     setSelectedToId(parsed.selectedToId);
@@ -184,11 +209,9 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                     if (parsed.showTaxToggle !== undefined) setShowTaxToggle(parsed.showTaxToggle);
                 } catch (e) {
                     console.error("Failed to parse autosave data", e);
-                    // Fallback to reset if corrupt
                     localStorage.removeItem('dashboard_autosave');
                 }
             } else {
-                // Explicitly reset form when clearing selection (e.g. from Edit to New)
                 setFormData(getInitialFormData(country));
                 setBankDetails({
                     bankName: '',
@@ -203,47 +226,42 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 setIsOtherFrom(false);
                 setIsOtherTo(false);
                 setClientType('company');
-
-                // Default to first companies if available
-                if (FROM_COMPANIES.length > 0) {
-                    handleFromCompanyChange(FROM_COMPANIES[0].id);
-                }
             }
         } else {
-            // Load from selected invoice
             setFormData({ ...selectedInvoice });
             if (selectedInvoice.companyInfo?.bankDetails) {
                 setBankDetails(selectedInvoice.companyInfo.bankDetails);
-                // Also set selected IDs for dropdowns if they match
                 if (selectedInvoice.companyInfo.id) setSelectedFromId(selectedInvoice.companyInfo.id);
             }
-            // Attempt to match the "To" select if possible (rough match)
-            // Fix: ensure correct client type is set
-            const employeeMatch = TO_EMPLOYEES.find(c => c.companyName === selectedInvoice.employeeName);
+            const employeeMatch = TO_EMPLOYEES.find(c => c.companyName === selectedInvoice.employeeName) ||
+                dynamicClientEmployees.find(c => c.companyName === selectedInvoice.employeeName);
+            const companyMatch = TO_COMPANIES.find(c => c.companyName === selectedInvoice.employeeName) ||
+                dynamicClientCompanies.find(c => c.companyName === selectedInvoice.employeeName);
+
             if (employeeMatch) {
                 setClientType('employee');
                 setSelectedToId(employeeMatch.id);
+                setIsOtherTo(false);
+            } else if (companyMatch) {
+                setClientType('company');
+                setSelectedToId(companyMatch.id);
+                setIsOtherTo(false);
             } else {
-                const companyMatch = TO_COMPANIES.find(c => c.companyName === selectedInvoice.employeeName);
-                if (companyMatch) {
-                    setClientType('company');
-                    setSelectedToId(companyMatch.id);
-                } else {
-                    // Fallback for custom entries (Others)
-                    setClientType(selectedInvoice.clientType || 'company');
-                    // Check dynamic lists too if needed, but 'other' logic handles new ones
-                    if (!selectedInvoice.clientType) {
-                        // Guess based on saved data structure or default
-                        setClientType('company');
-                    }
-                }
+                setClientType(selectedInvoice.clientType || 'company');
+                setIsOtherTo(true);
+                setSelectedToId('other');
             }
 
-            const toId = TO_COMPANIES.find(c => c.companyName === selectedInvoice.employeeName)?.id ||
-                TO_EMPLOYEES.find(c => c.companyName === selectedInvoice.employeeName)?.id;
-            if (toId) setSelectedToId(toId);
+            const isJapan = selectedInvoice.country === 'japan';
+            if (isJapan) {
+                setShowTaxToggle(!!selectedInvoice.showConsumptionTax || (selectedInvoice.taxRate || 0) > 0);
+            }
+
+            if (selectedInvoice.country) {
+                setCountry(selectedInvoice.country);
+            }
         }
-    }, [selectedInvoice]); // Removed country to prevent reset on toggle
+    }, [selectedInvoice, dynamicClientCompanies, dynamicClientEmployees]);
 
     // Auto-Save Effect
     useEffect(() => {
@@ -262,33 +280,26 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         }
     }, [formData, bankDetails, selectedFromId, selectedToId, isOtherFrom, isOtherTo, clientType, showTaxToggle, selectedInvoice]);
 
-    // Sync formData.country when global country changes (without resetting form)
     useEffect(() => {
         setFormData(prev => ({ ...prev, country: country }));
     }, [country]);
 
-    // Generate dynamic prefix based on company name
     const generateDynamicPrefix = (name: string): string => {
         if (!name.trim()) return 'INV-';
         const words = name.trim().split(/\s+/);
         let prefix = '';
         if (words.length >= 2) {
-            // Take first letter of first two words
             prefix = (words[0][0] + words[1][0]).toUpperCase();
         } else {
-            // Take first 3 letters
             prefix = name.trim().substring(0, 3).toUpperCase();
         }
         return `INV-${prefix}-`;
     };
 
-    // Generate invoice number
     useEffect(() => {
         const fetchNextNumber = () => {
             if (!selectedInvoice) {
                 const prefix = formData.companyInfo?.invoiceFormat || 'INV-';
-
-                // Find all invoices with this prefix (exact match, no sub-prefixes)
                 const regex = new RegExp(`^${prefix}\\d+$`);
                 const relevantInvoices = invoices.filter(inv =>
                     inv.invoiceNumber && regex.test(inv.invoiceNumber)
@@ -296,14 +307,12 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
                 let nextNum = 1;
                 if (relevantInvoices.length > 0) {
-                    // Extract numbers and find the max
                     const numbers = relevantInvoices.map(inv => {
                         const match = inv.invoiceNumber.match(/\d+$/);
                         return match ? parseInt(match[0], 10) : 0;
                     });
                     nextNum = Math.max(...numbers) + 1;
                 }
-
                 const finalNum = `${prefix}${nextNum}`;
                 setFormData(prev => ({ ...prev, invoiceNumber: finalNum }));
             }
@@ -311,7 +320,6 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         fetchNextNumber();
     }, [selectedInvoice, invoices, formData.companyInfo?.invoiceFormat]);
 
-    // Handle "From" Company Change
     const handleFromCompanyChange = (companyId: string) => {
         if (companyId === 'other') {
             setIsOtherFrom(true);
@@ -338,7 +346,6 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             return;
         }
 
-        // Check if it's a dynamic company
         const dynamicCompany = dynamicSenders.find(c => `dynamic-from-${c.companyName}` === companyId);
         if (dynamicCompany) {
             setIsOtherFrom(false);
@@ -348,8 +355,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             setFormData(prev => ({
                 ...prev,
                 company: dynamicCompany.companyName,
-                fromEmail: dynamicCompany.fromEmail || '', // Auto-populate From Email
-                country: dynamicCompany.bankDetails.ifscCode ? 'india' : 'japan', // Guess based on IFSC
+                fromEmail: dynamicCompany.fromEmail || '',
+                country: dynamicCompany.bankDetails.ifscCode ? 'india' : 'japan',
                 companyInfo: {
                     ...dynamicCompany,
                     invoiceFormat: dynamicPrefix
@@ -362,29 +369,21 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         setSelectedFromId(companyId);
         const company = FROM_COMPANIES.find(c => c.id === companyId);
         if (company) {
-            // Update currency/country context based on company
             if (company.currency === 'JPY') setCountry('japan');
-            else setCountry('india'); // Default to India for INR/USD for now
-
-            // Update Bank Details
+            else setCountry('india');
             setBankDetails({ ...company.bankDetails });
-
-            // Update formData immediately for reactivity (Logo, Address, Company Name)
             setFormData(prev => {
-                // Determine new invoice number with company-specific prefix
                 let newInvoiceNumber = prev.invoiceNumber;
                 if (company.invoiceFormat) {
-                    // Extract existing number (matches any digits at the end)
                     const match = prev.invoiceNumber.match(/\d+$/);
                     const currentNum = match ? match[0] : '0001';
                     newInvoiceNumber = `${company.invoiceFormat}${currentNum}`;
                 }
-
                 return {
                     ...prev,
                     invoiceNumber: newInvoiceNumber,
                     company: company.companyName,
-                    fromEmail: (company as DummyCompany).fromEmail || '', // Auto-populate From Email
+                    fromEmail: (company as DummyCompany).fromEmail || '',
                     country: company.currency === 'JPY' ? 'japan' : 'india',
                     companyInfo: {
                         id: company.id,
@@ -399,26 +398,19 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         }
     };
 
-    // Delete Handlers
     const handleDeleteSender = (id: string) => {
         hideSender(id);
         setHiddenSenderIds(prev => [...prev, id]);
-        // If currently selected, reset to empty
         if (selectedFromId === id) {
             setSelectedFromId('');
             setIsOtherFrom(false);
-            setFormData(prev => ({
-                ...prev,
-                company: '',
-                companyInfo: undefined
-            }));
+            setFormData(prev => ({ ...prev, company: '', companyInfo: undefined }));
         }
     };
 
     const handleDeleteClient = (id: string) => {
         hideClient(id);
         setHiddenClientIds(prev => [...prev, id]);
-        // If currently selected, reset to empty
         if (selectedToId === id) {
             setSelectedToId('');
             setIsOtherTo(false);
@@ -432,7 +424,6 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         }
     };
 
-    // Handle "To" Client Change
     const handleToClientChange = (clientId: string) => {
         if (clientId === 'other') {
             setIsOtherTo(true);
@@ -444,8 +435,6 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 employeeAddress: '',
                 employeeMobile: '',
             }));
-
-            // If Client Type is Employee, CLEAR Bank Details (Manual Entry)
             if (clientType === 'employee') {
                 setBankDetails({
                     bankName: '',
@@ -461,8 +450,6 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             return;
         }
 
-        // Check if it's a dynamic client
-        // Search in both logs based on clientType or just ID? ID is unique.
         const dynamicClient = dynamicClientCompanies.find(c => c.id === clientId) ||
             dynamicClientEmployees.find(c => c.id === clientId);
 
@@ -477,8 +464,6 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 employeeMobile: dynamicClient.phone,
                 country: dynamicClient.country || prev.country
             }));
-
-            // Auto-populate Bank Details from the dynamic client record (which we extracted from Invoice CompanyInfo)
             if (dynamicClient.bankDetails) {
                 setBankDetails({ ...dynamicClient.bankDetails });
             }
@@ -487,44 +472,33 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
         setIsOtherTo(false);
         setSelectedToId(clientId);
-
         let client = TO_COMPANIES.find(c => c.id === clientId);
-        if (!client) {
-            client = TO_EMPLOYEES.find(c => c.id === clientId);
-        }
+        if (!client) client = TO_EMPLOYEES.find(c => c.id === clientId);
 
         if (client) {
             setFormData(prev => ({
                 ...prev,
-                employeeName: client!.companyName, // Non-null assertion safer here as we checked client match
+                employeeName: client!.companyName,
                 employeeEmail: client!.email,
                 employeeAddress: client!.address,
                 employeeMobile: client!.phone,
-                // Also update country if client is Japanese
                 country: client!.country === 'japan' ? 'japan' : prev.country
             }));
-
-            // If Client has Bank Details (e.g. Employee), AUTO-POPULATE
-            if (client.bankDetails) {
-                setBankDetails({ ...client.bankDetails });
-            }
+            if (client.bankDetails) setBankDetails({ ...client.bankDetails });
         }
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         let processedValue = value;
-
-        // Bug 7: Employee Phone validation (Japan: Numeric only, 11 digits)
         if (name === 'employeeMobile') {
             processedValue = value.replace(/\D/g, '');
             if (country === 'japan') {
                 processedValue = processedValue.slice(0, 11);
             } else {
-                processedValue = processedValue.slice(0, 15); // Reasonable limit for India/Others
+                processedValue = processedValue.slice(0, 15);
             }
         }
-
         setFormData(prev => ({ ...prev, [name]: processedValue }));
         if (errors[name]) {
             setErrors(prev => {
@@ -535,18 +509,6 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         }
     };
 
-    const handleServiceChange = (index: number, field: keyof ServiceItem, value: string | number) => {
-        setFormData(prev => {
-            const services = [...(prev.services || [])];
-            let processedValue = value;
-            if ((field === 'hours' || field === 'rate') && typeof value === 'number') {
-                processedValue = Math.round((value + Number.EPSILON) * 10000) / 10000;
-            }
-            services[index] = { ...services[index], [field]: processedValue as any };
-            return { ...prev, services };
-        });
-    };
-
     const addService = () => {
         setFormData(prev => ({
             ...prev,
@@ -555,6 +517,16 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 { id: `service-${Date.now()}`, description: '', hours: 0, rate: 0 }
             ]
         }));
+    };
+
+    const handleServiceChange = (index: number, field: keyof ServiceItem, value: any) => {
+        const updatedServices = [...(formData.services || [])];
+        let processedValue = value;
+        if ((field === 'hours' || field === 'rate') && typeof value === 'number') {
+            processedValue = field === 'hours' ? Math.round(value * 100) / 100 : Math.max(0, value);
+        }
+        updatedServices[index] = { ...updatedServices[index], [field]: processedValue };
+        setFormData(prev => ({ ...prev, services: updatedServices }));
     };
 
     const removeService = (index: number) => {
@@ -595,6 +567,15 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         return Object.keys(newErrors).length === 0;
     };
 
+    const fileToBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = (error) => reject(error);
+        });
+    };
+
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -610,6 +591,23 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         }
 
         setIsSaving(true);
+
+        let finalLogoUrl = formData.companyInfo?.companyLogoUrl || '';
+        let finalSignatureUrl = formData.signatureUrl || '';
+
+        try {
+            if (customLogoFile) {
+                finalLogoUrl = await fileToBase64(customLogoFile);
+            }
+            if (customSignatureFile) {
+                finalSignatureUrl = await fileToBase64(customSignatureFile);
+            }
+        } catch (err) {
+            console.error("Failed to convert image files", err);
+            alert("Failed to process image files. Please try again.");
+            setIsSaving(false);
+            return;
+        }
 
         const invoiceDate = new Date(formData.date || new Date().toISOString().split('T')[0]);
         const dueDate = new Date(invoiceDate);
@@ -641,8 +639,10 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             showConsumptionTax: country === 'japan' ? showTaxToggle : false,
             roundOff: roundOff,
             finalAmount: finalAmount,
+            signatureUrl: finalSignatureUrl,
             companyInfo: formData.companyInfo ? {
                 ...formData.companyInfo,
+                companyLogoUrl: finalLogoUrl,
                 bankDetails: bankDetails // Ensure the latest (possibly edited) bank details are used
             } : undefined
         };
@@ -821,6 +821,24 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                                 }
                                             }));
                                         }}
+                                    />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <ImageUpload
+                                        value={customLogoFile}
+                                        onChange={(file) => {
+                                            setCustomLogoFile(file);
+                                            // Optional: handle immediate preview if needed, 
+                                            // but state 'customLogoFile' is enough for save
+                                        }}
+                                        label="Company Logo"
+                                        existingImageUrl={formData.companyInfo?.companyLogoUrl}
+                                    />
+                                    <ImageUpload
+                                        value={customSignatureFile}
+                                        onChange={setCustomSignatureFile}
+                                        label="Authorized Signature"
+                                        existingImageUrl={formData.signatureUrl}
                                     />
                                 </div>
                             </div>
@@ -1105,11 +1123,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 {formData.services?.map((service, index) => (
                     <div key={service.id || index} className="grid grid-cols-12 gap-4 mb-4 items-end border-b border-gray-50 pb-4 last:border-0">
                         <div className="col-span-6">
-                            <label className={labelClasses}>Description</label>
+                            <label className={labelClasses}>Description <span className="text-red-500">*</span></label>
                             <input type="text" value={service.description} onChange={(e) => handleServiceChange(index, 'description', e.target.value)} className={inputClasses(!!errors[`service-${index}-description`])} />
                         </div>
                         <div className="col-span-2">
-                            <label className={labelClasses}>Hours</label>
+                            <label className={labelClasses}>Hours <span className="text-red-500">*</span></label>
                             <input
                                 type="number"
                                 step="0.01"
@@ -1120,7 +1138,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             />
                         </div>
                         <div className="col-span-3">
-                            <label className={labelClasses}>Rate ({getCurrencySymbol(country)})</label>
+                            <label className={labelClasses}>Rate ({getCurrencySymbol(country)}) <span className="text-red-500">*</span></label>
                             <input
                                 type="number"
                                 step="0.01"

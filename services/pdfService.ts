@@ -1,5 +1,5 @@
 import { Invoice, CompanyInfo } from '../types';
-import { calculateTax, Country, formatCurrency } from '../services/countryPreferenceService';
+import { calculateTax, Country, formatCurrency, formatDate } from '../services/countryPreferenceService';
 import jsPDF from 'jspdf';
 import i18n from '../src/i18n/i18n';
 import { configureJapaneseFont, renderJapaneseText } from './japaneseFontSupport';
@@ -392,19 +392,9 @@ const drawInvoiceContent = async (
         return formatCurrency(value, effectiveCountry, !forceRound, includeSymbol);
     };
 
-    // Format date as DD/MM/YYYY
-    const formatDate = (dateString: string) => {
-        if (!dateString) return '';
-        // Handle YYYY-MM-DD string directly to avoid timezone issues
-        if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
-            const [year, month, day] = dateString.split('-');
-            return `${day}/${month}/${year}`;
-        }
-        const date = new Date(dateString);
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = date.getFullYear();
-        return `${day}/${month}/${year}`;
+    // Use centralized formatDate
+    const formatDateInPdf = (dateString: string) => {
+        return formatDate(dateString);
     };
 
     // Add logo at top left
@@ -445,7 +435,7 @@ const drawInvoiceContent = async (
     });
     headerTextY += 6;
 
-    await addTextToPdf(doc, `${t.date} ${formatDate(invoice.date)}`, rightColX, headerTextY, {
+    await addTextToPdf(doc, `${t.date} ${formatDateInPdf(invoice.date)}`, rightColX, headerTextY, {
         fontSize: 11,
         fontStyle: 'bold',
         align: 'left',
@@ -566,51 +556,54 @@ const drawInvoiceContent = async (
 
         // Email
         if (invoice.employeeEmail && invoice.employeeEmail.trim()) {
-            await addTextToPdf(doc, `${t.email}:`, billToX, billToY, {
+            const label = language === 'ja' ? `${t.email} : ` : `${t.email}: `;
+            await addTextToPdf(doc, label, billToX, billToY, {
                 fontSize: 10,
                 fontStyle: 'normal',
                 align: 'left',
                 language
             });
-            await addTextToPdf(doc, invoice.employeeEmail.trim(), billToX + labelWidth, billToY, {
+            await addTextToPdf(doc, invoice.employeeEmail.trim(), billToX + labelWidth + 2, billToY, {
                 fontSize: 10,
                 align: 'left',
                 language,
-                maxWidth: rightColWidth - labelWidth
+                maxWidth: rightColWidth - labelWidth - 2
             });
             billToY += 7;
         }
 
         // Phone
         if (invoice.employeeMobile && invoice.employeeMobile.trim()) {
-            await addTextToPdf(doc, `${t.phone}:`, billToX, billToY, {
+            const label = language === 'ja' ? `${t.phone} : ` : `${t.phone}: `;
+            await addTextToPdf(doc, label, billToX, billToY, {
                 fontSize: 10,
                 fontStyle: 'normal',
                 align: 'left',
                 language
             });
-            await addTextToPdf(doc, invoice.employeeMobile.trim(), billToX + labelWidth, billToY, {
+            await addTextToPdf(doc, invoice.employeeMobile.trim(), billToX + labelWidth + 2, billToY, {
                 fontSize: 10,
                 align: 'left',
                 language,
-                maxWidth: rightColWidth - labelWidth
+                maxWidth: rightColWidth - labelWidth - 2
             });
             billToY += 7;
         }
 
         // Address
         if (invoice.employeeAddress && invoice.employeeAddress.trim()) {
-            await addTextToPdf(doc, `${t.address}:`, billToX, billToY, {
+            const label = language === 'ja' ? `${t.address} : ` : `${t.address}: `;
+            await addTextToPdf(doc, label, billToX, billToY, {
                 fontSize: 10,
                 fontStyle: 'normal',
                 align: 'left',
                 language
             });
-            await addTextToPdf(doc, invoice.employeeAddress.replace(/\n/g, ', ').trim(), billToX + labelWidth, billToY, {
+            await addTextToPdf(doc, invoice.employeeAddress.replace(/\n/g, ', ').trim(), billToX + labelWidth + 2, billToY, {
                 fontSize: 10,
                 align: 'left',
                 language,
-                maxWidth: rightColWidth - labelWidth
+                maxWidth: rightColWidth - labelWidth - 2
             });
             billToY += 7;
         }
@@ -632,7 +625,7 @@ const drawInvoiceContent = async (
 
     // Due Date (Right Side)
     if (invoice.dueDate) {
-        await addTextToPdf(doc, `${t.dueDate}: ${formatDate(invoice.dueDate)}`, billToX, commonRowY, {
+        await addTextToPdf(doc, `${t.dueDate}: ${formatDateInPdf(invoice.dueDate)}`, billToX, commonRowY, {
             fontSize: 10,
             fontStyle: 'bold',
             align: 'left',
@@ -647,7 +640,10 @@ const drawInvoiceContent = async (
 
 
     // Services Table
-    const colX = [14, 30, 110, 135, 165, 196];
+    // Adjusted widths to prevent layout breaks for large amounts (T3)
+    // Original: [14, 25, 95, 120, 158, 196]
+    // Refined: [14, 25, 90, 115, 155, 196] (Gives more space to Rate and Amount)
+    const colX = [14, 25, 90, 115, 155, 196];
     const tableStartY = yPosition;
 
     doc.setDrawColor(0);
@@ -727,8 +723,11 @@ const drawInvoiceContent = async (
             }
         }
 
-        // Hours (Right Aligned)
-        const formattedHours = service.hours % 1 === 0 ? service.hours.toString() : service.hours.toFixed(1);
+        // Hours (Right Aligned) - Formatted specifically for T4/T5
+        const formattedHours = Number(service.hours).toLocaleString(undefined, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2
+        });
         doc.text(formattedHours, colX[3] - 4, rowTextY, { align: 'right' });
 
         // Unit Price WITH CURRENCY (Right Aligned)

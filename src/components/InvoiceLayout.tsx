@@ -1,5 +1,4 @@
-import React from 'react';
-import { formatCurrency, Country } from '../../services/countryPreferenceService';
+import { formatCurrency, Country, formatDate } from '../../services/countryPreferenceService';
 
 interface InvoiceItem {
   sno: number;
@@ -49,6 +48,7 @@ interface InvoiceLayoutProps {
   logoUrl?: string; // Added
   stampUrl?: string; // Added
   isVisionAI?: boolean; // Added
+  signatureUrl?: string; // Added
 }
 
 const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
@@ -71,20 +71,11 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
   logoUrl,
   stampUrl,
   isVisionAI,
+  signatureUrl,
 }) => {
-  // Format date as DD/MM/YYYY to match PDF
-  const formatDate = (dateString: string) => {
-    if (!dateString) return '';
-    // Handle YYYY-MM-DD string directly to avoid timezone issues
-    if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
-      const [year, month, day] = dateString.split('-');
-      return `${day}/${month}/${year}`;
-    }
-    const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
+  // Use centralized formatDate
+  const formatDateLocal = (dateString: string) => {
+    return formatDate(dateString);
   };
 
   const currencyCode = country === 'japan' ? 'JPY' : 'INR';
@@ -105,7 +96,7 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
           {/* Stamp moved to bottom right */}
           <div className="space-y-1">
             <h2 className="text-[10pt] font-bold text-gray-900 leading-tight uppercase tracking-tight">INVOICE # {invoiceNumber}</h2>
-            <p className="text-[10pt] font-bold text-gray-900">Date: {formatDate(date)}</p>
+            <p className="text-[10pt] font-bold text-gray-900">Date: {formatDateLocal(date)}</p>
           </div>
         </div>
       </div>
@@ -155,7 +146,7 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
         </div>
         <div className="w-1/2 pl-[26mm]">
           {dueDate && (
-            <p className="font-bold text-gray-900">Due Date: {formatDate(dueDate)}</p>
+            <p className="font-bold text-gray-900">Due Date: {formatDateLocal(dueDate)}</p>
           )}
         </div>
       </div>
@@ -165,11 +156,11 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
         <table className="w-full border-collapse border border-gray-900">
           <thead>
             <tr className="border-b border-gray-900">
-              <th className="border-r border-gray-900 p-2 text-center w-[16mm] font-bold text-[10pt]">SNO</th>
+              <th className="border-r border-gray-900 p-2 text-center w-[11mm] font-bold text-[10pt]">SNO</th>
               <th className="border-r border-gray-900 p-2 text-center font-bold text-[10pt]">Description</th>
               <th className="border-r border-gray-900 p-2 text-right w-[25mm] font-bold text-[10pt] pr-4">Hours</th>
-              <th className="border-r border-gray-900 p-2 text-right w-[30mm] font-bold text-[10pt] pr-4">Unit Price</th>
-              <th className="p-2 text-right w-[31mm] font-bold text-[10pt] pr-4">Amount</th>
+              <th className="border-r border-gray-900 p-2 text-right w-[38mm] font-bold text-[10pt] pr-4">Unit Price</th>
+              <th className="p-2 text-right w-[38mm] font-bold text-[10pt] pr-4">Amount</th>
             </tr>
           </thead>
           <tbody>
@@ -296,11 +287,11 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
 
         {/* Signature Section (Right) - Horizontally aligned with Account Holder row */}
         <div className="w-[80mm] text-center relative mb-4">
-          {isVisionAI && stampUrl && (
+          {((isVisionAI && stampUrl) || signatureUrl) && (
             <img
-              src={stampUrl}
-              alt="Stamp"
-              className="absolute left-1/2 -translate-x-1/2 -top-[19mm] w-[18mm] h-[18mm] opacity-90 z-10"
+              src={signatureUrl || stampUrl}
+              alt="Signature"
+              className="absolute left-1/2 -translate-x-1/2 -top-[19mm] w-[30mm] h-[18mm] object-contain opacity-90 z-10"
             />
           )}
           <div className="border-t border-gray-900 pt-2">

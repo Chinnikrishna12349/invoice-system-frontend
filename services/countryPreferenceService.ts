@@ -104,13 +104,12 @@ export const formatCurrency = (amount: number, country: Country = 'india', showD
 
     let formattedNumber = '';
     if (country === 'japan') {
-        // Japan: Allow up to 2 decimals if needed
-        formattedNumber = amount.toLocaleString('ja-JP', {
-            minimumFractionDigits: showDecimals ? 0 : 0,
-            maximumFractionDigits: showDecimals ? 2 : 0
+        const val = Math.round(amount);
+        formattedNumber = val.toLocaleString('ja-JP', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
         });
     } else {
-        // India: 2 decimals by default
         formattedNumber = amount.toLocaleString('en-IN', {
             minimumFractionDigits: showDecimals ? 2 : 0,
             maximumFractionDigits: showDecimals ? 2 : 0
@@ -118,5 +117,17 @@ export const formatCurrency = (amount: number, country: Country = 'india', showD
     }
 
     return includeSymbol ? `${symbol}${formattedNumber}` : formattedNumber;
+};
+
+/**
+ * Standardize date format to DD/MM/YYYY
+ */
+export const formatDate = (date: string | Date): string => {
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return String(date);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
 };
 

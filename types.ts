@@ -17,6 +17,7 @@ export interface Invoice {
   dueDate: string;
   company: string;
   employeeName: string;
+  signatureUrl?: string;
 
   employeeEmail: string;
   employeeAddress: string;
@@ -49,6 +50,7 @@ export interface CompanyInfo {
   id: string;
   companyName: string;
   companyAddress: string;
+  signatureUrl?: string;
   companyLogoUrl: string;
   invoiceFormat?: string;
   bankDetails: BankDetails;
