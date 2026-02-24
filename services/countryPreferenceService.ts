@@ -104,10 +104,10 @@ export const formatCurrency = (amount: number, country: Country = 'india', showD
 
     let formattedNumber = '';
     if (country === 'japan') {
-        const val = Math.round(amount);
+        const val = showDecimals ? amount : Math.round(amount);
         formattedNumber = val.toLocaleString('ja-JP', {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
+            minimumFractionDigits: showDecimals ? 2 : 0,
+            maximumFractionDigits: showDecimals ? 2 : 0
         });
     } else {
         formattedNumber = amount.toLocaleString('en-IN', {

@@ -369,8 +369,12 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         setSelectedFromId(companyId);
         const company = FROM_COMPANIES.find(c => c.id === companyId);
         if (company) {
-            if (company.currency === 'JPY') setCountry('japan');
-            else setCountry('india');
+            if (company.currency === 'JPY') {
+                setCountry('japan');
+                setShowTaxToggle(false);
+            } else {
+                setCountry('india');
+            }
             setBankDetails({ ...company.bankDetails });
             setFormData(prev => {
                 let newInvoiceNumber = prev.invoiceNumber;
@@ -682,6 +686,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                     branchName: '',
                     accountType: ''
                 });
+                setShowTaxToggle(false);
 
                 // Re-default From Company
                 if (FROM_COMPANIES.length > 0) {
