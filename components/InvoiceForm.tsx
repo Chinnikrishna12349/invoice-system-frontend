@@ -11,6 +11,7 @@ import { CustomDropdown } from './CustomDropdown';
 import { getHiddenSenders, getHiddenClients, hideSender, hideClient } from '../src/utils/companyStorage';
 import InvoiceLayout from '../src/components/InvoiceLayout';
 import { ImageUpload } from './ImageUpload';
+import { bankAccountService, BankAccount } from '../services/bankAccountService';
 import visionAiStamp from '../src/assets/visionai-stamp.png';
 import { VISION_AI_LOGO_BASE64 } from '../src/assets/visionAiLogoBase64';
 
@@ -46,6 +47,9 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         branchName: '',
         accountType: ''
     });
+
+    const [availableBankAccounts, setAvailableBankAccounts] = useState<BankAccount[]>([]);
+    const [selectedBankAccountId, setSelectedBankAccountId] = useState<string>('');
 
     const getInitialFormData = (currentCountry: 'india' | 'japan') => ({
         invoiceNumber: '',
@@ -180,6 +184,21 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             }
         }
     }, [selectedInvoice]);
+
+    // Fetch bank accounts from separate system
+    useEffect(() => {
+        const fetchBankAccounts = async () => {
+            if (user?.id) {
+                try {
+                    const accounts = await bankAccountService.getAll(user.id);
+                    setAvailableBankAccounts(accounts);
+                } catch (err) {
+                    console.error("Failed to fetch bank accounts", err);
+                }
+            }
+        };
+        fetchBankAccounts();
+    }, [user?.id]);
 
     // Save draft to localStorage on change
     useEffect(() => {
@@ -371,7 +390,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         if (company) {
             if (company.currency === 'JPY') {
                 setCountry('japan');
-                setShowTaxToggle(false);
+                setShowTaxToggle(true); // Default to true for Japan as per testing feedback
+                setFormData(prev => ({ ...prev, taxRate: 10 })); // Default to 10% for Japan
             } else {
                 setCountry('india');
             }
@@ -451,6 +471,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                     accountType: ''
                 });
             }
+            if (clientType === 'employee') {
+                setCountry('japan');
+                setShowTaxToggle(true);
+                setFormData(prev => ({ ...prev, taxRate: 10 }));
+            }
             return;
         }
 
@@ -504,6 +529,12 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             }
         }
         setFormData(prev => ({ ...prev, [name]: processedValue }));
+
+        // Auto-calculate tax if country is Japan and toggle is on
+        if (name === 'taxRate' && country === 'japan' && showTaxToggle) {
+            // Calculation is done in useMemo or render, just ensuring state updates
+        }
+
         if (errors[name]) {
             setErrors(prev => {
                 const newErrors = { ...prev };
@@ -1094,11 +1125,44 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 </div>
             </div>
 
-            {/* 2. Bank Details (Editable) */}
-            <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-gray-100 relative z-20">
-                <div className="px-8 py-5 border-b border-gray-100 flex items-center gap-3">
-                    <div className="h-8 w-1 bg-gradient-to-b from-green-500 to-emerald-600 rounded-full"></div>
-                    <h3 className="text-lg font-bold text-gray-900">Bank Details</h3>
+            {/* 2. Bank Details (Managed via Separate Screen) */}
+            <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-gray-100 relative z-20 overflow-hidden">
+                <div className="px-8 py-5 border-b border-gray-100 flex items-center justify-between gap-3 bg-gray-50/50">
+                    <div className="flex items-center gap-3">
+                        <div className="h-8 w-1 bg-gradient-to-b from-green-500 to-emerald-600 rounded-full"></div>
+                        <h3 className="text-lg font-bold text-gray-900">Bank Details</h3>
+                    </div>
+                    {availableBankAccounts.length > 0 && (
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm font-medium text-gray-600">Quick Select:</label>
+                            <select
+                                value={selectedBankAccountId}
+                                onChange={(e) => {
+                                    const accountId = e.target.value;
+                                    setSelectedBankAccountId(accountId);
+                                    const account = availableBankAccounts.find(a => a.id === accountId);
+                                    if (account) {
+                                        setBankDetails({
+                                            bankName: account.bankName,
+                                            accountNumber: account.accountNumber,
+                                            accountHolderName: account.accountHolderName,
+                                            ifscCode: account.ifscCode,
+                                            swiftCode: account.swiftCode,
+                                            branchName: account.branchName,
+                                            branchCode: account.branchCode,
+                                            accountType: account.accountType
+                                        } as BankDetails);
+                                    }
+                                }}
+                                className="text-sm border-gray-200 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 p-2 border bg-white shadow-sm"
+                            >
+                                <option value="">Select from my accounts...</option>
+                                {availableBankAccounts.map(acc => (
+                                    <option key={acc.id} value={acc.id}>{acc.bankName} - {acc.accountNumber}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
                 </div>
                 <div className="p-6">
                     <BankDetailsForm
@@ -1108,16 +1172,14 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             branchName: newData.branchName || '',
                             accountType: newData.accountType || ''
                         })}
-                        errors={{}} // Validation handled loosely for now as per request
+                        errors={{}}
                         country={country}
                     />
-                    <p className="text-xs text-gray-400 mt-4 px-2">
-                        * These details are auto-filled from the selected "From" company but can be edited for this invoice.
+                    <p className="text-xs text-gray-400 mt-4 px-2 italic">
+                        * Use the Bank Accounts screen to manage and save these details for reuse across invoices.
                     </p>
                 </div>
             </div>
-
-
 
             {/* 4. Services */}
             <div className="bg-white rounded-3xl border border-gray-100 p-6 relative z-10">
@@ -1125,41 +1187,43 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                     <h3 className="text-lg font-bold text-gray-900">Services <span className="text-red-500">*</span></h3>
                     <button type="button" onClick={addService} className="text-blue-600 font-semibold text-sm hover:underline">+ Add Item</button>
                 </div>
-                {formData.services?.map((service, index) => (
-                    <div key={service.id || index} className="grid grid-cols-12 gap-4 mb-4 items-end border-b border-gray-50 pb-4 last:border-0">
-                        <div className="col-span-6">
-                            <label className={labelClasses}>Description <span className="text-red-500">*</span></label>
-                            <input type="text" value={service.description} onChange={(e) => handleServiceChange(index, 'description', e.target.value)} className={inputClasses(!!errors[`service-${index}-description`])} />
+                {
+                    formData.services?.map((service, index) => (
+                        <div key={service.id || index} className="grid grid-cols-12 gap-4 mb-4 items-end border-b border-gray-50 pb-4 last:border-0">
+                            <div className="col-span-6">
+                                <label className={labelClasses}>Description <span className="text-red-500">*</span></label>
+                                <input type="text" value={service.description} onChange={(e) => handleServiceChange(index, 'description', e.target.value)} className={inputClasses(!!errors[`service-${index}-description`])} />
+                            </div>
+                            <div className="col-span-2">
+                                <label className={labelClasses}>Hours <span className="text-red-500">*</span></label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    value={service.hours}
+                                    onWheel={(e) => (e.target as HTMLElement).blur()}
+                                    onChange={(e) => handleServiceChange(index, 'hours', parseFloat(e.target.value))}
+                                    className={inputClasses(!!errors[`service-${index}-hours`])}
+                                />
+                            </div>
+                            <div className="col-span-3">
+                                <label className={labelClasses}>Rate ({getCurrencySymbol(country)}) <span className="text-red-500">*</span></label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    value={service.rate}
+                                    onWheel={(e) => (e.target as HTMLElement).blur()}
+                                    onChange={(e) => handleServiceChange(index, 'rate', parseFloat(e.target.value))}
+                                    className={inputClasses(!!errors[`service-${index}-rate`])}
+                                />
+                            </div>
+                            <div className="col-span-1 pb-2">
+                                <button type="button" onClick={() => removeService(index)} className="text-red-500 hover:bg-red-50 p-2 rounded-full">🗑️</button>
+                            </div>
                         </div>
-                        <div className="col-span-2">
-                            <label className={labelClasses}>Hours <span className="text-red-500">*</span></label>
-                            <input
-                                type="number"
-                                step="0.01"
-                                value={service.hours}
-                                onWheel={(e) => (e.target as HTMLElement).blur()}
-                                onChange={(e) => handleServiceChange(index, 'hours', parseFloat(e.target.value))}
-                                className={inputClasses(!!errors[`service-${index}-hours`])}
-                            />
-                        </div>
-                        <div className="col-span-3">
-                            <label className={labelClasses}>Rate ({getCurrencySymbol(country)}) <span className="text-red-500">*</span></label>
-                            <input
-                                type="number"
-                                step="0.01"
-                                value={service.rate}
-                                onWheel={(e) => (e.target as HTMLElement).blur()}
-                                onChange={(e) => handleServiceChange(index, 'rate', parseFloat(e.target.value))}
-                                className={inputClasses(!!errors[`service-${index}-rate`])}
-                            />
-                        </div>
-                        <div className="col-span-1 pb-2">
-                            <button type="button" onClick={() => removeService(index)} className="text-red-500 hover:bg-red-50 p-2 rounded-full">🗑️</button>
-                        </div>
-                    </div>
-                ))}
+                    ))
+                }
                 {(formData.services?.length === 0) && <p className="text-center text-gray-400 py-4">No items added.</p>}
-            </div>
+            </div >
 
             {/* 5. Totals */}
             <div className="bg-slate-50 rounded-3xl p-8 border border-slate-100">
@@ -1246,7 +1310,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                         </div>
                     </div>
                 </div>
-            </div>
+            </div >
 
             <div className="flex justify-end gap-4">
                 {selectedInvoice && <button type="button" onClick={clearSelection} className="px-6 py-2 border rounded-xl">Cancel</button>}
@@ -1267,68 +1331,70 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             </div>
 
             {/* Preview Overlay */}
-            {showPreview && previewInvoice && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] overflow-y-auto p-4 md:p-8 flex items-start justify-center">
-                    <div className="bg-gray-100 rounded-3xl w-full max-w-5xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 my-8">
-                        {/* Preview Header */}
-                        <div className="bg-white px-8 py-4 border-b border-gray-200 flex justify-between items-center sticky top-0 z-10">
-                            <div>
-                                <h2 className="text-xl font-bold text-gray-900">Invoice Preview</h2>
-                                <p className="text-xs text-gray-500">Please review the details before finalizing</p>
+            {
+                showPreview && previewInvoice && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] overflow-y-auto p-4 md:p-8 flex items-start justify-center">
+                        <div className="bg-gray-100 rounded-3xl w-full max-w-5xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 my-8">
+                            {/* Preview Header */}
+                            <div className="bg-white px-8 py-4 border-b border-gray-200 flex justify-between items-center sticky top-0 z-10">
+                                <div>
+                                    <h2 className="text-xl font-bold text-gray-900">Invoice Preview</h2>
+                                    <p className="text-xs text-gray-500">Please review the details before finalizing</p>
+                                </div>
+                                <button
+                                    onClick={() => setShowPreview(false)}
+                                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                                >
+                                    <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
                             </div>
-                            <button
-                                onClick={() => setShowPreview(false)}
-                                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                            >
-                                <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
 
-                        {/* Preview Content */}
-                        <div className="p-8">
-                            <div className="bg-white shadow-lg rounded-xl overflow-hidden scale-[0.98] origin-top transform transition-transform">
-                                <InvoiceLayout {...mapInvoiceToLayoutProps(previewInvoice)} />
+                            {/* Preview Content */}
+                            <div className="p-8">
+                                <div className="bg-white shadow-lg rounded-xl overflow-hidden scale-[0.98] origin-top transform transition-transform">
+                                    <InvoiceLayout {...mapInvoiceToLayoutProps(previewInvoice)} />
+                                </div>
                             </div>
-                        </div>
 
-                        {/* Preview Footer */}
-                        <div className="bg-white px-8 py-6 border-t border-gray-200 flex flex-col sm:flex-row justify-center gap-4">
-                            <button
-                                type="button"
-                                onClick={() => setShowPreview(false)}
-                                className="px-10 py-3.5 border-2 border-gray-200 text-gray-700 rounded-2xl font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
-                            >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                                </svg>
-                                Back to Edit
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleConfirmSave}
-                                disabled={isSaving}
-                                className="px-12 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-2xl font-bold hover:from-blue-700 hover:to-indigo-800 shadow-xl shadow-blue-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                            >
-                                {isSaving ? (
-                                    <>
-                                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                                        Saving...
-                                    </>
-                                ) : (
-                                    <>
-                                        <span>Confirm & Create</span>
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                    </>
-                                )}
-                            </button>
+                            {/* Preview Footer */}
+                            <div className="bg-white px-8 py-6 border-t border-gray-200 flex flex-col sm:flex-row justify-center gap-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPreview(false)}
+                                    className="px-10 py-3.5 border-2 border-gray-200 text-gray-700 rounded-2xl font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                    </svg>
+                                    Back to Edit
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleConfirmSave}
+                                    disabled={isSaving}
+                                    className="px-12 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-2xl font-bold hover:from-blue-700 hover:to-indigo-800 shadow-xl shadow-blue-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                                >
+                                    {isSaving ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                                            Saving...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span>Confirm & Create</span>
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
         </form >
     );
 };

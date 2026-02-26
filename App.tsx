@@ -7,6 +7,7 @@ import { LandingPage } from './pages/LandingPage';
 import { Dashboard } from './pages/Dashboard';
 import { InvoicesPage } from './pages/InvoicesPage';
 import InvoicePage from './pages/InvoicePage';
+import BankAccountsPage from './pages/BankAccountsPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Invoice } from './types';
 
@@ -51,6 +52,14 @@ const AppContent: React.FC = () => {
                     element={
                         <ProtectedRoute>
                             <InvoicePage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/bank-accounts"
+                    element={
+                        <ProtectedRoute>
+                            <BankAccountsPage />
                         </ProtectedRoute>
                     }
                 />

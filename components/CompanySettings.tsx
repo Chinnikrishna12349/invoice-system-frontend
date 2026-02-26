@@ -16,6 +16,7 @@ export const CompanySettings: React.FC<CompanySettingsProps> = ({ onClose }) => 
     const [companyName, setCompanyName] = useState(companyInfo?.companyName || '');
     const [companyAddress, setCompanyAddress] = useState(companyInfo?.companyAddress || '');
     const [invoiceFormat, setInvoiceFormat] = useState(companyInfo?.invoiceFormat || 'INV-');
+    const [fromEmail, setFromEmail] = useState(companyInfo?.fromEmail || '');
     const [companyLogo, setCompanyLogo] = useState<File | null>(null);
     const [bankDetails, setBankDetails] = useState<BankDetailsFormData>({
         bankName: companyInfo?.bankDetails?.bankName || '',
@@ -42,6 +43,7 @@ export const CompanySettings: React.FC<CompanySettingsProps> = ({ onClose }) => 
                 companyName,
                 companyAddress,
                 invoiceFormat,
+                fromEmail,
                 companyLogo,
                 bankDetails
             });
@@ -114,6 +116,20 @@ export const CompanySettings: React.FC<CompanySettingsProps> = ({ onClose }) => 
                                 className="block w-full rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-3 border"
                                 placeholder="e.g. INV-"
                             />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">
+                                From Email Address (Email sender)
+                            </label>
+                            <input
+                                type="email"
+                                value={fromEmail}
+                                onChange={(e) => setFromEmail(e.target.value)}
+                                className="block w-full rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-3 border"
+                                placeholder="e.g., contact@company.com"
+                            />
+                            <p className="mt-1 text-xs text-gray-500 italic">This email will be used as the sender when emailing invoices.</p>
                         </div>
 
                         <div className="pt-2">

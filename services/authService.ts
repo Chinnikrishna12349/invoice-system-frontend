@@ -21,6 +21,7 @@ export interface SignupCredentials {
     companyName: string;
     companyAddress: string;
     invoiceFormat?: string;
+    fromEmail?: string;
     companyLogo: File | null;
     bankDetails: {
         bankName: string;
@@ -38,6 +39,7 @@ export interface CompanyInfo {
     companyName: string;
     companyAddress: string;
     companyLogoUrl: string;
+    fromEmail?: string;
     invoiceFormat?: string;
     bankDetails: {
         bankName: string;
@@ -461,6 +463,7 @@ export const updateCompanyInfo = async (credentials: Partial<SignupCredentials>)
     if (credentials.companyName) formData.append('companyName', credentials.companyName.trim());
     if (credentials.companyAddress) formData.append('companyAddress', credentials.companyAddress.trim());
     if (credentials.invoiceFormat) formData.append('invoiceFormat', credentials.invoiceFormat);
+    if (credentials.fromEmail) formData.append('fromEmail', credentials.fromEmail.trim());
     if (credentials.companyLogo) formData.append('companyLogo', credentials.companyLogo);
 
     if (credentials.bankDetails) {

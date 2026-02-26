@@ -47,11 +47,25 @@ export interface BankDetails {
 }
 
 export interface CompanyInfo {
-  id: string;
+  id?: string;
   companyName: string;
   companyAddress: string;
   signatureUrl?: string;
-  companyLogoUrl: string;
+  companyLogoUrl?: string;
+  fromEmail?: string;
   invoiceFormat?: string;
-  bankDetails: BankDetails;
+  bankDetails?: BankDetails;
+}
+
+export interface BankAccount {
+  id: string;
+  bankName: string;
+  accountNumber: string;
+  accountHolderName: string;
+  ifscCode: string;
+  swiftCode?: string;
+  branchName: string;
+  branchCode: string;
+  accountType?: string;
+  userId: string;
 }
