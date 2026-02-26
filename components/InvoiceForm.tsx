@@ -345,15 +345,15 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             setSelectedFromId('other');
             setFormData(prev => ({
                 ...prev,
-                company: companyInfo?.companyName || '',
-                fromEmail: companyInfo?.fromEmail || '',
+                company: '',
+                fromEmail: '',
                 companyInfo: {
                     ...prev.companyInfo,
-                    companyName: companyInfo?.companyName || '',
-                    companyAddress: companyInfo?.companyAddress || '',
-                    companyLogoUrl: companyInfo?.companyLogoUrl || '',
-                    invoiceFormat: companyInfo?.invoiceFormat || 'INV-',
-                    bankDetails: companyInfo?.bankDetails || {
+                    companyName: '',
+                    companyAddress: '',
+                    companyLogoUrl: '',
+                    invoiceFormat: 'INV-',
+                    bankDetails: {
                         bankName: '',
                         accountNumber: '',
                         accountHolderName: '',
