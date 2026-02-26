@@ -86,39 +86,6 @@ export const CompanySettings: React.FC<CompanySettingsProps> = ({ onClose }) => 
 
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1">Company Name</label>
-                            <input
-                                type="text"
-                                value={companyName}
-                                onChange={(e) => setCompanyName(e.target.value)}
-                                className="block w-full rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-3 border"
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1">Company Address</label>
-                            <textarea
-                                value={companyAddress}
-                                onChange={(e) => setCompanyAddress(e.target.value)}
-                                rows={3}
-                                className="block w-full rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-3 border"
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1">Invoice Format</label>
-                            <input
-                                type="text"
-                                value={invoiceFormat}
-                                onChange={(e) => setInvoiceFormat(e.target.value)}
-                                className="block w-full rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-3 border"
-                                placeholder="e.g. INV-"
-                            />
-                        </div>
-
-                        <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-1">
                                 From Email Address (Email sender)
                             </label>
@@ -144,13 +111,6 @@ export const CompanySettings: React.FC<CompanySettingsProps> = ({ onClose }) => 
                                 <p className="mt-2 text-xs text-gray-500 italic">Current logo is already stored securely in the database.</p>
                             )}
                         </div>
-                    </div>
-
-                    <div className="border-t border-gray-100 pt-6">
-                        <BankDetailsForm
-                            data={bankDetails}
-                            onChange={setBankDetails}
-                        />
                     </div>
 
                     <div className="pt-6 flex justify-end gap-3">
