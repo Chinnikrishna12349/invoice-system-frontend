@@ -868,12 +868,27 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                             // Optional: handle immediate preview if needed, 
                                             // but state 'customLogoFile' is enough for save
                                         }}
+                                        onRemoveExisting={() => {
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                companyInfo: prev.companyInfo ? {
+                                                    ...prev.companyInfo,
+                                                    companyLogoUrl: ''
+                                                } : prev.companyInfo
+                                            }));
+                                        }}
                                         label="Company Logo"
                                         existingImageUrl={formData.companyInfo?.companyLogoUrl}
                                     />
                                     <ImageUpload
                                         value={customSignatureFile}
                                         onChange={setCustomSignatureFile}
+                                        onRemoveExisting={() => {
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                signatureUrl: ''
+                                            }));
+                                        }}
                                         label="Authorized Signature"
                                         existingImageUrl={formData.signatureUrl}
                                     />

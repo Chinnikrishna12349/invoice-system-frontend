@@ -9,6 +9,7 @@ interface ImageUploadProps {
     maxSizeMB?: number;
     required?: boolean;
     error?: string;
+    onRemoveExisting?: () => void;
 }
 
 export const ImageUpload: React.FC<ImageUploadProps> = ({
@@ -20,6 +21,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
     maxSizeMB = 5,
     required = false,
     error,
+    onRemoveExisting,
 }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [preview, setPreview] = useState<string | null>(null);
@@ -59,10 +61,14 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
     };
 
     const handleRemove = () => {
-        onChange(null);
-        setPreview(null);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
+        if (preview || value) {
+            onChange(null);
+            setPreview(null);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        } else if (isShowingExisting && onRemoveExisting) {
+            onRemoveExisting();
         }
     };
 
@@ -101,7 +107,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
                             alt="Preview"
                             className="h-16 w-16 object-contain rounded-lg border border-gray-300 bg-gray-50"
                         />
-                        {(preview || value) && (
+                        {(preview || value || (isShowingExisting && onRemoveExisting)) && (
                             <button
                                 type="button"
                                 onClick={handleRemove}
