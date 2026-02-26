@@ -65,13 +65,25 @@ const COMPANY_INFO_KEY = 'companyInfo';
 
 // API base URL
 const getBaseUrl = () => {
-    // If we have a VITE_API_URL that isn't the Render one, use it
-    const envUrl = import.meta.env?.VITE_API_URL;
-    if (envUrl && envUrl !== 'https://invoice-system-backend-owhd.onrender.com/api/invoices') {
-        return envUrl.replace('/api/invoices', '');
+    // Priority 1: Explicitly defined VITE_API_URL or VITE_API_BASE_URL
+    const explicitUrl = import.meta.env?.VITE_API_URL || import.meta.env?.VITE_API_BASE_URL;
+
+    if (explicitUrl) {
+        // If it's a full URL to /api/invoices, strip it to get the base
+        if (explicitUrl.includes('/api/invoices')) {
+            return explicitUrl.replace('/api/invoices', '');
+        }
+        // If it's already a base URL (doesn't start with /), return it
+        if (explicitUrl.startsWith('http')) {
+            return explicitUrl;
+        }
     }
-    // Default to localhost in dev, or Render in prod
-    return import.meta.env?.DEV ? 'http://localhost:8085' : 'https://invoice-system-backend-owhd.onrender.com';
+
+    // Priority 2: Hardcoded Production URL for this specific project
+    const PROD_URL = 'https://invoice-system-backend-owhd.onrender.com';
+
+    // Priority 3: Localhost fallback
+    return import.meta.env?.DEV ? 'http://localhost:8085' : PROD_URL;
 };
 
 const AUTH_API_URL = getBaseUrl();
