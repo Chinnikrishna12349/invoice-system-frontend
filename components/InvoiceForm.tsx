@@ -1121,7 +1121,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                 </div>
                             </div>
                         )}
-                    </div >
+                    </div>
                 </div>
             </div>
 
@@ -1223,7 +1223,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                     ))
                 }
                 {(formData.services?.length === 0) && <p className="text-center text-gray-400 py-4">No items added.</p>}
-            </div >
+            </div>
 
             {/* 5. Totals */}
             <div className="bg-slate-50 rounded-3xl p-8 border border-slate-100">
@@ -1310,7 +1310,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                         </div>
                     </div>
                 </div>
-            </div >
+            </div>
 
             <div className="flex justify-end gap-4">
                 {selectedInvoice && <button type="button" onClick={clearSelection} className="px-6 py-2 border rounded-xl">Cancel</button>}
@@ -1395,7 +1395,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                     </div>
                 )
             }
-        </form >
+        </form>
     );
 };
 
