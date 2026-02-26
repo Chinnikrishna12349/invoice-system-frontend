@@ -87,7 +87,7 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
       <div className="flex justify-between items-start mb-10">
         <div className="w-1/2">
           {logoUrl ? (
-            <img src={logoUrl} alt="Logo" className="max-w-[50mm] max-h-[25mm] object-contain" />
+            <img src={logoUrl} alt="Logo" className="max-w-[50mm] max-h-[20mm] object-contain" />
           ) : (
             null
           )}

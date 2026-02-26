@@ -29,7 +29,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 }) => {
     const { t } = useTranslation();
     const { country, setCountry } = useCountry();
-    const { user } = useAuth();
+    const { user, companyInfo } = useAuth();
 
     // Dropdown States
     const [selectedFromId, setSelectedFromId] = useState<string>('');
@@ -345,14 +345,15 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             setSelectedFromId('other');
             setFormData(prev => ({
                 ...prev,
-                company: '',
+                company: companyInfo?.companyName || '',
+                fromEmail: companyInfo?.fromEmail || '',
                 companyInfo: {
                     ...prev.companyInfo,
-                    companyName: '',
-                    companyAddress: '',
-                    companyLogoUrl: '',
-                    invoiceFormat: 'INV-',
-                    bankDetails: {
+                    companyName: companyInfo?.companyName || '',
+                    companyAddress: companyInfo?.companyAddress || '',
+                    companyLogoUrl: companyInfo?.companyLogoUrl || '',
+                    invoiceFormat: companyInfo?.invoiceFormat || 'INV-',
+                    bankDetails: companyInfo?.bankDetails || {
                         bankName: '',
                         accountNumber: '',
                         accountHolderName: '',
