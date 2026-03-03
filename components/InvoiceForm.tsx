@@ -576,7 +576,9 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         const updatedServices = [...(formData.services || [])];
         let processedValue = value;
         if ((field === 'hours' || field === 'rate') && typeof value === 'number') {
-            processedValue = field === 'hours' ? Math.round(value * 100) / 100 : Math.max(0, value);
+            processedValue = field === 'hours' 
+                ? Math.max(0, Math.round(value * 100) / 100) 
+                : Math.max(0, value);
         }
         updatedServices[index] = { ...updatedServices[index], [field]: processedValue };
         setFormData(prev => ({ ...prev, services: updatedServices }));
@@ -1276,6 +1278,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                 <input
                                     type="number"
                                     step="0.01"
+                                    min="0"
                                     value={service.hours}
                                     onWheel={(e) => (e.target as HTMLElement).blur()}
                                     onChange={(e) => handleServiceChange(index, 'hours', parseFloat(e.target.value))}
@@ -1287,6 +1290,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                 <input
                                     type="number"
                                     step="0.01"
+                                    min="0"
                                     value={service.rate}
                                     onWheel={(e) => (e.target as HTMLElement).blur()}
                                     onChange={(e) => handleServiceChange(index, 'rate', parseFloat(e.target.value))}
