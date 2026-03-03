@@ -573,7 +573,6 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
         if (!selectedFromId && !selectedInvoice) newErrors.fromCompany = "Please select a sender company";
         if (!formData.date) newErrors.date = 'Invoice Date is required';
-        if (!formData.dueDate) newErrors.dueDate = 'Due Date is required';
         if (!formData.fromEmail) newErrors.fromEmail = 'From Email is required';
 
         // Validate manual company name entry if "Other" or dynamic sender is selected
@@ -619,14 +618,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         if (!bankDetails.branchName?.trim()) newErrors.branchName = 'Branch name is required';
         if (!bankDetails.branchCode?.trim()) newErrors.branchCode = 'Branch code is required';
         
-        if (bankDetails.swiftCode !== undefined && bankDetails.swiftCode !== null && bankDetails.swiftCode !== '') {
+        // Country-specific bank code validation
+        if (country === 'japan') {
             if (!bankDetails.swiftCode?.trim()) newErrors.swiftCode = 'Swift code is required';
-        } else if (bankDetails.ifscCode !== undefined && bankDetails.ifscCode !== null && bankDetails.ifscCode !== '') {
-            if (!bankDetails.ifscCode?.trim()) newErrors.ifscCode = 'IFSC code is required';
         } else {
-             // If both are empty, check which one should be mandatory based on country or selection
-             if (country === 'japan') newErrors.swiftCode = 'Swift code is required';
-             else newErrors.ifscCode = 'IFSC code is required';
+            if (!bankDetails.ifscCode?.trim()) newErrors.ifscCode = 'IFSC code is required';
         }
 
         if (!bankDetails.accountType) {

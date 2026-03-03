@@ -32,6 +32,7 @@ export const FROM_COMPANIES: DummyCompany[] = [
             accountNumber: '2165551',
             accountHolderName: 'VISION AI',
             ifscCode: '',
+            swiftCode: 'GMAZJPJT', // GMO Aozora Net Bank
             branchName: '法人第二営業部',
             branchCode: '002',
             accountType: '普通口座'
@@ -50,6 +51,7 @@ export const FROM_COMPANIES: DummyCompany[] = [
             accountNumber: '1234567',
             accountHolderName: 'IDEAL FOLKS',
             ifscCode: '',
+            swiftCode: 'SMBCJPJT', // SMBC
             branchName: 'Azabu Branch',
             branchCode: '123',
             accountType: 'Savings'
@@ -68,6 +70,7 @@ export const FROM_COMPANIES: DummyCompany[] = [
             accountNumber: '7654321',
             accountHolderName: 'VCAS CONSULTING',
             ifscCode: '',
+            swiftCode: 'MHCBJPJT', // Mizuho Bank
             branchName: 'Kawasaki Branch',
             branchCode: '456',
             accountType: 'Current'
