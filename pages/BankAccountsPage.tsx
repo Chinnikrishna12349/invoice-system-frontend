@@ -59,10 +59,25 @@ const BankAccountsPage: React.FC = () => {
         }
     };
 
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
         setSuccess('');
+        setFormErrors({});
+
+        // Validation
+        const newErrors: Record<string, string> = {};
+        if (!currentAccount.bankName) newErrors.bankName = 'Bank name is required';
+        if (!currentAccount.accountNumber) newErrors.accountNumber = 'Account number is required';
+        if (!currentAccount.accountHolderName) newErrors.accountHolderName = 'Account holder name is required';
+        if (!currentAccount.accountType) newErrors.accountType = 'Account type is required';
+
+        if (Object.keys(newErrors).length > 0) {
+            setFormErrors(newErrors);
+            return;
+        }
 
         try {
             if (currentAccount.id) {
@@ -127,7 +142,7 @@ const BankAccountsPage: React.FC = () => {
                                 </svg>
                             </div>
                             <div className="flex gap-2">
-                                <button onClick={() => handleEdit(account)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                                <button onClick={() => { handleEdit(account); setFormErrors({}); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>
@@ -189,7 +204,17 @@ const BankAccountsPage: React.FC = () => {
                         <form onSubmit={handleSubmit} className="p-8">
                             <BankDetailsForm
                                 data={currentAccount as any}
-                                onChange={(data) => setCurrentAccount({ ...currentAccount, ...data })}
+                                onChange={(data) => {
+                                    setCurrentAccount({ ...currentAccount, ...data });
+                                    if (data.accountType && formErrors.accountType) {
+                                        setFormErrors(prev => {
+                                            const newErrors = { ...prev };
+                                            delete newErrors.accountType;
+                                            return newErrors;
+                                        });
+                                    }
+                                }}
+                                errors={formErrors as any}
                             />
                             <div className="mt-8 flex justify-end gap-3">
                                 <button

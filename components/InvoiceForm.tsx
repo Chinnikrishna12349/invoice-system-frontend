@@ -635,6 +635,10 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             });
         }
 
+        if (!bankDetails.accountType) {
+            newErrors.accountType = 'Account type is required';
+        }
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -1231,12 +1235,21 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 <div className="p-6">
                     <BankDetailsForm
                         data={{ ...bankDetails, branchName: bankDetails.branchName || '', branchCode: bankDetails.branchCode || '', accountType: bankDetails.accountType || '' }}
-                        onChange={(newData) => setBankDetails({
-                            ...newData,
-                            branchName: newData.branchName || '',
-                            accountType: newData.accountType || ''
-                        })}
-                        errors={{}}
+                        onChange={(newData) => {
+                            setBankDetails({
+                                ...newData,
+                                branchName: newData.branchName || '',
+                                accountType: newData.accountType || ''
+                            });
+                            if (newData.accountType && errors.accountType) {
+                                setErrors(prev => {
+                                    const newErrors = { ...prev };
+                                    delete newErrors.accountType;
+                                    return newErrors;
+                                });
+                            }
+                        }}
+                        errors={errors as any}
                         country={country}
                     />
                     <p className="text-xs text-gray-400 mt-4 px-2 italic">

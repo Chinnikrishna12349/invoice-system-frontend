@@ -181,18 +181,22 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
 
                 <div>
                     <label htmlFor="accountType" className={labelClasses}>
-                        Account Type
+                        Account Type <span className="text-red-500">*</span>
                     </label>
                     <select
                         id="accountType"
                         value={data.accountType || ''}
                         onChange={(e) => updateField('accountType', e.target.value)}
-                        className={inputClasses(false)}
+                        className={inputClasses(!!errors.accountType)}
+                        required
                     >
                         <option value="">Select Account Type</option>
                         <option value="Savings">Savings</option>
                         <option value="Current">Current</option>
                     </select>
+                    {errors.accountType && (
+                        <p className="mt-1 text-xs text-red-500">{errors.accountType}</p>
+                    )}
                 </div>
             </div>
         </div>
