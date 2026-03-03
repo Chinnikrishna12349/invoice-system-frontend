@@ -846,69 +846,68 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             ]}
                         />
 
-                        {/* Manual entry for FROM if "Other" or dynamic company is selected */}
-                        {(isOtherFrom || (selectedFromId && selectedFromId.startsWith('dynamic-from-'))) && (
+                        {/* Manual entry / Logo & Signature for FROM */}
+                        {selectedFromId && (
                             <div className="mt-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-500 mb-1">Company Name</label>
-                                    <input
-                                        type="text"
-                                        placeholder="Enter company name"
-                                        className={inputClasses(!!errors.fromCompany)}
-                                        value={formData.company}
-                                        onChange={(e) => {
-                                            const val = e.target.value;
-                                            const dynamicPrefix = generateDynamicPrefix(val);
-
-                                            // Real-time validation for better UX
-                                            if (val && !validateCompanyName(val)) {
-                                                setErrors(prev => ({ ...prev, fromCompany: COMPANY_NAME_VALIDATION_ERROR }));
-                                            } else {
-                                                setErrors(prev => {
-                                                    const { fromCompany, ...rest } = prev;
-                                                    return rest;
-                                                });
-                                            }
-
-                                            setFormData(prev => ({
-                                                ...prev,
-                                                company: val,
-                                                companyInfo: {
-                                                    ...prev.companyInfo!,
-                                                    companyName: val,
-                                                    invoiceFormat: dynamicPrefix
-                                                }
-                                            }));
-                                        }}
-                                    />
-                                    {errors.fromCompany && <p className="mt-1 text-xs text-red-500">{errors.fromCompany}</p>}
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-500 mb-1">Company Address</label>
-                                    <textarea
-                                        placeholder="Enter company address"
-                                        className={inputClasses(false)}
-                                        rows={2}
-                                        value={formData.companyInfo?.companyAddress}
-                                        onChange={(e) => {
-                                            const val = e.target.value;
-                                            setFormData(prev => ({
-                                                ...prev,
-                                                companyInfo: {
-                                                    ...prev.companyInfo!,
-                                                    companyAddress: val
-                                                }
-                                            }));
-                                        }}
-                                    />
-                                </div>
+                                {(isOtherFrom || (selectedFromId && selectedFromId.startsWith('dynamic-from-'))) && (
+                                    <>
+                                        <div>
+                                            <label className="block text-xs font-semibold text-gray-500 mb-1">Company Name</label>
+                                            <input
+                                                type="text"
+                                                placeholder="Enter company name"
+                                                className={inputClasses(!!errors.fromCompany)}
+                                                value={formData.company}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    const dynamicPrefix = generateDynamicPrefix(val);
+                                                    if (val && !validateCompanyName(val)) {
+                                                        setErrors(prev => ({ ...prev, fromCompany: COMPANY_NAME_VALIDATION_ERROR }));
+                                                    } else {
+                                                        setErrors(prev => {
+                                                            const { fromCompany, ...rest } = prev;
+                                                            return rest;
+                                                        });
+                                                    }
+                                                    setFormData(prev => ({
+                                                        ...prev,
+                                                        company: val,
+                                                        companyInfo: {
+                                                            ...prev.companyInfo!,
+                                                            companyName: val,
+                                                            invoiceFormat: dynamicPrefix
+                                                        }
+                                                    }));
+                                                }}
+                                            />
+                                            {errors.fromCompany && <p className="mt-1 text-xs text-red-500">{errors.fromCompany}</p>}
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold text-gray-500 mb-1">Company Address</label>
+                                            <textarea
+                                                placeholder="Enter company address"
+                                                className={inputClasses(false)}
+                                                rows={2}
+                                                value={formData.companyInfo?.companyAddress}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    setFormData(prev => ({
+                                                        ...prev,
+                                                        companyInfo: {
+                                                            ...prev.companyInfo!,
+                                                            companyAddress: val
+                                                        }
+                                                    }));
+                                                }}
+                                            />
+                                        </div>
+                                    </>
+                                )}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <ImageUpload
                                         value={customLogoFile}
                                         onChange={(file) => {
                                             setCustomLogoFile(file);
-                                            // Optional: handle immediate preview if needed, 
-                                            // but state 'customLogoFile' is enough for save
                                         }}
                                         onRemoveExisting={() => {
                                             setFormData(prev => ({
