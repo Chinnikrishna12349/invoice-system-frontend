@@ -877,10 +877,12 @@ const drawInvoiceContent = async (
         const signatureX = rightColX + (rightColWidth / 2);
         const signatureY = accountIdY;
 
-        // Add Vision AI Stamp if applicable (above signature)
-        if (isVisionAI) {
+        // Custom signature takes precedence; fallback to Vision AI Stamp if applicable
+        if (invoice.signatureUrl) {
+            await addLogoToPdf(doc, signatureX - 15, signatureY - 19, invoice.signatureUrl, 30, 18);
+        } else if (isVisionAI) {
             const stampSize = 18;
-            await addStaticStampToPdf(doc, rightColX + (rightColWidth / 2) - (stampSize / 2), signatureY - 20, visionAiStamp, stampSize, stampSize);
+            await addStaticStampToPdf(doc, signatureX - (stampSize / 2), signatureY - 20, visionAiStamp, stampSize, stampSize);
         }
 
         doc.setDrawColor(0);

@@ -1471,6 +1471,7 @@ const mapInvoiceToLayoutProps = (invoice: Invoice) => {
         sgstRate: invoice.sgstRate,
         logoUrl: logoToUse,
         stampUrl: isVisionAI ? visionAiStamp : undefined,
-        isVisionAI: isVisionAI
+        isVisionAI: isVisionAI,
+        signatureUrl: invoice.signatureUrl
     };
 };
