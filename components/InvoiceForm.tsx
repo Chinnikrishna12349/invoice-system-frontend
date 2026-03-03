@@ -174,18 +174,6 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
     const [customLogoFile, setCustomLogoFile] = useState<File | null>(null);
     const [customSignatureFile, setCustomSignatureFile] = useState<File | null>(null);
 
-    // Load draft from localStorage on mount
-    useEffect(() => {
-        const savedDraft = localStorage.getItem('invoice_draft');
-        if (savedDraft && !selectedInvoice) {
-            try {
-                const parsed = JSON.parse(savedDraft);
-                setFormData(prev => ({ ...prev, ...parsed }));
-            } catch (e) {
-                console.error("Failed to load draft", e);
-            }
-        }
-    }, [selectedInvoice]);
 
     // Fetch bank accounts from separate system
     useEffect(() => {
@@ -202,52 +190,24 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         fetchBankAccounts();
     }, [user?.id]);
 
-    // Save draft to localStorage on change
-    useEffect(() => {
-        if (!selectedInvoice) {
-            const timer = setTimeout(() => {
-                const { companyLogoUrl, signatureUrl, ...rest } = formData as any;
-                localStorage.setItem('invoice_draft', JSON.stringify(rest));
-            }, 1000);
-            return () => clearTimeout(timer);
-        }
-    }, [formData, selectedInvoice]);
 
     // Initialize/Reset Logic
     useEffect(() => {
         if (!selectedInvoice) {
-            const savedData = localStorage.getItem('dashboard_autosave');
-            if (savedData) {
-                try {
-                    const parsed = JSON.parse(savedData);
-                    setFormData(parsed.formData);
-                    setBankDetails(parsed.bankDetails);
-                    setSelectedFromId(parsed.selectedFromId);
-                    setSelectedToId(parsed.selectedToId);
-                    setIsOtherFrom(parsed.isOtherFrom);
-                    setIsOtherTo(parsed.isOtherTo);
-                    setClientType(parsed.clientType || 'company');
-                    if (parsed.showTaxToggle !== undefined) setShowTaxToggle(parsed.showTaxToggle);
-                } catch (e) {
-                    console.error("Failed to parse autosave data", e);
-                    localStorage.removeItem('dashboard_autosave');
-                }
-            } else {
-                setFormData(getInitialFormData(country));
-                setBankDetails({
-                    bankName: '',
-                    accountNumber: '',
-                    accountHolderName: '',
-                    ifscCode: '',
-                    branchName: '',
-                    accountType: ''
-                });
-                setSelectedFromId('');
-                setSelectedToId('');
-                setIsOtherFrom(false);
-                setIsOtherTo(false);
-                setClientType('company');
-            }
+            setFormData(getInitialFormData(country));
+            setBankDetails({
+                bankName: '',
+                accountNumber: '',
+                accountHolderName: '',
+                ifscCode: '',
+                branchName: '',
+                accountType: ''
+            });
+            setSelectedFromId('');
+            setSelectedToId('');
+            setIsOtherFrom(false);
+            setIsOtherTo(false);
+            setClientType('company');
         } else {
             setFormData({ ...selectedInvoice });
             if (selectedInvoice.companyInfo?.bankDetails) {
@@ -284,22 +244,6 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         }
     }, [selectedInvoice, dynamicClientCompanies, dynamicClientEmployees]);
 
-    // Auto-Save Effect
-    useEffect(() => {
-        if (!selectedInvoice) {
-            const dataToSave = {
-                formData,
-                bankDetails,
-                selectedFromId,
-                selectedToId,
-                isOtherFrom,
-                isOtherTo,
-                clientType,
-                showTaxToggle
-            };
-            localStorage.setItem('dashboard_autosave', JSON.stringify(dataToSave));
-        }
-    }, [formData, bankDetails, selectedFromId, selectedToId, isOtherFrom, isOtherTo, clientType, showTaxToggle, selectedInvoice]);
 
     useEffect(() => {
         setFormData(prev => ({ ...prev, country: country }));
