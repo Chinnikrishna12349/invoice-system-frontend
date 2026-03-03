@@ -11,11 +11,12 @@ import {
 import { useCountry } from '../contexts/CountryContext';
 import { useAuth } from '../contexts/AuthContext';
 
-import { useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export const Dashboard: React.FC = () => {
     const { t } = useTranslation();
     const location = useLocation();
+    const navigate = useNavigate();
     const { country, setCountry } = useCountry();
     const { companyInfo, user } = useAuth();
     const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
@@ -72,15 +73,14 @@ export const Dashboard: React.FC = () => {
             }
             setSelectedInvoice(null);
             setError(null);
-            // await loadInvoices(); // No need to load if we reload
-            alert('Invoice saved successfully! The page will now reload.');
-            window.location.reload();
+            // Navigate back to invoices page to see changes immediately
+            navigate('/invoices');
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Failed to save invoice';
             setError(errorMessage);
             alert(errorMessage);
         }
-    }, [selectedInvoice, country]);
+    }, [selectedInvoice, country, navigate, user?.id]);
 
     const handleClearSelection = useCallback(() => {
         setSelectedInvoice(null);
