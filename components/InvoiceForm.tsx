@@ -538,6 +538,14 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             // Calculation is done in useMemo or render, just ensuring state updates
         }
 
+        // Real-time validation for employeeName (Client Company)
+        if (name === 'employeeName' && clientType === 'company') {
+            if (processedValue && !validateCompanyName(processedValue)) {
+                setErrors(prev => ({ ...prev, employeeName: COMPANY_NAME_VALIDATION_ERROR }));
+                return; // Don't clear error if it just became invalid
+            }
+        }
+
         if (errors[name]) {
             setErrors(prev => {
                 const newErrors = { ...prev };
@@ -579,7 +587,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         const newErrors: Record<string, string> = {};
 
         if (!selectedFromId && !selectedInvoice) newErrors.fromCompany = "Please select a sender company";
-        if (!formData.invoiceDate) newErrors.invoiceDate = 'Invoice Date is required';
+        if (!formData.date) newErrors.date = 'Invoice Date is required';
         if (!formData.dueDate) newErrors.dueDate = 'Due Date is required';
         if (!formData.fromEmail) newErrors.fromEmail = 'From Email is required';
 
@@ -592,14 +600,19 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         } else if (!selectedFromId) {
             newErrors.fromCompany = 'Sender Company is required';
         }
-        if (!formData.employeeName?.trim()) newErrors.employeeName = "Client Name is required";
+        if (!formData.employeeName?.trim()) {
+            newErrors.employeeName = clientType === 'company' ? "Company Name is required" : "Client Name is required";
+        } else if (clientType === 'company' && !validateCompanyName(formData.employeeName)) {
+            newErrors.employeeName = COMPANY_NAME_VALIDATION_ERROR;
+        }
+
         if (!formData.employeeEmail?.trim()) newErrors.employeeEmail = "Email is required";
         else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.employeeEmail)) newErrors.employeeEmail = "Invalid email format";
 
         if (!formData.employeeAddress?.trim()) newErrors.employeeAddress = "Address is required"; // Mandatory Address
         if (!formData.employeeMobile?.trim()) newErrors.employeeMobile = "Phone is required"; // Mandatory Phone
 
-        if (!formData.date) newErrors.date = t('form.required');
+        // Date is already checked above, so we can remove the duplicate check if it exists
 
         if (!formData.services || formData.services.length === 0) {
             newErrors.services = 'At least one service is required';
