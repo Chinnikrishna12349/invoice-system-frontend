@@ -210,9 +210,27 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             setClientType('company');
         } else {
             setFormData({ ...selectedInvoice });
-            if (selectedInvoice.companyInfo?.bankDetails) {
-                setBankDetails(selectedInvoice.companyInfo.bankDetails);
-                if (selectedInvoice.companyInfo.id) setSelectedFromId(selectedInvoice.companyInfo.id);
+            
+            // Fix Sender (From) restoration
+            const invoiceFrom = selectedInvoice.companyInfo;
+            if (invoiceFrom) {
+                const senderNameLower = invoiceFrom.companyName.toLowerCase();
+                const fromMatch = FROM_COMPANIES.find(c => c.companyName.toLowerCase() === senderNameLower);
+                const dynamicFromMatch = dynamicSenders.find(c => c.companyName.toLowerCase() === senderNameLower);
+
+                if (fromMatch) {
+                    setSelectedFromId(fromMatch.id);
+                    setIsOtherFrom(false);
+                    if (invoiceFrom.bankDetails) setBankDetails(invoiceFrom.bankDetails);
+                } else if (dynamicFromMatch) {
+                    setSelectedFromId(`dynamic-from-${dynamicFromMatch.companyName}`);
+                    setIsOtherFrom(false);
+                    if (invoiceFrom.bankDetails) setBankDetails(invoiceFrom.bankDetails);
+                } else {
+                    setSelectedFromId('other');
+                    setIsOtherFrom(true);
+                    if (invoiceFrom.bankDetails) setBankDetails(invoiceFrom.bankDetails);
+                }
             }
             const employeeMatch = TO_EMPLOYEES.find(c => c.companyName === selectedInvoice.employeeName) ||
                 dynamicClientEmployees.find(c => c.companyName === selectedInvoice.employeeName);
