@@ -15,7 +15,7 @@ import { bankAccountService, BankAccount } from '../services/bankAccountService'
 import visionAiStamp from '../src/assets/visionai-stamp.png';
 import { VISION_AI_LOGO_BASE64 } from '../src/assets/visionAiLogoBase64';
 import { mapInvoiceToLayoutProps } from '../src/utils/invoiceMapping';
-import { validateCompanyName, COMPANY_NAME_VALIDATION_ERROR } from '../src/utils/validation';
+import { validateCompanyName, COMPANY_NAME_VALIDATION_ERROR, validateEmployeeName, EMPLOYEE_NAME_VALIDATION_ERROR } from '../src/utils/validation';
 
 interface InvoiceFormProps {
     onSave: (invoice: Invoice) => Promise<void>;
@@ -538,11 +538,18 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             // Calculation is done in useMemo or render, just ensuring state updates
         }
 
-        // Real-time validation for employeeName (Client Company)
-        if (name === 'employeeName' && clientType === 'company') {
-            if (processedValue && !validateCompanyName(processedValue)) {
-                setErrors(prev => ({ ...prev, employeeName: COMPANY_NAME_VALIDATION_ERROR }));
-                return; // Don't clear error if it just became invalid
+        // Real-time validation for employeeName (Client Company or Employee)
+        if (name === 'employeeName') {
+            if (clientType === 'company') {
+                if (processedValue && !validateCompanyName(processedValue)) {
+                    setErrors(prev => ({ ...prev, employeeName: COMPANY_NAME_VALIDATION_ERROR }));
+                    return;
+                }
+            } else if (clientType === 'employee') {
+                if (processedValue && !validateEmployeeName(processedValue)) {
+                    setErrors(prev => ({ ...prev, employeeName: EMPLOYEE_NAME_VALIDATION_ERROR }));
+                    return;
+                }
             }
         }
 
@@ -601,9 +608,13 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             newErrors.fromCompany = 'Sender Company is required';
         }
         if (!formData.employeeName?.trim()) {
-            newErrors.employeeName = clientType === 'company' ? "Company Name is required" : "Client Name is required";
-        } else if (clientType === 'company' && !validateCompanyName(formData.employeeName)) {
-            newErrors.employeeName = COMPANY_NAME_VALIDATION_ERROR;
+            newErrors.employeeName = clientType === 'company' ? "Company Name is required" : "Employee Name is required";
+        } else {
+            if (clientType === 'company' && !validateCompanyName(formData.employeeName)) {
+                newErrors.employeeName = COMPANY_NAME_VALIDATION_ERROR;
+            } else if (clientType === 'employee' && !validateEmployeeName(formData.employeeName)) {
+                newErrors.employeeName = EMPLOYEE_NAME_VALIDATION_ERROR;
+            }
         }
 
         if (!formData.employeeEmail?.trim()) newErrors.employeeEmail = "Email is required";
