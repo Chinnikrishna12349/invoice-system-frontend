@@ -281,27 +281,40 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
     useEffect(() => {
         const fetchNextNumber = () => {
-            if (!selectedInvoice) {
-                const prefix = formData.companyInfo?.invoiceFormat || 'INV-';
-                const regex = new RegExp(`^${prefix}\\d+$`);
-                const relevantInvoices = invoices.filter(inv =>
-                    inv.invoiceNumber && regex.test(inv.invoiceNumber)
-                );
+            const currentPrefix = formData.companyInfo?.invoiceFormat || 'INV-';
+            const currentCompanyName = formData.companyInfo?.companyName;
 
-                let nextNum = 1;
-                if (relevantInvoices.length > 0) {
-                    const numbers = relevantInvoices.map(inv => {
-                        const match = inv.invoiceNumber.match(/\d+$/);
-                        return match ? parseInt(match[0], 10) : 0;
-                    });
-                    nextNum = Math.max(...numbers) + 1;
+            // Logic for Edit Mode: If we are back to the original sender, restore original number
+            if (selectedInvoice && currentCompanyName === selectedInvoice.companyInfo?.companyName) {
+                if (formData.invoiceNumber !== selectedInvoice.invoiceNumber) {
+                    setFormData(prev => ({ ...prev, invoiceNumber: selectedInvoice.invoiceNumber }));
                 }
-                const finalNum = `${prefix}${nextNum}`;
+                return;
+            }
+
+            // Otherwise (Create mode or changed sender in Edit mode), calculate next sequence
+            const regex = new RegExp(`^${currentPrefix}\\d+$`);
+            const relevantInvoices = invoices.filter(inv =>
+                inv.invoiceNumber && regex.test(inv.invoiceNumber)
+            );
+
+            let nextNum = 1;
+            if (relevantInvoices.length > 0) {
+                const numbers = relevantInvoices.map(inv => {
+                    const match = inv.invoiceNumber.match(/\d+$/);
+                    return match ? parseInt(match[0], 10) : 0;
+                });
+                nextNum = Math.max(...numbers) + 1;
+            }
+            const finalNum = `${currentPrefix}${nextNum}`;
+            
+            // Only update if it's different to avoid loops
+            if (formData.invoiceNumber !== finalNum) {
                 setFormData(prev => ({ ...prev, invoiceNumber: finalNum }));
             }
         };
         fetchNextNumber();
-    }, [selectedInvoice, invoices, formData.companyInfo?.invoiceFormat]);
+    }, [selectedInvoice, invoices, formData.companyInfo?.invoiceFormat, formData.companyInfo?.companyName]);
 
     const handleFromCompanyChange = (companyId: string) => {
         if (companyId === 'other') {
@@ -362,15 +375,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             }
             setBankDetails({ ...company.bankDetails });
             setFormData(prev => {
-                let newInvoiceNumber = prev.invoiceNumber;
-                if (company.invoiceFormat) {
-                    const match = prev.invoiceNumber.match(/\d+$/);
-                    const currentNum = match ? match[0] : '0001';
-                    newInvoiceNumber = `${company.invoiceFormat}${currentNum}`;
-                }
                 return {
                     ...prev,
-                    invoiceNumber: newInvoiceNumber,
                     company: company.companyName,
                     fromEmail: (company as DummyCompany).fromEmail || '',
                     country: company.currency === 'JPY' ? 'japan' : 'india',
