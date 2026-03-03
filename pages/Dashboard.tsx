@@ -33,18 +33,11 @@ export const Dashboard: React.FC = () => {
         const state = location.state as { editInvoice?: Invoice };
         if (state?.editInvoice) {
             setSelectedInvoice(state.editInvoice);
-            // Optional: Clear state so refresh doesn't re-select? 
-            // Window.history.replaceState clears it but might trigger rerender issues if not careful.
-            // For now, persistent on this navigation is fine. 
-            // Actually, better to reset it if we navigate away and back? 
-            // The browser handles state per history entry.
-            // We just need to ensure strict equality check or ID check?
-            // React handles it.
-
-            // Just ensure we scroll to form?
+            // Clear state so navigation/refresh doesn't re-select it
+            navigate(location.pathname, { replace: true, state: {} });
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
-    }, [location.state]);
+    }, [location.state, location.pathname, navigate]);
 
     const loadInvoices = async () => {
         try {

@@ -1358,6 +1358,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                     <p className="text-xs text-gray-500">Please review the details before finalizing</p>
                                 </div>
                                 <button
+                                    type="button"
                                     onClick={() => setShowPreview(false)}
                                     className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                                 >
