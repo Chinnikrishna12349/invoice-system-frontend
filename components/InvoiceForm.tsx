@@ -483,6 +483,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             if (!isNaN(taxVal)) {
                 processedValue = Math.min(10, Math.max(0, taxVal)).toString();
             }
+        } else if ((name === 'cgstRate' || name === 'sgstRate') && country === 'india') {
+            const taxVal = parseFloat(value);
+            if (!isNaN(taxVal)) {
+                processedValue = Math.min(9, Math.max(0, taxVal)).toString();
+            }
         }
 
         // Real-time validation for employeeName (Client Company or Employee)
@@ -1261,11 +1266,31 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             <>
                                 <div>
                                     <label className={labelClasses}>CGST (%)</label>
-                                    <input type="number" name="cgstRate" value={formData.cgstRate} onWheel={(e) => (e.target as HTMLElement).blur()} onChange={handleChange} className={inputClasses(false)} />
+                                    <input
+                                        type="number"
+                                        name="cgstRate"
+                                        value={formData.cgstRate}
+                                        onWheel={(e) => (e.target as HTMLElement).blur()}
+                                        onChange={handleChange}
+                                        className={inputClasses(false)}
+                                        min="0"
+                                        max="9"
+                                        step="0.01"
+                                    />
                                 </div>
                                 <div>
                                     <label className={labelClasses}>SGST (%)</label>
-                                    <input type="number" name="sgstRate" value={formData.sgstRate} onWheel={(e) => (e.target as HTMLElement).blur()} onChange={handleChange} className={inputClasses(false)} />
+                                    <input
+                                        type="number"
+                                        name="sgstRate"
+                                        value={formData.sgstRate}
+                                        onWheel={(e) => (e.target as HTMLElement).blur()}
+                                        onChange={handleChange}
+                                        className={inputClasses(false)}
+                                        min="0"
+                                        max="9"
+                                        step="0.01"
+                                    />
                                 </div>
                             </>
                         ) : (
