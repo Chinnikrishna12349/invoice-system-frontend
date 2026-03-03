@@ -128,26 +128,44 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                 </div>
 
                 <div>
-                    <label htmlFor="ifscCode" className={labelClasses}>
-                        {country === 'japan' ? 'Swift Code' : 'IFSC Code'}
+                    <label className={labelClasses}>
+                        Code Type (IFSC/SWIFT) <span className="text-red-500">*</span>
                     </label>
-                    <input
-                        id="ifscCode"
-                        type="text"
-                        value={country === 'japan' ? (data.swiftCode || '') : data.ifscCode}
-                        onChange={(e) => {
-                            if (country === 'japan') {
-                                updateField('swiftCode', e.target.value.toUpperCase());
-                            } else {
-                                updateField('ifscCode', e.target.value.toUpperCase());
-                            }
-                        }}
-                        className={inputClasses(!!errors.ifscCode)}
-                        placeholder={`Enter ${country === 'japan' ? 'Swift' : 'IFSC'} code`}
-                    />
-                    {/* Reuse error for simplification or separate? Reuse error key for now but we might want distinct key */}
-                    {errors.ifscCode && (
-                        <p className="mt-1 text-xs text-red-500">{errors.ifscCode}</p>
+                    <div className="flex gap-2">
+                        <select
+                            className="w-1/3 rounded-lg border-0 py-2.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+                            value={data.swiftCode ? 'swift' : (data.ifscCode ? 'ifsc' : (country === 'japan' ? 'swift' : 'ifsc'))}
+                            onChange={(e) => {
+                                const type = e.target.value;
+                                if (type === 'swift') {
+                                    onChange({ ...data, ifscCode: '', swiftCode: data.ifscCode || data.swiftCode || '' });
+                                } else {
+                                    onChange({ ...data, swiftCode: '', ifscCode: data.swiftCode || data.ifscCode || '' });
+                                }
+                            }}
+                        >
+                            <option value="ifsc">IFSC (India)</option>
+                            <option value="swift">SWIFT (Japan/Intl)</option>
+                        </select>
+                        <div className="flex-1">
+                            <input
+                                id="ifscCode"
+                                type="text"
+                                value={data.swiftCode || data.ifscCode || ''}
+                                onChange={(e) => {
+                                    if (data.swiftCode !== undefined && data.swiftCode !== null && (data.swiftCode !== '' || !data.ifscCode)) {
+                                        updateField('swiftCode', e.target.value.toUpperCase());
+                                    } else {
+                                        updateField('ifscCode', e.target.value.toUpperCase());
+                                    }
+                                }}
+                                className={inputClasses(!!errors.ifscCode || !!errors.swiftCode)}
+                                placeholder={`Enter ${data.swiftCode ? 'Swift' : 'IFSC'} code`}
+                            />
+                        </div>
+                    </div>
+                    {(errors.ifscCode || errors.swiftCode) && (
+                        <p className="mt-1 text-xs text-red-500">{errors.ifscCode || errors.swiftCode}</p>
                     )}
                 </div>
 
