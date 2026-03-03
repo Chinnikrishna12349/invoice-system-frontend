@@ -69,10 +69,19 @@ const BankAccountsPage: React.FC = () => {
 
         // Validation
         const newErrors: Record<string, string> = {};
-        if (!currentAccount.bankName) newErrors.bankName = 'Bank name is required';
-        if (!currentAccount.accountNumber) newErrors.accountNumber = 'Account number is required';
-        if (!currentAccount.accountHolderName) newErrors.accountHolderName = 'Account holder name is required';
+        if (!currentAccount.bankName?.trim()) newErrors.bankName = 'Bank name is required';
+        if (!currentAccount.accountNumber?.trim()) newErrors.accountNumber = 'Account number is required';
+        if (!currentAccount.accountHolderName?.trim()) newErrors.accountHolderName = 'Account holder name is required';
+        if (!currentAccount.branchName?.trim()) newErrors.branchName = 'Branch name is required';
+        if (!currentAccount.branchCode?.trim()) newErrors.branchCode = 'Branch code is required';
         if (!currentAccount.accountType) newErrors.accountType = 'Account type is required';
+        
+        const isSwift = currentAccount.swiftCode !== undefined && currentAccount.swiftCode !== null && currentAccount.swiftCode !== '';
+        if (isSwift) {
+            if (!currentAccount.swiftCode?.trim()) newErrors.swiftCode = 'Swift code is required';
+        } else {
+            if (!currentAccount.ifscCode?.trim()) newErrors.ifscCode = 'IFSC code is required';
+        }
 
         if (Object.keys(newErrors).length > 0) {
             setFormErrors(newErrors);

@@ -171,30 +171,38 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
 
                 <div>
                     <label htmlFor="branchName" className={labelClasses}>
-                        Branch Name
+                        Branch Name <span className="text-red-500">*</span>
                     </label>
                     <input
                         id="branchName"
                         type="text"
                         value={data.branchName}
                         onChange={(e) => updateField('branchName', e.target.value)}
-                        className={inputClasses(false)}
+                        required
+                        className={inputClasses(!!errors.branchName)}
                         placeholder="Enter branch name"
                     />
+                    {errors.branchName && (
+                        <p className="mt-1 text-xs text-red-500">{errors.branchName}</p>
+                    )}
                 </div>
 
                 <div>
                     <label htmlFor="branchCode" className={labelClasses}>
-                        Branch Code
+                        Branch Code <span className="text-red-500">*</span>
                     </label>
                     <input
                         id="branchCode"
                         type="text"
                         value={data.branchCode}
                         onChange={(e) => updateField('branchCode', e.target.value)}
-                        className={inputClasses(false)}
+                        required
+                        className={inputClasses(!!errors.branchCode)}
                         placeholder="Enter branch code"
                     />
+                    {errors.branchCode && (
+                        <p className="mt-1 text-xs text-red-500">{errors.branchCode}</p>
+                    )}
                 </div>
 
                 <div>

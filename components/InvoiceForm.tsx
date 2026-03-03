@@ -607,6 +607,22 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             });
         }
 
+        if (!bankDetails.bankName?.trim()) newErrors.bankName = 'Bank name is required';
+        if (!bankDetails.accountNumber?.trim()) newErrors.accountNumber = 'Account number is required';
+        if (!bankDetails.accountHolderName?.trim()) newErrors.accountHolderName = 'Account holder name is required';
+        if (!bankDetails.branchName?.trim()) newErrors.branchName = 'Branch name is required';
+        if (!bankDetails.branchCode?.trim()) newErrors.branchCode = 'Branch code is required';
+        
+        if (bankDetails.swiftCode !== undefined && bankDetails.swiftCode !== null && bankDetails.swiftCode !== '') {
+            if (!bankDetails.swiftCode?.trim()) newErrors.swiftCode = 'Swift code is required';
+        } else if (bankDetails.ifscCode !== undefined && bankDetails.ifscCode !== null && bankDetails.ifscCode !== '') {
+            if (!bankDetails.ifscCode?.trim()) newErrors.ifscCode = 'IFSC code is required';
+        } else {
+             // If both are empty, check which one should be mandatory based on country or selection
+             if (country === 'japan') newErrors.swiftCode = 'Swift code is required';
+             else newErrors.ifscCode = 'IFSC code is required';
+        }
+
         if (!bankDetails.accountType) {
             newErrors.accountType = 'Account type is required';
         }
