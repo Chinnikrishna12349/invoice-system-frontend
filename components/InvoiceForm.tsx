@@ -535,7 +535,10 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
         // Auto-calculate tax if country is Japan and toggle is on
         if (name === 'taxRate' && country === 'japan' && showTaxToggle) {
-            // Calculation is done in useMemo or render, just ensuring state updates
+            const taxVal = parseFloat(value);
+            if (!isNaN(taxVal)) {
+                processedValue = Math.min(10, Math.max(0, taxVal)).toString();
+            }
         }
 
         // Real-time validation for employeeName (Client Company or Employee)
@@ -1352,6 +1355,9 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                             onChange={handleChange}
                                             className={inputClasses(false)}
                                             placeholder="Enter tax rate manually"
+                                            min="0"
+                                            max="10"
+                                            step="0.01"
                                         />
                                     </div>
                                 )}
