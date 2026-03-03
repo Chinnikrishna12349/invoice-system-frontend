@@ -64,7 +64,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         employeeEmail: '',
         employeeAddress: '',
         employeeMobile: '',
-        services: [],
+        services: [{ id: `service-${Date.now()}`, description: '', hours: 0, rate: 0 }],
         taxRate: 0,
         cgstRate: 0,
         sgstRate: 0,
