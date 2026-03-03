@@ -10,6 +10,8 @@ import {
     deleteInvoice,
     getAllInvoices
 } from '../services/apiService';
+import InvoiceLayout from '../src/components/InvoiceLayout';
+import { mapInvoiceToLayoutProps } from '../src/utils/invoiceMapping';
 
 export const InvoicesPage: React.FC = () => {
     const { t } = useTranslation();
@@ -27,6 +29,8 @@ export const InvoicesPage: React.FC = () => {
     const [selectedDate, setSelectedDate] = useState<string>('');
     const [dateFilterType, setDateFilterType] = useState<'day' | 'month'>('day');
     const [downloadedIds, setDownloadedIds] = useState<Set<string>>(new Set());
+    const [showPreview, setShowPreview] = useState(false);
+    const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
 
     const loadInvoices = useCallback(async () => {
         try {
@@ -98,6 +102,11 @@ export const InvoicesPage: React.FC = () => {
     const handleCloseLanguageModal = useCallback(() => {
         setShowLanguageModal(false);
         setSelectedLangInvoice(null);
+    }, []);
+
+    const handlePreviewClick = useCallback((invoice: Invoice) => {
+        setPreviewInvoice(invoice);
+        setShowPreview(true);
     }, []);
 
     // Helper to normalize any date string to YYYY-MM-DD
@@ -285,6 +294,7 @@ export const InvoicesPage: React.FC = () => {
                             }}
                             onDelete={handleDeleteClick}
                             onDownload={handleDownloadClick}
+                            onPreview={handlePreviewClick}
                         />
                     </div>
                 )
@@ -339,6 +349,48 @@ export const InvoicesPage: React.FC = () => {
                         </div>
                     </div>
                 </div>
+
+                {/* Preview Overlay */}
+                {showPreview && previewInvoice && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] overflow-y-auto p-4 md:p-8 flex items-start justify-center">
+                        <div className="bg-gray-100 rounded-3xl w-full max-w-5xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 my-8">
+                            {/* Preview Header */}
+                            <div className="bg-white px-8 py-4 border-b border-gray-200 flex justify-between items-center sticky top-0 z-10">
+                                <div>
+                                    <h2 className="text-xl font-bold text-gray-900">Invoice Preview</h2>
+                                    <p className="text-xs text-gray-500">Viewing invoice details</p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPreview(false)}
+                                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                                >
+                                    <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+
+                            {/* Preview Content */}
+                            <div className="p-8">
+                                <div className="bg-white shadow-lg rounded-xl overflow-hidden scale-[0.98] origin-top transform transition-transform">
+                                    <InvoiceLayout {...mapInvoiceToLayoutProps(previewInvoice)} />
+                                </div>
+                            </div>
+
+                            {/* Preview Footer */}
+                            <div className="bg-white px-8 py-6 border-t border-gray-200 flex justify-center">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPreview(false)}
+                                    className="px-10 py-3.5 border-2 border-gray-200 text-gray-700 rounded-2xl font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+                                >
+                                    Close Preview
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </main>
         </div>
     );

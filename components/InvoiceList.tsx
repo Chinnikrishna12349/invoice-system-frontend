@@ -12,9 +12,10 @@ interface InvoiceListProps {
     onEdit?: (invoice: Invoice) => void;
     onDelete: (id: string) => void;
     onDownload: (invoice: Invoice) => void;
+    onPreview: (invoice: Invoice) => void;
 }
 
-export const InvoiceList: React.FC<InvoiceListProps> = ({ invoices, onEdit, onDelete, onDownload }) => {
+export const InvoiceList: React.FC<InvoiceListProps> = ({ invoices, onEdit, onDelete, onDownload, onPreview }) => {
     const { t } = useTranslation();
     const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
     const [emailInvoice, setEmailInvoice] = useState<Invoice | null>(null);
@@ -148,6 +149,13 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({ invoices, onEdit, onDe
                                                     {ICONS.EDIT}
                                                 </button>
                                             )}
+                                            <button
+                                                onClick={() => onPreview(invoice)}
+                                                className="text-gray-400 hover:text-blue-600 transition-colors p-1"
+                                                title="Preview"
+                                            >
+                                                {ICONS.EYE}
+                                            </button>
                                             <button
                                                 onClick={() => onDownload(invoice)}
                                                 className="text-gray-400 hover:text-blue-600 transition-colors p-1"
