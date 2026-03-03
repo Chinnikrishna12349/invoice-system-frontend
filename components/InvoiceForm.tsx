@@ -15,6 +15,7 @@ import { bankAccountService, BankAccount } from '../services/bankAccountService'
 import visionAiStamp from '../src/assets/visionai-stamp.png';
 import { VISION_AI_LOGO_BASE64 } from '../src/assets/visionAiLogoBase64';
 import { mapInvoiceToLayoutProps } from '../src/utils/invoiceMapping';
+import { validateCompanyName, COMPANY_NAME_VALIDATION_ERROR } from '../src/utils/validation';
 
 interface InvoiceFormProps {
     onSave: (invoice: Invoice) => Promise<void>;
@@ -578,9 +579,19 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         const newErrors: Record<string, string> = {};
 
         if (!selectedFromId && !selectedInvoice) newErrors.fromCompany = "Please select a sender company";
-        if (!formData.poNumber?.trim()) newErrors.poNumber = "PO Number is required"; // Mandatory PO Number
-        if (!formData.fromEmail?.trim()) newErrors.fromEmail = "From Email is required"; // Mandatory From Email
+        if (!formData.invoiceDate) newErrors.invoiceDate = 'Invoice Date is required';
+        if (!formData.dueDate) newErrors.dueDate = 'Due Date is required';
+        if (!formData.fromEmail) newErrors.fromEmail = 'From Email is required';
 
+        // Validate manual company name entry if "Other" or dynamic sender is selected
+        const isOtherOrDynamicFrom = isOtherFrom || (selectedFromId && selectedFromId.startsWith('dynamic-from-'));
+        if (isOtherOrDynamicFrom && formData.company) {
+            if (!validateCompanyName(formData.company)) {
+                newErrors.fromCompany = COMPANY_NAME_VALIDATION_ERROR;
+            }
+        } else if (!selectedFromId) {
+            newErrors.fromCompany = 'Sender Company is required';
+        }
         if (!formData.employeeName?.trim()) newErrors.employeeName = "Client Name is required";
         if (!formData.employeeEmail?.trim()) newErrors.employeeEmail = "Email is required";
         else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.employeeEmail)) newErrors.employeeEmail = "Invalid email format";
@@ -825,11 +836,22 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                     <input
                                         type="text"
                                         placeholder="Enter company name"
-                                        className={inputClasses(false)}
+                                        className={inputClasses(!!errors.fromCompany)}
                                         value={formData.company}
                                         onChange={(e) => {
                                             const val = e.target.value;
                                             const dynamicPrefix = generateDynamicPrefix(val);
+
+                                            // Real-time validation for better UX
+                                            if (val && !validateCompanyName(val)) {
+                                                setErrors(prev => ({ ...prev, fromCompany: COMPANY_NAME_VALIDATION_ERROR }));
+                                            } else {
+                                                setErrors(prev => {
+                                                    const { fromCompany, ...rest } = prev;
+                                                    return rest;
+                                                });
+                                            }
+
                                             setFormData(prev => ({
                                                 ...prev,
                                                 company: val,
@@ -841,6 +863,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                             }));
                                         }}
                                     />
+                                    {errors.fromCompany && <p className="mt-1 text-xs text-red-500">{errors.fromCompany}</p>}
                                 </div>
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-500 mb-1">Company Address</label>

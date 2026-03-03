@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { checkBackendHealth } from '../services/authService';
 import { useNavigate } from 'react-router-dom';
+import { validateCompanyName, COMPANY_NAME_VALIDATION_ERROR } from '../src/utils/validation';
 
 const API_URL = import.meta.env?.VITE_API_URL?.replace('/api/invoices', '') || 'https://invoice-system-backend-owhd.onrender.com';
 
@@ -14,6 +15,10 @@ export const SignupForm: React.FC = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+
+    // Company Information
+    const [companyName, setCompanyName] = useState('');
+    const [companyAddress, setCompanyAddress] = useState('');
 
     // State for Feedback
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -52,6 +57,14 @@ export const SignupForm: React.FC = () => {
 
         if (password !== confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
 
+        if (!companyName.trim()) {
+            newErrors.companyName = 'Company Name is required';
+        } else if (!validateCompanyName(companyName)) {
+            newErrors.companyName = COMPANY_NAME_VALIDATION_ERROR;
+        }
+
+        if (!companyAddress.trim()) newErrors.companyAddress = 'Company Address is required';
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -75,8 +88,8 @@ export const SignupForm: React.FC = () => {
                 email,
                 password,
                 name,
-                companyName: "Pending Setup",
-                companyAddress: "Address Not Set",
+                companyName,
+                companyAddress,
                 invoiceFormat: "INV-",
                 companyLogo: null, // No logo initially
                 bankDetails: {
@@ -232,6 +245,43 @@ export const SignupForm: React.FC = () => {
                             />
                             {errors.confirmPassword && <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>}
                         </div>
+
+                        {/* Company Information */}
+                        <div className="md:col-span-2 pt-4">
+                            <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-100 pb-2 mb-6">Company Information</h3>
+                        </div>
+
+                        <div className="md:col-span-2">
+                            <label htmlFor="signup-company-name" className={labelClasses}>
+                                Company Name <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                id="signup-company-name"
+                                type="text"
+                                value={companyName}
+                                onChange={(e) => setCompanyName(e.target.value)}
+                                required
+                                className={inputClasses(!!errors.companyName)}
+                                placeholder="e.g. Acme Corporation"
+                            />
+                            {errors.companyName && <p className="mt-1 text-sm text-red-600">{errors.companyName}</p>}
+                        </div>
+
+                        <div className="md:col-span-2">
+                            <label htmlFor="signup-company-address" className={labelClasses}>
+                                Company Address <span className="text-red-500">*</span>
+                            </label>
+                            <textarea
+                                id="signup-company-address"
+                                value={companyAddress}
+                                onChange={(e) => setCompanyAddress(e.target.value)}
+                                required
+                                rows={3}
+                                className={inputClasses(!!errors.companyAddress)}
+                                placeholder="Enter full company address"
+                            />
+                            {errors.companyAddress && <p className="mt-1 text-sm text-red-600">{errors.companyAddress}</p>}
+                        </div>
                     </div>
                 </div>
 
@@ -252,7 +302,7 @@ export const SignupForm: React.FC = () => {
                         ) : backendStatus !== 'online' ? 'Backend Offline - Cannot Sign Up' : 'Create Account'}
                     </button>
                     <p className="mt-4 text-center text-sm text-gray-500">
-                        Setup company and bank details later in your dashboard.
+                        Setup bank details later in your dashboard.
                     </p>
                 </div>
             </form >
