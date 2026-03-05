@@ -36,8 +36,8 @@ interface InvoiceLayoutProps {
     bankName: string; // Added
     accountName: string;
     accountNumber: string;
-    ifsc: string;
     swiftCode?: string;
+    bankCode?: string;
     branchName?: string;
     branchCode: string;
     accountType?: string;
@@ -221,6 +221,13 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
             <p className="flex gap-1 leading-tight">
               <span className="min-w-[166px]">Bank Name:</span>
               <span>{bankDetails.bankName}</span>
+            </p>
+          )}
+
+          {bankDetails.bankCode && (
+            <p className="flex gap-1 leading-tight">
+              <span className="min-w-[166px]">Bank Code:</span>
+              <span>{bankDetails.bankCode}</span>
             </p>
           )}
 

@@ -46,8 +46,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         accountNumber: '',
         accountHolderName: '',
         ifscCode: '',
+        swiftCode: '',
+        bankCode: '',
         branchName: '',
-        accountType: ''
+        branchCode: '',
+        accountType: 'Savings'
     });
 
     const [availableBankAccounts, setAvailableBankAccounts] = useState<BankAccount[]>([]);
@@ -356,7 +359,10 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                         accountNumber: '',
                         accountHolderName: '',
                         ifscCode: '',
+                        swiftCode: '',
+                        bankCode: '',
                         branchName: '',
+                        branchCode: '',
                         accountType: ''
                     }
                 }
@@ -375,6 +381,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 company: dynamicCompany.companyName,
                 fromEmail: dynamicCompany.fromEmail || '',
                 country: dynamicCompany.bankDetails.ifscCode ? 'india' : 'japan',
+                signatureUrl: dynamicCompany.signatureUrl, // Autofill signature
                 companyInfo: {
                     ...dynamicCompany,
                     invoiceFormat: dynamicPrefix
@@ -401,11 +408,13 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                     company: company.companyName,
                     fromEmail: (company as DummyCompany).fromEmail || '',
                     country: company.currency === 'JPY' ? 'japan' : 'india',
+                    signatureUrl: company.signatureUrl, // Autofill signature
                     companyInfo: {
                         id: company.id,
                         companyName: company.companyName,
                         companyAddress: company.companyAddress,
                         companyLogoUrl: company.companyLogoUrl,
+                        signatureUrl: company.signatureUrl, // Include in snapshot
                         invoiceFormat: company.invoiceFormat,
                         bankDetails: company.bankDetails
                     }
@@ -638,12 +647,18 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         if (!bankDetails.accountHolderName?.trim()) newErrors.accountHolderName = 'Account holder name is required';
         if (!bankDetails.branchName?.trim()) newErrors.branchName = 'Branch name is required';
         
-        // Branch code is only required for Japan
+        // Branch/Bank code validation for Japan
         if (country === 'japan') {
             if (!bankDetails.branchCode?.trim()) {
                 newErrors.branchCode = 'Branch code is required';
             } else if (bankDetails.branchCode.length !== 3) {
                 newErrors.branchCode = 'Branch code must be 3 digits for Japan';
+            }
+
+            if (!bankDetails.bankCode?.trim()) {
+                newErrors.bankCode = 'Bank code is required';
+            } else if (bankDetails.bankCode.length !== 4) {
+                newErrors.bankCode = 'Bank code must be 4 digits for Japan';
             }
         }
         
@@ -1078,6 +1093,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                                 accountHolderName: '',
                                                 ifscCode: '',
                                                 swiftCode: '',
+                                                bankCode: '',
                                                 branchName: '',
                                                 branchCode: '',
                                                 accountType: ''
@@ -1234,6 +1250,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                             accountHolderName: account.accountHolderName,
                                             ifscCode: account.ifscCode,
                                             swiftCode: account.swiftCode,
+                                            bankCode: account.bankCode,
                                             branchName: account.branchName,
                                             branchCode: account.branchCode,
                                             accountType: account.accountType

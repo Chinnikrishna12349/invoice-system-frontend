@@ -54,6 +54,14 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
             }
         }
 
+        // Add Bank Code validation (Numeric only, max 4 for Japan)
+        if (field === 'bankCode') {
+            processedValue = value.replace(/\D/g, '');
+            if (country === 'japan') {
+                processedValue = processedValue.slice(0, 4);
+            }
+        }
+
         onChange({ ...data, [field]: processedValue });
     };
 
@@ -167,24 +175,45 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                 </div>
 
                 {codeType === 'swift' && (
-                    <div>
-                        <label htmlFor="branchCode" className={labelClasses}>
-                            Branch Code <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            id="branchCode"
-                            type="text"
-                            value={data.branchCode}
-                            onChange={(e) => updateField('branchCode', e.target.value)}
-                            required
-                            maxLength={country === 'japan' ? 3 : undefined}
-                            className={inputClasses(!!errors.branchCode)}
-                            placeholder="Enter branch code"
-                        />
-                        {errors.branchCode && (
-                            <p className="mt-1 text-xs text-red-500">{errors.branchCode}</p>
-                        )}
-                    </div>
+                    <>
+                        <div>
+                            <label htmlFor="bankCode" className={labelClasses}>
+                                Bank Code <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                id="bankCode"
+                                type="text"
+                                value={data.bankCode || ''}
+                                onChange={(e) => updateField('bankCode', e.target.value)}
+                                required
+                                maxLength={4}
+                                className={inputClasses(!!errors.bankCode)}
+                                placeholder="Enter 4-digit bank code"
+                            />
+                            {errors.bankCode && (
+                                <p className="mt-1 text-xs text-red-500">{errors.bankCode}</p>
+                            )}
+                        </div>
+
+                        <div>
+                            <label htmlFor="branchCode" className={labelClasses}>
+                                Branch Code <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                id="branchCode"
+                                type="text"
+                                value={data.branchCode}
+                                onChange={(e) => updateField('branchCode', e.target.value)}
+                                required
+                                maxLength={country === 'japan' ? 3 : undefined}
+                                className={inputClasses(!!errors.branchCode)}
+                                placeholder="Enter branch code"
+                            />
+                            {errors.branchCode && (
+                                <p className="mt-1 text-xs text-red-500">{errors.branchCode}</p>
+                            )}
+                        </div>
+                    </>
                 )}
 
                 <div>

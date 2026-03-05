@@ -49,6 +49,7 @@ export const mapInvoiceToLayoutProps = (invoice: Invoice) => {
             accountNumber: invoice.companyInfo?.bankDetails?.accountNumber || '',
             ifsc: invoice.companyInfo?.bankDetails?.ifscCode || '',
             swiftCode: invoice.companyInfo?.bankDetails?.swiftCode,
+            bankCode: invoice.companyInfo?.bankDetails?.bankCode || '',
             branchName: invoice.companyInfo?.bankDetails?.branchName || '',
             branchCode: invoice.companyInfo?.bankDetails?.branchCode || '',
             accountType: invoice.companyInfo?.bankDetails?.accountType || ''

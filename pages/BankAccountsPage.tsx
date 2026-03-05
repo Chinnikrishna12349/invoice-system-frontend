@@ -38,6 +38,7 @@ const BankAccountsPage: React.FC = () => {
             accountHolderName: '',
             ifscCode: '',
             swiftCode: '',
+            bankCode: '',
             branchName: '',
             branchCode: '',
             accountType: 'Savings',
@@ -81,12 +82,18 @@ const BankAccountsPage: React.FC = () => {
         
         const isSwift = modalCountry === 'japan';
         
-        // Branch code is only required for SWIFT (Japan)
+        // Branch/Bank code validation for Japan
         if (isSwift) {
             if (!currentAccount.branchCode?.trim()) {
                 newErrors.branchCode = 'Branch code is required';
             } else if (currentAccount.branchCode.length !== 3) {
                 newErrors.branchCode = 'Branch code must be 3 digits for Japan';
+            }
+
+            if (!currentAccount.bankCode?.trim()) {
+                newErrors.bankCode = 'Bank code is required';
+            } else if (currentAccount.bankCode.length !== 4) {
+                newErrors.bankCode = 'Bank code must be 4 digits for Japan';
             }
         }
         if (isSwift) {
@@ -190,6 +197,16 @@ const BankAccountsPage: React.FC = () => {
                             <div className="flex justify-between">
                                 <span>{account.swiftCode ? 'SWIFT' : 'IFSC'}:</span>
                                 <span className="font-mono font-semibold">{account.swiftCode || account.ifscCode}</span>
+                            </div>
+                            {account.bankCode && (
+                                <div className="flex justify-between">
+                                    <span>Bank Code:</span>
+                                    <span className="font-mono font-semibold">{account.bankCode}</span>
+                                </div>
+                            )}
+                            <div className="flex justify-between">
+                                <span>Branch Code:</span>
+                                <span className="font-mono font-semibold">{account.branchCode}</span>
                             </div>
                         </div>
                     </div>

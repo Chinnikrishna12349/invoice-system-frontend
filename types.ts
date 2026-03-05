@@ -41,6 +41,7 @@ export interface BankDetails {
   accountHolderName: string;
   ifscCode: string;
   swiftCode?: string; // Optional Swift Code for Japan/International
+  bankCode?: string; // 4-digit Bank Code for Japan
   branchName?: string;
   branchCode?: string;
   accountType?: string;
@@ -64,6 +65,7 @@ export interface BankAccount {
   accountHolderName: string;
   ifscCode: string;
   swiftCode?: string;
+  bankCode: string; // Added Bank Code
   branchName: string;
   branchCode: string;
   accountType?: string;
