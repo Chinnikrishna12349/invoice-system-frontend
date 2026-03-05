@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 export interface BankDetailsFormData {
     bankName: string;
@@ -19,6 +19,18 @@ interface BankDetailsFormProps {
 }
 
 export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange, errors = {}, country = 'india' }) => {
+    const [codeType, setCodeType] = useState<'ifsc' | 'swift'>(
+        data.swiftCode ? 'swift' : (data.ifscCode ? 'ifsc' : (country === 'japan' ? 'swift' : 'ifsc'))
+    );
+
+    // Sync local codeType if data changes externally (e.g., selecting a saved account)
+    useEffect(() => {
+        if (data.swiftCode) {
+            setCodeType('swift');
+        } else if (data.ifscCode) {
+            setCodeType('ifsc');
+        }
+    }, [data.swiftCode, data.ifscCode]);
     const updateField = (field: keyof BankDetailsFormData, value: string) => {
         let processedValue = value;
 
@@ -134,13 +146,14 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                     <div className="flex gap-2">
                         <select
                             className="w-1/3 rounded-lg border-0 py-2.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
-                            value={data.swiftCode ? 'swift' : (data.ifscCode ? 'ifsc' : (country === 'japan' ? 'swift' : 'ifsc'))}
+                            value={codeType}
                             onChange={(e) => {
-                                const type = e.target.value;
+                                const type = e.target.value as 'ifsc' | 'swift';
+                                setCodeType(type);
                                 if (type === 'swift') {
-                                    onChange({ ...data, ifscCode: '', swiftCode: data.ifscCode || data.swiftCode || '' });
+                                    onChange({ ...data, ifscCode: '', swiftCode: data.swiftCode || '' });
                                 } else {
-                                    onChange({ ...data, swiftCode: '', ifscCode: data.swiftCode || data.ifscCode || '' });
+                                    onChange({ ...data, swiftCode: '', ifscCode: data.ifscCode || '' });
                                 }
                             }}
                         >
@@ -149,18 +162,19 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                         </select>
                         <div className="flex-1">
                             <input
-                                id="ifscCode"
+                                id="codeField"
                                 type="text"
-                                value={data.swiftCode || data.ifscCode || ''}
+                                value={codeType === 'swift' ? (data.swiftCode || '') : (data.ifscCode || '')}
                                 onChange={(e) => {
-                                    if (data.swiftCode !== undefined && data.swiftCode !== null && (data.swiftCode !== '' || !data.ifscCode)) {
-                                        updateField('swiftCode', e.target.value.toUpperCase());
+                                    const val = e.target.value.toUpperCase();
+                                    if (codeType === 'swift') {
+                                        updateField('swiftCode', val);
                                     } else {
-                                        updateField('ifscCode', e.target.value.toUpperCase());
+                                        updateField('ifscCode', val);
                                     }
                                 }}
                                 className={inputClasses(!!errors.ifscCode || !!errors.swiftCode)}
-                                placeholder={`Enter ${data.swiftCode ? 'Swift' : 'IFSC'} code`}
+                                placeholder={`Enter ${codeType === 'swift' ? 'Swift' : 'IFSC'} code`}
                             />
                         </div>
                     </div>
