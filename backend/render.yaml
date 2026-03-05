@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: invoice-system-backend
+    env: docker
+    plan: free
+    branch: main
+    repo: https://github.com/Chinnikrishna12349/invoice-system-Backend
+    healthCheckPath: /api/auth/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: PORT
+        value: 8080

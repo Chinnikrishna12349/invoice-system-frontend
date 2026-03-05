@@ -1,0 +1,15 @@
+[core]
+	repositoryformatversion = 0
+	filemode = false
+	bare = false
+	logallrefupdates = true
+	symlinks = false
+	ignorecase = true
+[user]
+	email = dev@invoice-system.local
+	name = Invoice System Dev
+[remote "origin"]
+	url = https://github.com/Chinnikrishna12349/invoice-system-Backend
+	fetch = +refs/heads/*:refs/remotes/origin/*
+[http]
+	postBuffer = 524288000
