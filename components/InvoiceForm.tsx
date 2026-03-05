@@ -97,7 +97,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             if (inv.companyInfo && inv.companyInfo.companyName) {
                 const nameLower = inv.companyInfo.companyName.toLowerCase();
                 if (!seenNames.has(nameLower)) {
-                    senders.push({ ...inv.companyInfo, fromEmail: inv.fromEmail });
+                    senders.push({ 
+                        ...inv.companyInfo, 
+                        signatureUrl: inv.companyInfo.signatureUrl || inv.signatureUrl,
+                        fromEmail: inv.fromEmail 
+                    });
                     seenNames.add(nameLower);
                 }
             }
@@ -372,6 +376,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
         const dynamicCompany = dynamicSenders.find(c => `dynamic-from-${c.companyName}` === companyId);
         if (dynamicCompany) {
+            setCustomLogoFile(null);
+            setCustomSignatureFile(null);
             setIsOtherFrom(false);
             setSelectedFromId(companyId);
             const dynamicPrefix = generateDynamicPrefix(dynamicCompany.companyName);
@@ -392,6 +398,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
         setIsOtherFrom(false);
         setSelectedFromId(companyId);
+        setCustomLogoFile(null);
+        setCustomSignatureFile(null);
         const company = FROM_COMPANIES.find(c => c.id === companyId);
         if (company) {
             if (company.currency === 'JPY') {
@@ -753,6 +761,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             companyInfo: formData.companyInfo ? {
                 ...formData.companyInfo,
                 companyLogoUrl: finalLogoUrl,
+                signatureUrl: finalSignatureUrl,
                 bankDetails: bankDetails // Ensure the latest (possibly edited) bank details are used
             } : undefined
         };
