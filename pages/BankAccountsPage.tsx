@@ -218,6 +218,37 @@ const BankAccountsPage: React.FC = () => {
                             </button>
                         </div>
                         <form onSubmit={handleSubmit} className="p-8">
+                            <div className="mb-6 px-4 py-3 bg-indigo-50 rounded-2xl border border-indigo-100 flex items-center justify-between">
+                                <span className="text-sm font-medium text-indigo-900">Account Region</span>
+                                <div className="flex bg-white rounded-xl p-1 shadow-sm border border-indigo-100">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setCurrentAccount({
+                                                ...currentAccount,
+                                                swiftCode: '',
+                                                branchCode: ''
+                                            });
+                                        }}
+                                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${!currentAccount.swiftCode && (currentAccount.ifscCode || currentAccount.ifscCode === '') ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-500 hover:text-indigo-600'}`}
+                                    >
+                                        India
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setCurrentAccount({
+                                                ...currentAccount,
+                                                ifscCode: ''
+                                            });
+                                        }}
+                                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${currentAccount.swiftCode || currentAccount.swiftCode === '' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-500 hover:text-indigo-600'}`}
+                                    >
+                                        Japan
+                                    </button>
+                                </div>
+                            </div>
+
                             <BankDetailsForm
                                 data={currentAccount as any}
                                 onChange={(data) => {
@@ -231,7 +262,7 @@ const BankAccountsPage: React.FC = () => {
                                     }
                                 }}
                                 errors={formErrors as any}
-                                country={currentAccount.swiftCode || (!currentAccount.ifscCode && currentAccount.swiftCode === '') ? 'japan' : 'india'}
+                                country={(currentAccount.swiftCode !== undefined && currentAccount.swiftCode !== null && currentAccount.swiftCode !== '') || (currentAccount.ifscCode === '') ? 'japan' : 'india'}
                             />
                             <div className="mt-8 flex justify-end gap-3">
                                 <button

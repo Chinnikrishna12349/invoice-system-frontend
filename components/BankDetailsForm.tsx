@@ -19,18 +19,8 @@ interface BankDetailsFormProps {
 }
 
 export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange, errors = {}, country = 'india' }) => {
-    const [codeType, setCodeType] = useState<'ifsc' | 'swift'>(
-        data.swiftCode ? 'swift' : (data.ifscCode ? 'ifsc' : (country === 'japan' ? 'swift' : 'ifsc'))
-    );
+    const codeType = country === 'japan' ? 'swift' : 'ifsc';
 
-    // Sync local codeType if data changes externally (e.g., selecting a saved account)
-    useEffect(() => {
-        if (data.swiftCode) {
-            setCodeType('swift');
-        } else if (data.ifscCode) {
-            setCodeType('ifsc');
-        }
-    }, [data.swiftCode, data.ifscCode]);
     const updateField = (field: keyof BankDetailsFormData, value: string) => {
         let processedValue = value;
 
@@ -53,11 +43,7 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
 
         // Bug 3: SWIFT Code Validation (Alpha-numeric, max 11)
         if (field === 'swiftCode' || field === 'ifscCode') {
-            if (country === 'japan') {
-                processedValue = value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 11);
-            } else {
-                processedValue = value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 11);
-            }
+            processedValue = value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 11);
         }
 
         // Bug 4: Branch Code Validation (Numeric only, max 3 for Japan)
@@ -70,7 +56,6 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
 
         onChange({ ...data, [field]: processedValue });
     };
-
 
     const inputClasses = (hasError: boolean) => `
         block w-full rounded-lg border-0 py-2.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset 
@@ -140,44 +125,24 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                 </div>
 
                 <div>
-                    <label className={labelClasses}>
-                        Code Type (IFSC/SWIFT) <span className="text-red-500">*</span>
+                    <label htmlFor="codeField" className={labelClasses}>
+                        {codeType === 'swift' ? 'SWIFT Code' : 'IFSC Code'} <span className="text-red-500">*</span>
                     </label>
-                    <div className="flex gap-2">
-                        <select
-                            className="w-1/3 rounded-lg border-0 py-2.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
-                            value={codeType}
-                            onChange={(e) => {
-                                const type = e.target.value as 'ifsc' | 'swift';
-                                setCodeType(type);
-                                if (type === 'swift') {
-                                    onChange({ ...data, ifscCode: '', swiftCode: data.swiftCode || '' });
-                                } else {
-                                    onChange({ ...data, swiftCode: '', ifscCode: data.ifscCode || '' });
-                                }
-                            }}
-                        >
-                            <option value="ifsc">IFSC (India)</option>
-                            <option value="swift">SWIFT (Japan/Intl)</option>
-                        </select>
-                        <div className="flex-1">
-                            <input
-                                id="codeField"
-                                type="text"
-                                value={codeType === 'swift' ? (data.swiftCode || '') : (data.ifscCode || '')}
-                                onChange={(e) => {
-                                    const val = e.target.value.toUpperCase();
-                                    if (codeType === 'swift') {
-                                        updateField('swiftCode', val);
-                                    } else {
-                                        updateField('ifscCode', val);
-                                    }
-                                }}
-                                className={inputClasses(!!errors.ifscCode || !!errors.swiftCode)}
-                                placeholder={`Enter ${codeType === 'swift' ? 'Swift' : 'IFSC'} code`}
-                            />
-                        </div>
-                    </div>
+                    <input
+                        id="codeField"
+                        type="text"
+                        value={codeType === 'swift' ? (data.swiftCode || '') : (data.ifscCode || '')}
+                        onChange={(e) => {
+                            const val = e.target.value.toUpperCase();
+                            if (codeType === 'swift') {
+                                updateField('swiftCode', val);
+                            } else {
+                                updateField('ifscCode', val);
+                            }
+                        }}
+                        className={inputClasses(!!errors.ifscCode || !!errors.swiftCode)}
+                        placeholder={`Enter ${codeType === 'swift' ? 'Swift' : 'IFSC'} code`}
+                    />
                     {(errors.ifscCode || errors.swiftCode) && (
                         <p className="mt-1 text-xs text-red-500">{errors.ifscCode || errors.swiftCode}</p>
                     )}
