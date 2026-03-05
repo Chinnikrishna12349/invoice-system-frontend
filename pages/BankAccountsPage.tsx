@@ -29,22 +29,27 @@ const BankAccountsPage: React.FC = () => {
         }
     };
 
+    const [modalCountry, setModalCountry] = useState<'india' | 'japan'>('india');
+
     const handleAdd = () => {
         setCurrentAccount({
             bankName: '',
             accountNumber: '',
             accountHolderName: '',
             ifscCode: '',
+            swiftCode: '',
             branchName: '',
             branchCode: '',
             accountType: 'Savings',
             userId: user?.id
         });
+        setModalCountry('india');
         setIsEditing(true);
     };
 
     const handleEdit = (account: BankAccount) => {
         setCurrentAccount(account);
+        setModalCountry(account.swiftCode ? 'japan' : 'india');
         setIsEditing(true);
     };
 
@@ -74,7 +79,7 @@ const BankAccountsPage: React.FC = () => {
         if (!currentAccount.accountHolderName?.trim()) newErrors.accountHolderName = 'Account holder name is required';
         if (!currentAccount.branchName?.trim()) newErrors.branchName = 'Branch name is required';
         
-        const isSwift = currentAccount.swiftCode !== undefined && currentAccount.swiftCode !== null && currentAccount.swiftCode !== '';
+        const isSwift = modalCountry === 'japan';
         
         // Branch code is only required for SWIFT (Japan)
         if (isSwift) {
@@ -224,25 +229,27 @@ const BankAccountsPage: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={() => {
+                                            setModalCountry('india');
                                             setCurrentAccount({
                                                 ...currentAccount,
                                                 swiftCode: '',
                                                 branchCode: ''
                                             });
                                         }}
-                                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${!currentAccount.swiftCode && (currentAccount.ifscCode || currentAccount.ifscCode === '') ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-500 hover:text-indigo-600'}`}
+                                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${modalCountry === 'india' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-500 hover:text-indigo-600'}`}
                                     >
                                         India
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => {
+                                            setModalCountry('japan');
                                             setCurrentAccount({
                                                 ...currentAccount,
                                                 ifscCode: ''
                                             });
                                         }}
-                                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${currentAccount.swiftCode || currentAccount.swiftCode === '' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-500 hover:text-indigo-600'}`}
+                                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${modalCountry === 'japan' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-500 hover:text-indigo-600'}`}
                                     >
                                         Japan
                                     </button>
@@ -262,7 +269,7 @@ const BankAccountsPage: React.FC = () => {
                                     }
                                 }}
                                 errors={formErrors as any}
-                                country={(currentAccount.swiftCode !== undefined && currentAccount.swiftCode !== null && currentAccount.swiftCode !== '') || (currentAccount.ifscCode === '') ? 'japan' : 'india'}
+                                country={modalCountry}
                             />
                             <div className="mt-8 flex justify-end gap-3">
                                 <button
