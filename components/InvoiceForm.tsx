@@ -626,10 +626,14 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         if (!bankDetails.accountNumber?.trim()) newErrors.accountNumber = 'Account number is required';
         if (!bankDetails.accountHolderName?.trim()) newErrors.accountHolderName = 'Account holder name is required';
         if (!bankDetails.branchName?.trim()) newErrors.branchName = 'Branch name is required';
-        if (!bankDetails.branchCode?.trim()) {
-            newErrors.branchCode = 'Branch code is required';
-        } else if (country === 'japan' && bankDetails.branchCode.length !== 3) {
-            newErrors.branchCode = 'Branch code must be 3 digits for Japan';
+        
+        // Branch code is only required for Japan
+        if (country === 'japan') {
+            if (!bankDetails.branchCode?.trim()) {
+                newErrors.branchCode = 'Branch code is required';
+            } else if (bankDetails.branchCode.length !== 3) {
+                newErrors.branchCode = 'Branch code must be 3 digits for Japan';
+            }
         }
         
         // Country-specific bank code validation

@@ -201,24 +201,26 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                     )}
                 </div>
 
-                <div>
-                    <label htmlFor="branchCode" className={labelClasses}>
-                        Branch Code <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                        id="branchCode"
-                        type="text"
-                        value={data.branchCode}
-                        onChange={(e) => updateField('branchCode', e.target.value)}
-                        required
-                        maxLength={country === 'japan' ? 3 : undefined}
-                        className={inputClasses(!!errors.branchCode)}
-                        placeholder="Enter branch code"
-                    />
-                    {errors.branchCode && (
-                        <p className="mt-1 text-xs text-red-500">{errors.branchCode}</p>
-                    )}
-                </div>
+                {codeType === 'swift' && (
+                    <div>
+                        <label htmlFor="branchCode" className={labelClasses}>
+                            Branch Code <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                            id="branchCode"
+                            type="text"
+                            value={data.branchCode}
+                            onChange={(e) => updateField('branchCode', e.target.value)}
+                            required
+                            maxLength={country === 'japan' ? 3 : undefined}
+                            className={inputClasses(!!errors.branchCode)}
+                            placeholder="Enter branch code"
+                        />
+                        {errors.branchCode && (
+                            <p className="mt-1 text-xs text-red-500">{errors.branchCode}</p>
+                        )}
+                    </div>
+                )}
 
                 <div>
                     <label htmlFor="accountType" className={labelClasses}>
