@@ -209,10 +209,10 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             setIsOtherTo(false);
             setClientType('company');
         } else {
-            setFormData({ ...selectedInvoice });
-            
             // Fix Sender (From) restoration
             const invoiceFrom = selectedInvoice.companyInfo;
+            let finalCompany = selectedInvoice.company || (invoiceFrom?.companyName || '');
+
             if (invoiceFrom) {
                 const senderNameLower = invoiceFrom.companyName.toLowerCase();
                 const fromMatch = FROM_COMPANIES.find(c => c.companyName.toLowerCase() === senderNameLower);
@@ -222,16 +222,24 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                     setSelectedFromId(fromMatch.id);
                     setIsOtherFrom(false);
                     if (invoiceFrom.bankDetails) setBankDetails(invoiceFrom.bankDetails);
+                    finalCompany = fromMatch.companyName;
                 } else if (dynamicFromMatch) {
                     setSelectedFromId(`dynamic-from-${dynamicFromMatch.companyName}`);
                     setIsOtherFrom(false);
                     if (invoiceFrom.bankDetails) setBankDetails(invoiceFrom.bankDetails);
+                    finalCompany = dynamicFromMatch.companyName;
                 } else {
                     setSelectedFromId('other');
                     setIsOtherFrom(true);
                     if (invoiceFrom.bankDetails) setBankDetails(invoiceFrom.bankDetails);
+                    finalCompany = invoiceFrom.companyName;
                 }
             }
+            
+            setFormData({ 
+                ...selectedInvoice, 
+                company: finalCompany 
+            });
             const employeeMatch = TO_EMPLOYEES.find(c => c.companyName === selectedInvoice.employeeName) ||
                 dynamicClientEmployees.find(c => c.companyName === selectedInvoice.employeeName);
             const companyMatch = TO_COMPANIES.find(c => c.companyName === selectedInvoice.employeeName) ||
