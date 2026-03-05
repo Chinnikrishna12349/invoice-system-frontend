@@ -65,11 +65,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         employeeAddress: '',
         employeeMobile: '',
         services: [{ id: `service-${Date.now()}`, description: '', hours: 0, rate: 0 }],
-        taxRate: 0,
+        taxRate: currentCountry === 'japan' ? 10 : 0,
         cgstRate: 0,
         sgstRate: 0,
         country: currentCountry,
-        showConsumptionTax: false,
+        showConsumptionTax: currentCountry === 'japan',
         clientType: 'company' as const
     });
 
@@ -208,6 +208,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             setIsOtherFrom(false);
             setIsOtherTo(false);
             setClientType('company');
+            setShowTaxToggle(country === 'japan');
         } else {
             // Fix Sender (From) restoration
             const invoiceFrom = selectedInvoice.companyInfo;
@@ -274,7 +275,17 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
 
     useEffect(() => {
-        setFormData(prev => ({ ...prev, country: country }));
+        setFormData(prev => ({ 
+            ...prev, 
+            country: country,
+            showConsumptionTax: country === 'japan' ? true : prev.showConsumptionTax,
+            taxRate: (country === 'japan' && !prev.taxRate) ? 10 : prev.taxRate
+        }));
+        if (country === 'japan') {
+            setShowTaxToggle(true);
+        } else {
+            setShowTaxToggle(false);
+        }
     }, [country]);
 
     const generateDynamicPrefix = (name: string): string => {
