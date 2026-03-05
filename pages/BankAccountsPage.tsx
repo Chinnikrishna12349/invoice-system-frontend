@@ -73,7 +73,11 @@ const BankAccountsPage: React.FC = () => {
         if (!currentAccount.accountNumber?.trim()) newErrors.accountNumber = 'Account number is required';
         if (!currentAccount.accountHolderName?.trim()) newErrors.accountHolderName = 'Account holder name is required';
         if (!currentAccount.branchName?.trim()) newErrors.branchName = 'Branch name is required';
-        if (!currentAccount.branchCode?.trim()) newErrors.branchCode = 'Branch code is required';
+        if (!currentAccount.branchCode?.trim()) {
+            newErrors.branchCode = 'Branch code is required';
+        } else if (currentAccount.swiftCode && currentAccount.branchCode.length !== 3) {
+            newErrors.branchCode = 'Branch code must be 3 digits for Japan';
+        }
         if (!currentAccount.accountType) newErrors.accountType = 'Account type is required';
         
         const isSwift = currentAccount.swiftCode !== undefined && currentAccount.swiftCode !== null && currentAccount.swiftCode !== '';
@@ -224,6 +228,7 @@ const BankAccountsPage: React.FC = () => {
                                     }
                                 }}
                                 errors={formErrors as any}
+                                country={currentAccount.swiftCode || (!currentAccount.ifscCode && currentAccount.swiftCode === '') ? 'japan' : 'india'}
                             />
                             <div className="mt-8 flex justify-end gap-3">
                                 <button

@@ -211,6 +211,7 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                         value={data.branchCode}
                         onChange={(e) => updateField('branchCode', e.target.value)}
                         required
+                        maxLength={country === 'japan' ? 3 : undefined}
                         className={inputClasses(!!errors.branchCode)}
                         placeholder="Enter branch code"
                     />

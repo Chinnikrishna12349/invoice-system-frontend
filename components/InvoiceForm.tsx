@@ -216,6 +216,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             if (invoiceFrom) {
                 const senderNameLower = invoiceFrom.companyName.toLowerCase();
                 const fromMatch = FROM_COMPANIES.find(c => c.companyName.toLowerCase() === senderNameLower);
+                // Ensure dynamicSenders are checked correctly
                 const dynamicFromMatch = dynamicSenders.find(c => c.companyName.toLowerCase() === senderNameLower);
 
                 if (fromMatch) {
@@ -224,7 +225,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                     if (invoiceFrom.bankDetails) setBankDetails(invoiceFrom.bankDetails);
                     finalCompany = fromMatch.companyName;
                 } else if (dynamicFromMatch) {
-                    setSelectedFromId(`dynamic-from-${dynamicFromMatch.companyName}`);
+                    const dynamicId = `dynamic-from-${dynamicFromMatch.companyName}`;
+                    setSelectedFromId(dynamicId);
                     setIsOtherFrom(false);
                     if (invoiceFrom.bankDetails) setBankDetails(invoiceFrom.bankDetails);
                     finalCompany = dynamicFromMatch.companyName;
@@ -268,7 +270,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 setCountry(selectedInvoice.country);
             }
         }
-    }, [selectedInvoice, dynamicClientCompanies, dynamicClientEmployees]);
+    }, [selectedInvoice, dynamicClientCompanies, dynamicClientEmployees, dynamicSenders]);
 
 
     useEffect(() => {
@@ -624,7 +626,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         if (!bankDetails.accountNumber?.trim()) newErrors.accountNumber = 'Account number is required';
         if (!bankDetails.accountHolderName?.trim()) newErrors.accountHolderName = 'Account holder name is required';
         if (!bankDetails.branchName?.trim()) newErrors.branchName = 'Branch name is required';
-        if (!bankDetails.branchCode?.trim()) newErrors.branchCode = 'Branch code is required';
+        if (!bankDetails.branchCode?.trim()) {
+            newErrors.branchCode = 'Branch code is required';
+        } else if (country === 'japan' && bankDetails.branchCode.length !== 3) {
+            newErrors.branchCode = 'Branch code must be 3 digits for Japan';
+        }
         
         // Country-specific bank code validation
         if (country === 'japan') {
