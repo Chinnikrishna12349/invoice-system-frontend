@@ -40,6 +40,7 @@ public class BankAccountController {
     public ResponseEntity<?> saveBankAccount(@RequestBody BankAccount bankAccount) {
         try {
             System.out.println("Saving bank account for userId: " + bankAccount.getUserId());
+            System.out.println("Incoming bankCode: " + bankAccount.getBankCode());
             BankAccount saved = bankAccountService.saveBankAccount(bankAccount);
             return ResponseEntity.ok(saved);
         } catch (Exception e) {
@@ -53,6 +54,8 @@ public class BankAccountController {
     public ResponseEntity<?> updateBankAccount(@PathVariable String id,
             @RequestBody BankAccount bankAccount) {
         try {
+            System.out.println("Updating bank account id: " + id);
+            System.out.println("Incoming bankCode for update: " + bankAccount.getBankCode());
             return ResponseEntity.ok(bankAccountService.updateBankAccount(id, bankAccount));
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error updating bank account: " + e.getMessage());

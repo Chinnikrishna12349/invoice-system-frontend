@@ -50,7 +50,9 @@ const BankAccountsPage: React.FC = () => {
 
     const handleEdit = (account: BankAccount) => {
         setCurrentAccount(account);
-        setModalCountry(account.swiftCode ? 'japan' : 'india');
+        // Detect country based on specialized fields
+        const isJapan = !!(account.swiftCode || account.bankCode || (account.branchCode && account.branchCode.length === 3));
+        setModalCountry(isJapan ? 'japan' : 'india');
         setIsEditing(true);
     };
 
