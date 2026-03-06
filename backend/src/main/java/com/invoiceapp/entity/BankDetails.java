@@ -15,16 +15,16 @@ public class BankDetails {
     }
 
     public BankDetails(String bankName, String accountNumber, String accountHolderName,
-            String ifscCode, String branchName, String branchCode, String accountType, String swiftCode, String bankCode) {
+            String ifscCode, String swiftCode, String bankCode, String branchName, String branchCode, String accountType) {
         this.bankName = bankName;
         this.accountNumber = accountNumber;
         this.accountHolderName = accountHolderName;
         this.ifscCode = ifscCode;
+        this.swiftCode = swiftCode;
+        this.bankCode = bankCode;
         this.branchName = branchName;
         this.branchCode = branchCode;
         this.accountType = accountType;
-        this.swiftCode = swiftCode;
-        this.bankCode = bankCode;
     }
 
     public String getBankName() {

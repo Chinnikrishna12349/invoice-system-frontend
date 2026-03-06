@@ -106,10 +106,11 @@ public class AuthService {
                     bankDto.getAccountNumber(),
                     bankDto.getAccountHolderName(),
                     bankDto.getIfscCode(),
+                    bankDto.getSwiftCode(),
+                    bankDto.getBankCode(),
                     bankDto.getBranchName(),
                     bankDto.getBranchCode(),
-                    bankDto.getAccountType(),
-                    bankDto.getSwiftCode());
+                    bankDto.getAccountType());
         }
 
         // Create company info
@@ -187,10 +188,11 @@ public class AuthService {
                     bankDto.getAccountNumber(),
                     bankDto.getAccountHolderName(),
                     bankDto.getIfscCode(),
+                    bankDto.getSwiftCode(),
+                    bankDto.getBankCode(),
                     bankDto.getBranchName(),
                     bankDto.getBranchCode(),
-                    bankDto.getAccountType(),
-                    bankDto.getSwiftCode());
+                    bankDto.getAccountType());
             companyInfo.setBankDetails(bankDetails);
         }
 
