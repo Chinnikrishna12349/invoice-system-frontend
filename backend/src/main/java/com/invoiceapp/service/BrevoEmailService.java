@@ -57,7 +57,7 @@ public class BrevoEmailService implements EmailService, InitializingBean {
     @Value("${brevo.sender.email:karumanchipavankumar2001@gmail.com}")
     private String senderEmail;
 
-    @Value("${brevo.sender.name:Invoice System}")
+    @Value("${brevo.sender.name:Vision AI}")
     private String senderName;
 
     @Value("${app.base-url:https://invoice-system-backend-owhd.onrender.com}")
@@ -296,8 +296,8 @@ public class BrevoEmailService implements EmailService, InitializingBean {
             // Create email request
             Map<String, Object> request = new HashMap<>();
 
-            // Sender (Force lowercase for Brevo case-sensitivity)
-            String finalSenderEmail = senderEmail != null ? senderEmail.trim().toLowerCase() : "";
+            // Sender
+            String finalSenderEmail = resolveSenderEmail(invoice);
             request.put("sender", Map.of(
                     "name", senderName,
                     "email", finalSenderEmail));
