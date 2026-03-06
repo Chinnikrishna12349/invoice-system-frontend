@@ -53,7 +53,8 @@ public class InvoiceManagementApplication {
                             "http://localhost:3005", // preview/dev alt port
                             "http://localhost:3002",
                             "http://localhost:3001",
-                            "http://localhost:3000")
+                            "http://localhost:3000",
+                            "https://sparkling-stardust-b46625.netlify.app")
                     .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                     .allowedHeaders("*")
                     .allowCredentials(true)
