@@ -15,6 +15,7 @@ public class BankAccount {
     private String accountHolderName;
     private String ifscCode;
     private String swiftCode;
+    private String bankCode;
     private String branchName;
     private String branchCode;
     private String accountType;
@@ -79,6 +80,14 @@ public class BankAccount {
 
     public void setSwiftCode(String swiftCode) {
         this.swiftCode = swiftCode;
+    }
+
+    public String getBankCode() {
+        return bankCode;
+    }
+
+    public void setBankCode(String bankCode) {
+        this.bankCode = bankCode;
     }
 
     public String getBranchName() {

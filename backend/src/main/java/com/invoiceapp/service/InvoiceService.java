@@ -84,6 +84,7 @@ public class InvoiceService {
                 bankDetails.setBranchCode(invoiceDTO.getCompanyInfo().getBankDetails().getBranchCode());
                 bankDetails.setAccountType(invoiceDTO.getCompanyInfo().getBankDetails().getAccountType());
                 bankDetails.setSwiftCode(invoiceDTO.getCompanyInfo().getBankDetails().getSwiftCode());
+                bankDetails.setBankCode(invoiceDTO.getCompanyInfo().getBankDetails().getBankCode());
                 companyInfo.setBankDetails(bankDetails);
             }
             invoice.setCompanyInfo(companyInfo);
@@ -188,6 +189,7 @@ public class InvoiceService {
                 bankDetails.setBranchCode(dto.getCompanyInfo().getBankDetails().getBranchCode());
                 bankDetails.setAccountType(dto.getCompanyInfo().getBankDetails().getAccountType());
                 bankDetails.setSwiftCode(dto.getCompanyInfo().getBankDetails().getSwiftCode()); // Map Swift Code
+                bankDetails.setBankCode(dto.getCompanyInfo().getBankDetails().getBankCode()); // Map Bank Code
                 companyInfo.setBankDetails(bankDetails);
             }
             invoice.setCompanyInfo(companyInfo);
@@ -223,6 +225,7 @@ public class InvoiceService {
                 bankDetailsDTO.setBranchCode(entity.getCompanyInfo().getBankDetails().getBranchCode());
                 bankDetailsDTO.setAccountType(entity.getCompanyInfo().getBankDetails().getAccountType());
                 bankDetailsDTO.setSwiftCode(entity.getCompanyInfo().getBankDetails().getSwiftCode()); // Map Swift Code
+                bankDetailsDTO.setBankCode(entity.getCompanyInfo().getBankDetails().getBankCode()); // Map Bank Code
                 companyInfoDTO.setBankDetails(bankDetailsDTO);
             }
             dto.setCompanyInfo(companyInfoDTO);

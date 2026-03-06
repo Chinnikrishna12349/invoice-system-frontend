@@ -35,6 +35,7 @@ public class BankAccountService {
         bankAccount.setAccountHolderName(bankAccountData.getAccountHolderName());
         bankAccount.setIfscCode(bankAccountData.getIfscCode());
         bankAccount.setSwiftCode(bankAccountData.getSwiftCode());
+        bankAccount.setBankCode(bankAccountData.getBankCode());
         bankAccount.setBranchName(bankAccountData.getBranchName());
         bankAccount.setBranchCode(bankAccountData.getBranchCode());
         bankAccount.setAccountType(bankAccountData.getAccountType());

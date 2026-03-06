@@ -17,6 +17,8 @@ public class BankDetailsDTO {
 
     private String swiftCode; // Added for Japan
 
+    private String bankCode;
+
     private String branchName;
 
     private String branchCode;
@@ -64,6 +66,14 @@ public class BankDetailsDTO {
 
     public void setSwiftCode(String swiftCode) {
         this.swiftCode = swiftCode;
+    }
+
+    public String getBankCode() {
+        return bankCode;
+    }
+
+    public void setBankCode(String bankCode) {
+        this.bankCode = bankCode;
     }
 
     public String getBranchName() {

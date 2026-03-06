@@ -6,6 +6,7 @@ export interface BankDetailsFormData {
     accountHolderName: string;
     ifscCode: string;
     swiftCode?: string; // Added Swift Code
+    bankCode?: string; // Added Bank Code
     branchName: string;
     branchCode: string;
     accountType?: string;
