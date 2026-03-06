@@ -1252,6 +1252,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                     const accountId = e.target.value;
                                     setSelectedBankAccountId(accountId);
                                     const account = availableBankAccounts.find(a => a.id === accountId);
+                                    console.log("Selected account from Quick Select:", account);
                                     if (account) {
                                         setBankDetails({
                                             bankName: account.bankName,

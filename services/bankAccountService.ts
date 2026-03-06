@@ -54,6 +54,7 @@ export const bankAccountService = {
 
     save: async (data: Omit<BankAccount, 'id'>): Promise<BankAccount> => {
         const token = getToken();
+        console.log("Saving bank account with data:", data);
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: {
@@ -71,6 +72,7 @@ export const bankAccountService = {
 
     update: async (id: string, data: Partial<BankAccount>): Promise<BankAccount> => {
         const token = getToken();
+        console.log(`Updating bank account ${id} with data:`, data);
         const response = await fetch(`${API_URL}/${id}`, {
             method: 'PUT',
             headers: {
