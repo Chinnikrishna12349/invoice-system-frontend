@@ -29,6 +29,7 @@ export interface BankAccount {
     accountHolderName: string;
     ifscCode: string;
     swiftCode?: string;
+    bankCode?: string;
     branchName: string;
     branchCode: string;
     accountType?: string;
