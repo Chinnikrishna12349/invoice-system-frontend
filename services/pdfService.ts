@@ -434,9 +434,10 @@ const drawInvoiceContent = async (
     const headerColonX = rightColX + headerLabelWidth;
     const headerValueX = headerColonX + 4;
 
-    const invoiceNoLabelH = await addTextToPdf(doc, t.invoiceNo.replace(/[：:]/g, ''), rightColX, headerTextY, {
+    const invoiceNoLabelH = await addTextToPdf(doc, t.invoiceNo.replace(/[：:]/g, ''), headerColonX - 2, headerTextY, {
         fontSize: 11,
         fontStyle: 'bold',
+        align: 'right',
         language
     });
     await addTextToPdf(doc, ':', headerColonX, headerTextY, { fontSize: 11, fontStyle: 'bold', language });
@@ -448,9 +449,10 @@ const drawInvoiceContent = async (
     });
     headerTextY += Math.max(invoiceNoLabelH, invoiceNoValueH) + 3;
 
-    const dateLabelH = await addTextToPdf(doc, t.dateLabel?.replace(/[：:]/g, '') || t.date.replace(/[：:]/g, ''), rightColX, headerTextY, {
+    const dateLabelH = await addTextToPdf(doc, t.dateLabel?.replace(/[：:]/g, '') || t.date.replace(/[：:]/g, ''), headerColonX - 2, headerTextY, {
         fontSize: 11,
         fontStyle: 'bold',
+        align: 'right',
         language
     });
     await addTextToPdf(doc, ':', headerColonX, headerTextY, { fontSize: 11, fontStyle: 'bold', language });
@@ -541,8 +543,9 @@ const drawInvoiceContent = async (
         const fromColonX = fromLabelX + fromLabelWidth;
         const fromValueX = fromColonX + 4;
 
-        const emailLabelH = await addTextToPdf(doc, (t.email || 'Email').replace(/[：:]/g, ''), fromLabelX, fromY + 2, {
+        const emailLabelH = await addTextToPdf(doc, (t.email || 'Email').replace(/[：:]/g, ''), fromColonX - 2, fromY + 2, {
             fontSize: 10,
+            align: 'right',
             language
         });
         await addTextToPdf(doc, ':', fromColonX, fromY + 2, { fontSize: 10, language });
@@ -591,9 +594,9 @@ const drawInvoiceContent = async (
         // Email
         if (invoice.employeeEmail && invoice.employeeEmail.trim()) {
             const label = t.email.replace(/[：:]/g, '');
-            const labelH = await addTextToPdf(doc, label, billToX, billToY, {
+            const labelH = await addTextToPdf(doc, label, billToColonX - 2, billToY, {
                 fontSize: 10,
-                align: 'left',
+                align: 'right',
                 language
             });
             // Standard colon alignment
@@ -611,9 +614,9 @@ const drawInvoiceContent = async (
         // Phone
         if (invoice.employeeMobile && invoice.employeeMobile.trim()) {
             const label = t.phone.replace(/[：:]/g, '');
-            const labelH = await addTextToPdf(doc, label, billToX, billToY, {
+            const labelH = await addTextToPdf(doc, label, billToColonX - 2, billToY, {
                 fontSize: 10,
-                align: 'left',
+                align: 'right',
                 language
             });
             // Standard colon alignment
@@ -631,9 +634,9 @@ const drawInvoiceContent = async (
         // Address
         if (invoice.employeeAddress && invoice.employeeAddress.trim()) {
             const label = t.address.replace(/[：:]/g, '');
-            const labelH = await addTextToPdf(doc, label, billToX, billToY, {
+            const labelH = await addTextToPdf(doc, label, billToColonX - 2, billToY, {
                 fontSize: 10,
-                align: 'left',
+                align: 'right',
                 language
             });
             // Standard colon alignment
@@ -661,9 +664,10 @@ const drawInvoiceContent = async (
         const poColonX = 14 + poLabelWidth;
         const poValueX = poColonX + 4;
 
-        await addTextToPdf(doc, t.poNumber.replace(/[：:]/g, ''), 14, commonRowY, {
+        await addTextToPdf(doc, t.poNumber.replace(/[：:]/g, ''), poColonX - 2, commonRowY, {
             fontSize: 10,
             fontStyle: 'bold',
+            align: 'right',
             language
         });
         await addTextToPdf(doc, ':', poColonX, commonRowY, { fontSize: 10, fontStyle: 'bold', language });
@@ -682,9 +686,10 @@ const drawInvoiceContent = async (
         const dueDateColonX = dueDateLabelX + 25;
         const dueDateValueX = dueDateColonX + 4;
 
-        const labelH = await addTextToPdf(doc, dueDateLabel.replace(/[：:]/g, ''), dueDateLabelX, commonRowY, {
+        const labelH = await addTextToPdf(doc, dueDateLabel.replace(/[：:]/g, ''), dueDateColonX - 2, commonRowY, {
             fontSize: 10,
             fontStyle: 'bold',
+            align: 'right',
             language
         });
         await addTextToPdf(doc, ':', dueDateColonX, commonRowY, { fontSize: 10, fontStyle: 'bold', language });
@@ -930,8 +935,9 @@ const drawInvoiceContent = async (
 
         for (const item of validDetails) {
             // Label (e.g. "Bank Name")
-            await addTextToPdf(doc, item.label.replace(/[：:]/g, ''), 14, curY, {
+            await addTextToPdf(doc, item.label.replace(/[：:]/g, ''), bankColonX - 2, curY, {
                 fontSize: 10,
+                align: 'right',
                 language
             });
 
