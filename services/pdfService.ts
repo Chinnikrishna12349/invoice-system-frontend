@@ -434,7 +434,7 @@ const drawInvoiceContent = async (
     const headerColonX = rightColX + headerLabelWidth;
     const headerValueX = headerColonX + 4;
 
-    const invoiceNoLabelH = await addTextToPdf(doc, t.invoiceNo.replace(/:$/, ''), rightColX, headerTextY, {
+    const invoiceNoLabelH = await addTextToPdf(doc, t.invoiceNo.replace(/[：:]/g, ''), rightColX, headerTextY, {
         fontSize: 11,
         fontStyle: 'bold',
         language
@@ -448,7 +448,7 @@ const drawInvoiceContent = async (
     });
     headerTextY += Math.max(invoiceNoLabelH, invoiceNoValueH) + 3;
 
-    const dateLabelH = await addTextToPdf(doc, t.date.replace(/:$/, ''), rightColX, headerTextY, {
+    const dateLabelH = await addTextToPdf(doc, t.dateLabel?.replace(/[：:]/g, '') || t.date.replace(/[：:]/g, ''), rightColX, headerTextY, {
         fontSize: 11,
         fontStyle: 'bold',
         language
@@ -541,7 +541,7 @@ const drawInvoiceContent = async (
         const fromColonX = fromLabelX + fromLabelWidth;
         const fromValueX = fromColonX + 4;
 
-        const emailLabelH = await addTextToPdf(doc, t.email || 'Email', fromLabelX, fromY + 2, {
+        const emailLabelH = await addTextToPdf(doc, (t.email || 'Email').replace(/[：:]/g, ''), fromLabelX, fromY + 2, {
             fontSize: 10,
             language
         });
@@ -590,7 +590,7 @@ const drawInvoiceContent = async (
 
         // Email
         if (invoice.employeeEmail && invoice.employeeEmail.trim()) {
-            const label = t.email;
+            const label = t.email.replace(/[：:]/g, '');
             const labelH = await addTextToPdf(doc, label, billToX, billToY, {
                 fontSize: 10,
                 align: 'left',
@@ -610,7 +610,7 @@ const drawInvoiceContent = async (
 
         // Phone
         if (invoice.employeeMobile && invoice.employeeMobile.trim()) {
-            const label = t.phone;
+            const label = t.phone.replace(/[：:]/g, '');
             const labelH = await addTextToPdf(doc, label, billToX, billToY, {
                 fontSize: 10,
                 align: 'left',
@@ -630,7 +630,7 @@ const drawInvoiceContent = async (
 
         // Address
         if (invoice.employeeAddress && invoice.employeeAddress.trim()) {
-            const label = t.address;
+            const label = t.address.replace(/[：:]/g, '');
             const labelH = await addTextToPdf(doc, label, billToX, billToY, {
                 fontSize: 10,
                 align: 'left',
@@ -661,7 +661,7 @@ const drawInvoiceContent = async (
         const poColonX = 14 + poLabelWidth;
         const poValueX = poColonX + 4;
 
-        await addTextToPdf(doc, t.poNumber.replace(/:$/, ''), 14, commonRowY, {
+        await addTextToPdf(doc, t.poNumber.replace(/[：:]/g, ''), 14, commonRowY, {
             fontSize: 10,
             fontStyle: 'bold',
             language
@@ -682,7 +682,7 @@ const drawInvoiceContent = async (
         const dueDateColonX = dueDateLabelX + 25;
         const dueDateValueX = dueDateColonX + 4;
 
-        const labelH = await addTextToPdf(doc, dueDateLabel.replace(/:$/, ''), dueDateLabelX, commonRowY, {
+        const labelH = await addTextToPdf(doc, dueDateLabel.replace(/[：:]/g, ''), dueDateLabelX, commonRowY, {
             fontSize: 10,
             fontStyle: 'bold',
             language
@@ -837,7 +837,7 @@ const drawInvoiceContent = async (
         const fontSize = 10;
         const textY = yPosition + 7;
 
-        await addTextToPdf(doc, label.replace(/:$/, ''), colX[0] + 2, textY, {
+        await addTextToPdf(doc, label.replace(/[：:]/g, ''), colX[0] + 2, textY, {
             fontSize, fontStyle: isBold ? 'bold' : 'normal', align: 'left', language
         });
 
@@ -930,7 +930,7 @@ const drawInvoiceContent = async (
 
         for (const item of validDetails) {
             // Label (e.g. "Bank Name")
-            await addTextToPdf(doc, item.label.replace(/:$/, ''), 14, curY, {
+            await addTextToPdf(doc, item.label.replace(/[：:]/g, ''), 14, curY, {
                 fontSize: 10,
                 language
             });
