@@ -46,6 +46,16 @@ const mapping: { [key: string]: string } = {
   'v': 'ブ', 'th': 'サ', 'ph': 'フ',
 };
 
+// Custom replacements for common terms
+const termReplacements: { [key: string]: string } = {
+  'street': 'ストリート',
+  'road': 'ロード',
+  'floor': '階',
+  'building': 'ビル',
+  'india': 'インディア',
+  'japan': 'ジャパン',
+};
+
 // Single Letters (Initials)
 const initials: { [key: string]: string } = {
   'A': 'エー', 'B': 'ビー', 'C': 'シー', 'D': 'ディー', 'E': 'イー', 
@@ -68,10 +78,18 @@ export const toKatakana = (text: string): string => {
 
   let result = '';
   let i = 0;
-  const lowerText = text.toLowerCase();
   
-  while (i < text.length) {
-    const char = text[i];
+  // Pre-processing: Apply term replacements for whole words
+  let processedText = text;
+  for (const [eng, kat] of Object.entries(termReplacements)) {
+    const regex = new RegExp(`\\b${eng}\\b`, 'gi');
+    processedText = processedText.replace(regex, kat);
+  }
+
+  const lowerText = processedText.toLowerCase();
+  
+  while (i < processedText.length) {
+    const char = processedText[i];
     
     // Handle whitespace and punctuation
     if (/\s/.test(char)) {
@@ -80,6 +98,13 @@ export const toKatakana = (text: string): string => {
       continue;
     }
     
+    // Handle numbers - keep them as is
+    if (/[0-9]/.test(char)) {
+      result += char;
+      i++;
+      continue;
+    }
+
     if (/[^a-zA-Z]/.test(char)) {
       result += char;
       i++;
@@ -87,7 +112,7 @@ export const toKatakana = (text: string): string => {
     }
 
     // Handle Single Capital Initial followed by dot or space (e.g. "M.")
-    if (/[A-Z]/.test(char) && (i + 1 === text.length || !/[a-z]/.test(text[i + 1]))) {
+    if (/[A-Z]/.test(char) && (i + 1 === processedText.length || !/[a-z]/.test(processedText[i + 1]))) {
       result += initials[char] || char;
       i++;
       continue;
@@ -97,7 +122,7 @@ export const toKatakana = (text: string): string => {
     let found = false;
     // Try 3-char, then 2-char, then 1-char
     for (let len = 3; len >= 1; len--) {
-      if (i + len <= text.length) {
+      if (i + len <= processedText.length) {
         const sub = lowerText.substring(i, i + len);
         if (mapping[sub]) {
           result += mapping[sub];
@@ -112,7 +137,6 @@ export const toKatakana = (text: string): string => {
       // Fallback for individual consonants
       const c = lowerText[i];
       if (/[bcdfghjklmnpqrstvwxyz]/.test(c)) {
-        // Simple mapping for lingering consonants
         const fallback: { [key: string]: string } = {
           'b': 'ブ', 'c': 'ク', 'd': 'ド', 'f': 'フ', 'g': 'グ', 'h': 'ホ', 
           'j': 'ジュ', 'k': 'ク', 'l': 'ル', 'm': 'ム', 'n': 'ン', 'p': 'プ', 

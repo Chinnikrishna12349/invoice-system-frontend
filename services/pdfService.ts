@@ -38,37 +38,34 @@ const addTextToPdf = async (
                 const img = new Image();
                 await new Promise<void>((resolve) => {
                     img.onload = () => {
-                        const aspectRatio = img.width / img.height;
+                        // html2canvas renders at a high scale (e.g., 4x)
+                        // We need to scale it back to jsPDF units (mm)
+                        // 1pt = 0.3527mm. If we want 10pt text to be 3.527mm tall.
+                        
+                        // Calculate target dimensions
+                        const canvasToMm = 0.3527 / 4; // 1 pixel at scale 4 is roughly this many mm in PDF
+                        
+                        let finalWidth = img.width * canvasToMm;
+                        let finalHeight = img.height * canvasToMm;
 
-                        // Calculate target height in mm based on font size (pt to mm conversion: 1pt ≈ 0.3527mm)
-                        // Add a small buffer factor because html2canvas might have padding
-                        const targetHeight = fontSize * 0.3527 * 1.6;
-
-                        // Calculate natural width based on aspect ratio
-                        let finalWidth = targetHeight * aspectRatio;
-                        let finalHeight = targetHeight;
-
-                        // Constrain by maxWidth if necessary
+                        // If it exceeds maxWidth, scale down proportionally
                         if (finalWidth > maxWidth) {
+                            const ratio = maxWidth / finalWidth;
                             finalWidth = maxWidth;
-                            finalHeight = finalWidth / aspectRatio;
+                            finalHeight = finalHeight * ratio;
                         }
 
                         // Adjust positions based on alignment
                         let adjustedX = x;
-                        let adjustedY = y;
+                        // For Y, we want to align the bottom of the text (baseline) with the provided y
+                        // html2canvas adds a small bit of padding (2px in renderJapaneseText)
+                        const paddingOffset = 2 * canvasToMm; 
+                        let adjustedY = y - finalHeight + paddingOffset;
 
                         if (align === 'right') {
-                            // For right alignment, x is the right edge
                             adjustedX = x - finalWidth;
-                            adjustedY = y - finalHeight; // Adjusted to move image bottom to baseline
                         } else if (align === 'center') {
                             adjustedX = x - finalWidth / 2;
-                            adjustedY = y - finalHeight;
-                        } else {
-                            // Left alignment
-                            adjustedX = x - 1; // Corrected alignment offset as requested
-                            adjustedY = y - finalHeight;
                         }
 
                         // Add image with calculated dimensions

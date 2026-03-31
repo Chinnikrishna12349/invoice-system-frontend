@@ -28,32 +28,29 @@ export const renderJapaneseText = async (
     // Use slightly heavier weight for normal text to match PDF Helvetica
     div.style.fontWeight = fontStyle === 'bold' ? 'bold' : '500';
     div.style.color = '#000000';
-    div.style.whiteSpace = 'nowrap';
-    div.style.width = 'auto'; // Auto width to fit content
-    div.style.minWidth = '50px'; // Minimum width to prevent collapse
-    div.style.padding = '4px'; // Decreased padding as requested (2px)
+    div.style.whiteSpace = 'pre-wrap';
+    div.style.width = width > 0 ? `${width}mm` : 'auto';
+    div.style.padding = '2px'; 
+    div.style.boxSizing = 'border-box';
     // CSS properties for sharper text rendering
     // @ts-ignore
     div.style.textRendering = 'geometricPrecision';
     // @ts-ignore
     div.style.webkitFontSmoothing = 'antialiased';
 
-    // div.style.lineHeight = '1.2'; // Standard line height
-    // div.style.textAlign = align; // Text align doesn't matter for auto width div
     div.style.overflow = 'visible';
-    div.style.whiteSpace = 'nowrap';
     const textNode = document.createTextNode(text);
     div.appendChild(textNode);
-    // div.textContent = text;
 
     document.body.appendChild(div);
 
     // Render to canvas
     const canvas = await html2canvas(div, {
-      backgroundColor: '#FFFFFF',
+      backgroundColor: null, // Transparent background
       scale: 4, // Higher scale for better definition
       logging: false,
       useCORS: true,
+      allowTaint: true
     });
 
     // Remove the temporary element
