@@ -44,6 +44,12 @@ const mapping: { [key: string]: string } = {
   'ti': 'ティ', 'tu': 'トゥ',
   'la': 'ラ', 'li': 'リ', 'lu': 'ル', 'le': 'レ', 'lo': 'ロ', // Map L to R
   'v': 'ブ', 'th': 'サ', 'ph': 'フ',
+  
+  // Vowel-less fallbacks (greedy matching handles them last)
+  'b': 'ブ', 'c': 'ク', 'd': 'ド', 'f': 'フ', 'g': 'グ', 'h': 'ホ', 
+  'j': 'ジュ', 'k': 'ク', 'l': 'ル', 'm': 'ム', 'p': 'プ', 
+  'r': 'ル', 's': 'ス', 't': 'ト', 'w': 'ウ', 'z': 'ズ',
+  'sh': 'シ', 'ch': 'チ', 'ts': 'ツ',
 };
 
 // Custom replacements for common terms
@@ -134,18 +140,9 @@ export const toKatakana = (text: string): string => {
     }
 
     if (!found) {
-      // Fallback for individual consonants
+      // Fallback for vowels that aren't in mapping (shouldn't happen but safe)
       const c = lowerText[i];
-      if (/[bcdfghjklmnpqrstvwxyz]/.test(c)) {
-        const fallback: { [key: string]: string } = {
-          'b': 'ブ', 'c': 'ク', 'd': 'ド', 'f': 'フ', 'g': 'グ', 'h': 'ホ', 
-          'j': 'ジュ', 'k': 'ク', 'l': 'ル', 'm': 'ム', 'n': 'ン', 'p': 'プ', 
-          'r': 'ル', 's': 'ス', 't': 'ト', 'v': 'ヴ', 'w': 'ウ', 'z': 'ズ'
-        };
-        result += fallback[c] || c;
-      } else {
-        result += char;
-      }
+      result += char;
       i++;
     }
   }
@@ -158,5 +155,6 @@ export const toKatakana = (text: string): string => {
     .replace(/イィ/g, 'イ')
     .replace(/ウゥ/g, 'ウ')
     .replace(/エェ/g, 'エ')
-    .replace(/オォ/g, 'オ');
+    .replace(/オォ/g, 'オ')
+    .replace(/v/gi, ''); // Remove stray 'v's that might remain from 'vi' etc if greedy fail
 };

@@ -22,7 +22,7 @@ const addTextToPdf = async (
         language?: 'en' | 'ja';
         maxWidth?: number;
     } = {}
-): Promise<void> => {
+): Promise<number> => {
     const { fontSize = 10, fontStyle = 'normal', align = 'left', language = 'en', maxWidth = 100 } = options;
 
     // Check for Japanese characters OR specific currency symbols (¥, ₹)
@@ -33,10 +33,7 @@ const addTextToPdf = async (
         // Use html2canvas for Japanese text
         try {
             const imageData = await renderJapaneseText(text, fontSize, fontStyle, maxWidth, align);
-            if (imageData && imageData !== 'data:,') {
-                // Get image dimensions
-                const img = new Image();
-                await new Promise<void>((resolve) => {
+                const heightmm = await new Promise<number>((resolve) => {
                     img.onload = () => {
                         // html2canvas renders at a high scale (e.g., 4x)
                         // We need to scale it back to jsPDF units (mm)
@@ -70,31 +67,42 @@ const addTextToPdf = async (
 
                         // Add image with calculated dimensions
                         doc.addImage(imageData, 'PNG', adjustedX, adjustedY, finalWidth, finalHeight, '', 'FAST');
-                        resolve();
+                        resolve(finalHeight);
                     };
                     img.onerror = () => {
                         console.warn('Image load failed, using fallback');
-                        resolve();
+                        resolve(0);
                     };
                     img.src = imageData;
                 });
+                return heightmm;
             } else {
                 // Fallback to regular text if rendering fails
                 doc.setFont('helvetica', fontStyle);
                 doc.setFontSize(fontSize);
                 doc.text(text, x, y, { align, maxWidth });
+                return fontSize * 0.3527 * 1.2; // Approximation
             }
         } catch (error) {
             console.warn('Error rendering Japanese text, using fallback:', error);
             doc.setFont('helvetica', fontStyle);
             doc.setFontSize(fontSize);
             doc.text(text, x, y, { align, maxWidth });
+            return fontSize * 0.3527 * 1.2;
         }
     } else {
         // Use regular jsPDF text for English
         doc.setFont('helvetica', fontStyle);
         doc.setFontSize(fontSize);
         doc.text(text, x, y, { align, maxWidth });
+        
+        // Calculate approx height
+        // For wrapping text, we should ideally use splitTextToSize
+        if (maxWidth) {
+            const lines = doc.splitTextToSize(text, maxWidth);
+            return lines.length * fontSize * 0.3527 * 1.2;
+        }
+        return fontSize * 0.3527 * 1.2;
     }
 };
 
@@ -429,14 +437,14 @@ const drawInvoiceContent = async (
 
     // Stamp moved to bottom right as requested
 
-    await addTextToPdf(doc, `${t.invoiceNo} ${invoice.invoiceNumber}`, rightColX, headerTextY, {
+    const invoiceNoHeight = await addTextToPdf(doc, `${t.invoiceNo} ${invoice.invoiceNumber}`, rightColX, headerTextY, {
         fontSize: 11,
         fontStyle: 'bold',
         align: 'left',
         language,
         maxWidth: rightColWidth
     });
-    headerTextY += 6;
+    headerTextY += invoiceNoHeight + 2;
 
     await addTextToPdf(doc, `${t.date} ${formatDateInPdf(invoice.date)}`, rightColX, headerTextY, {
         fontSize: 11,
@@ -466,13 +474,13 @@ const drawInvoiceContent = async (
     doc.setFontSize(10);
     // Company Name Bold
     const displayCompanyName = companyInfoToUse?.companyName || invoice.company || t.companyName;
-    await addTextToPdf(doc, language === 'ja' ? toKatakana(displayCompanyName) : displayCompanyName, 14, fromY, {
+    const fromNameHeight = await addTextToPdf(doc, language === 'ja' ? toKatakana(displayCompanyName) : displayCompanyName, 14, fromY, {
         fontSize: 10,
         fontStyle: 'bold',
         language,
         maxWidth: 90
     });
-    fromY += 8; // Increased gap after bold company name
+    fromY += fromNameHeight + 2; // Dynamic gap after bold company name
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
@@ -507,12 +515,12 @@ const drawInvoiceContent = async (
     for (const line of fromLines) {
         if (line && line.trim()) {
             const displayLine = language === 'ja' ? toKatakana(line.trim()) : line.trim();
-            await addTextToPdf(doc, displayLine, 14, fromY, {
+            const lineHeight = await addTextToPdf(doc, displayLine, 14, fromY, {
                 fontSize: 10,
                 language,
                 maxWidth: 90
             });
-            fromY += 5;
+            fromY += lineHeight + 1;
         }
     }
 
@@ -545,14 +553,14 @@ const drawInvoiceContent = async (
         });
         billToY = fromStartY + 6;
 
-        await addTextToPdf(doc, language === 'ja' ? toKatakana(invoice.employeeName.trim()) : invoice.employeeName.trim(), billToX, billToY, {
+        const employeeNameHeight = await addTextToPdf(doc, language === 'ja' ? toKatakana(invoice.employeeName.trim()) : invoice.employeeName.trim(), billToX, billToY, {
             fontSize: 10,
             fontStyle: 'bold',
             align: 'left',
             language,
             maxWidth: rightColWidth
         });
-        billToY += 8; // Increased gap after bold client name
+        billToY += employeeNameHeight + 3; // Increased gap after bold client name
 
 
 
@@ -568,13 +576,13 @@ const drawInvoiceContent = async (
                 align: 'left',
                 language
             });
-            await addTextToPdf(doc, invoice.employeeEmail.trim(), billToX + labelWidth + 2, billToY, {
+            const emailHeight = await addTextToPdf(doc, invoice.employeeEmail.trim(), billToX + labelWidth + 2, billToY, {
                 fontSize: 10,
                 align: 'left',
                 language,
                 maxWidth: rightColWidth - labelWidth - 2
             });
-            billToY += 7;
+            billToY += emailHeight + 2;
         }
 
         // Phone
@@ -586,13 +594,13 @@ const drawInvoiceContent = async (
                 align: 'left',
                 language
             });
-            await addTextToPdf(doc, invoice.employeeMobile.trim(), billToX + labelWidth + 2, billToY, {
+            const phoneHeight = await addTextToPdf(doc, invoice.employeeMobile.trim(), billToX + labelWidth + 2, billToY, {
                 fontSize: 10,
                 align: 'left',
                 language,
                 maxWidth: rightColWidth - labelWidth - 2
             });
-            billToY += 7;
+            billToY += phoneHeight + 2;
         }
 
         // Address
@@ -606,13 +614,13 @@ const drawInvoiceContent = async (
             });
             const addressToDisplay = invoice.employeeAddress.replace(/\n/g, ', ').trim();
             const finalAddress = language === 'ja' ? toKatakana(addressToDisplay) : addressToDisplay;
-            await addTextToPdf(doc, finalAddress, billToX + labelWidth + 2, billToY, {
+            const addressHeight = await addTextToPdf(doc, finalAddress, billToX + labelWidth + 2, billToY, {
                 fontSize: 10,
                 align: 'left',
                 language,
                 maxWidth: rightColWidth - labelWidth - 2
             });
-            billToY += 7;
+            billToY += addressHeight + 2;
         }
     }
 
