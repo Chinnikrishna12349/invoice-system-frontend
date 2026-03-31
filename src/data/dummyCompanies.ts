@@ -26,7 +26,7 @@ export const FROM_COMPANIES: DummyCompany[] = [
         companyLogoUrl: VISION_AI_LOGO_BASE64,
         invoiceFormat: 'INV-VI-',
         currency: 'JPY',
-        fromEmail: 'billing@vision-ai.jp', // Added fromEmail
+        fromEmail: 'chinnikrishnamaddana@gmail.com', // Updated fromEmail
         bankDetails: {
             bankName: 'ＧＭＯあおぞらネット銀行',
             accountNumber: '2165551',
@@ -46,7 +46,7 @@ export const FROM_COMPANIES: DummyCompany[] = [
         companyLogoUrl: '',
         invoiceFormat: 'INV-IF-',
         currency: 'JPY',
-        fromEmail: 'accounts@idealfolks.com',
+        fromEmail: 'chinnikrishnamaddana@gmail.com',
         bankDetails: {
             bankName: 'Sumitomo Mitsui Banking Corporation',
             accountNumber: '1234567',
@@ -66,7 +66,7 @@ export const FROM_COMPANIES: DummyCompany[] = [
         companyLogoUrl: '',
         invoiceFormat: 'INV-VCAS-',
         currency: 'JPY',
-        fromEmail: 'finance@vcasconsulting.com',
+        fromEmail: 'chinnikrishnamaddana@gmail.com',
         bankDetails: {
             bankName: 'Mizuho Bank',
             accountNumber: '7654321',

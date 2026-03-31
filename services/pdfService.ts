@@ -113,7 +113,8 @@ const getTranslations = async (language: 'en' | 'ja') => {
     console.log('Current i18n language after change:', i18n.language);
 
     const t = {
-        invoice: language === 'ja' ? '請求書' : 'INVOICE',
+        invoice: i18n.t('invoice.title') || (language === 'ja' ? '請求書' : 'INVOICE'),
+        sNo: i18n.t('invoice.sNo') || 'SNo',
         companyName: i18n.t('invoice.companyName'),
         from: i18n.t('invoice.from'),
         billTo: i18n.t('invoice.to'),
@@ -153,7 +154,18 @@ const getTranslations = async (language: 'en' | 'ja') => {
         companyAddress: i18n.t('company.address'),
         companyGstin: i18n.t('company.gstin'),
         companyPhone: i18n.t('company.phone'),
-        companyEmail: i18n.t('company.email')
+        companyEmail: i18n.t('company.email'),
+        poNumber: i18n.t('invoice.poNumber') || 'PO Number',
+        roundOff: i18n.t('invoice.roundOff') || 'Round Off',
+        bankDetailsLabel: i18n.t('payment.instructions'),
+        bankNameLabel: i18n.t('payment.bankName'),
+        branchLabel: i18n.t('payment.branchName'),
+        branchCodeLabel: i18n.t('payment.branchCode'),
+        accountTypeLabel: i18n.t('payment.accountType'),
+        accountNoLabel: i18n.t('payment.accountNumber'),
+        accountHolderLabel: i18n.t('payment.accountName'),
+        swiftCodeLabel: i18n.t('payment.swiftCode') || 'Swift Code:',
+        ifscCodeLabel: i18n.t('payment.ifsc')
     };
 
     // Restore original language
@@ -608,7 +620,7 @@ const drawInvoiceContent = async (
 
     // PO Number (Left Side)
     if (invoice.poNumber && invoice.poNumber.trim()) {
-        await addTextToPdf(doc, `PO Number: ${invoice.poNumber.trim()}`, 14, commonRowY, {
+        await addTextToPdf(doc, `${t.poNumber}: ${invoice.poNumber.trim()}`, 14, commonRowY, {
             fontSize: 10,
             fontStyle: 'bold',
             language,
@@ -618,7 +630,7 @@ const drawInvoiceContent = async (
 
     // Due Date (Right Side)
     if (invoice.dueDate) {
-        await addTextToPdf(doc, `${t.dueDate}: ${formatDateInPdf(invoice.dueDate)}`, billToX, commonRowY, {
+        await addTextToPdf(doc, `${t.dueDate}${language === 'ja' ? '：' : ': '} ${formatDateInPdf(invoice.dueDate)}`, billToX, commonRowY, {
             fontSize: 10,
             fontStyle: 'bold',
             align: 'left',
@@ -649,7 +661,7 @@ const drawInvoiceContent = async (
     const textY = tableStartY + 6;
 
     // SNO
-    await addTextToPdf(doc, 'SNO', (colX[0] + colX[1]) / 2, textY, {
+    await addTextToPdf(doc, t.sNo, (colX[0] + colX[1]) / 2, textY, {
         fontSize: 10, fontStyle: 'bold', align: 'center', language
     });
     // Description
@@ -776,7 +788,12 @@ const drawInvoiceContent = async (
         doc.setFont('helvetica', isBold ? 'bold' : 'normal');
         doc.setFontSize(fontSize);
         // Correctly right-align value at the end of the table
-        doc.text(value, colX[5] - 4, textY, { align: 'right' });
+        await addTextToPdf(doc, value, colX[5] - 4, textY, {
+            fontSize, 
+            fontStyle: isBold ? 'bold' : 'normal', 
+            align: 'right', 
+            language
+        });
 
         yPosition += rowH;
     };
@@ -797,13 +814,13 @@ const drawInvoiceContent = async (
         const effectiveCgstAmount = invoice.cgstRate !== undefined ? Math.round((subTotal * (invoice.cgstRate / 100)) * 100) / 100 : (cgstAmount || 0);
         const effectiveSgstAmount = invoice.sgstRate !== undefined ? Math.round((subTotal * (invoice.sgstRate / 100)) * 100) / 100 : (sgstAmount || 0);
 
-        if (effectiveCgstRate) await drawTotalRow(`CGST (${effectiveCgstRate}%)`, formatAmount(effectiveCgstAmount, false, false), true);
-        if (effectiveSgstRate) await drawTotalRow(`SGST (${effectiveSgstRate}%)`, formatAmount(effectiveSgstAmount, false, false), true);
+        if (effectiveCgstRate) await drawTotalRow(`${t.cgst} (${effectiveCgstRate}%)`, formatAmount(effectiveCgstAmount, false, false), true);
+        if (effectiveSgstRate) await drawTotalRow(`${t.sgst} (${effectiveSgstRate}%)`, formatAmount(effectiveSgstAmount, false, false), true);
     }
 
     // Round Off (if exists)
     if (invoice.roundOff !== undefined && invoice.roundOff !== 0) {
-        await drawTotalRow('Round Off', formatAmount(invoice.roundOff, false, false), true);
+        await drawTotalRow(t.roundOff, formatAmount(invoice.roundOff, false, false), true);
     }
 
     // Grand Total (Currency in label, amount without symbol)
@@ -822,16 +839,16 @@ const drawInvoiceContent = async (
     if (hasBankDetails) {
         const bankY = yPosition;
 
-        await addTextToPdf(doc, 'Bank Details:', 14, bankY, { fontSize: 11, fontStyle: 'bold' });
+        await addTextToPdf(doc, t.bankDetailsLabel || 'Bank Details:', 14, bankY, { fontSize: 11, fontStyle: 'bold', language });
         doc.setFont('helvetica', 'normal');
 
         const details = [
-            { label: 'Bank Name:', value: companyInfoToUse?.bankDetails?.bankName },
-            { label: 'Branch:', value: companyInfoToUse?.bankDetails?.branchName },
-            { label: 'Branch Code:', value: companyInfoToUse?.bankDetails?.branchCode },
-            { label: 'Account Type:', value: companyInfoToUse?.bankDetails?.accountType },
-            { label: 'Account No:', value: companyInfoToUse?.bankDetails?.accountNumber }, // Matched Preview 'Account No'
-            { label: 'Account Holder:', value: companyInfoToUse?.bankDetails?.accountHolderName },
+            { label: t.bankNameLabel || 'Bank Name:', value: companyInfoToUse?.bankDetails?.bankName },
+            { label: t.branchLabel || 'Branch:', value: companyInfoToUse?.bankDetails?.branchName },
+            { label: t.branchCodeLabel || 'Branch Code:', value: companyInfoToUse?.bankDetails?.branchCode },
+            { label: t.accountTypeLabel || 'Account Type:', value: companyInfoToUse?.bankDetails?.accountType },
+            { label: t.accountNoLabel || 'Account No:', value: companyInfoToUse?.bankDetails?.accountNumber },
+            { label: t.accountHolderLabel || 'Account Holder:', value: companyInfoToUse?.bankDetails?.accountHolderName },
         ];
 
         // Add IFSC or Swift Code based on logic matching InvoiceLayout
@@ -841,10 +858,10 @@ const drawInvoiceContent = async (
 
         if (isJapan || (swift && swift.length > 0)) {
             if (swift || ifsc) {
-                details.push({ label: 'Swift Code:', value: (swift && swift.length > 0) ? swift : ifsc });
+                details.push({ label: t.swiftCodeLabel || 'Swift Code:', value: (swift && swift.length > 0) ? swift : ifsc });
             }
         } else if (ifsc && ifsc.length > 0) {
-            details.push({ label: 'IFSC Code:', value: ifsc });
+            details.push({ label: t.ifscCodeLabel || 'IFSC Code:', value: ifsc });
         }
 
         const validDetails = details.filter(item => item.value && item.value.trim().length > 0);
@@ -856,17 +873,20 @@ const drawInvoiceContent = async (
             // Label
             await addTextToPdf(doc, item.label, 14, curY, {
                 fontSize: 10,
-                fontStyle: 'normal'
+                fontStyle: 'normal',
+                language
             });
 
             // Value (Offset by 45mm for alignment)
+            // Use translation check for "Account Holder" label for consistent signature alignment
             await addTextToPdf(doc, item.value || '', 58, curY, {
                 fontSize: 10,
-                fontStyle: 'normal'
+                fontStyle: 'normal',
+                language
             });
 
             // Capture Y of Account Holder for horizontal alignment of signature
-            if (item.label === 'Account Holder:') {
+            if (item.label === t.accountHolderLabel || item.label === 'Account Holder:') {
                 accountIdY = curY;
             }
 

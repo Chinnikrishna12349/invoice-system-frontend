@@ -51,8 +51,11 @@
     "phone": "電話番号",
     "address": "住所",
     "invoiceNo": "請求書番号：",
+    "sNo": "項",
     "dateLabel": "発行日：",
-    "dueLabel": "支払期限："
+    "dueLabel": "支払期限：",
+    "poNumber": "注文番号",
+    "roundOff": "端数調整"
   },
   "form": {
     "required": "この項目は必須です",
@@ -96,6 +99,7 @@
     "accountNumber": "口座番号：",
     "accountName": "口座名義：",
     "ifsc": "IFSC：",
+    "swiftCode": "SWIFTコード：",
     "branchCode": "支店コード：",
     "note": "※振込手数料はお客様のご負担でお願いいたします。",
     "authorisedSignature": "承認された署名"
