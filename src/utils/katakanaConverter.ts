@@ -43,13 +43,14 @@ const mapping: { [key: string]: string } = {
   'fa': 'ファ', 'fi': 'フィ', 'fe': 'フェ', 'fo': 'フォ',
   'ti': 'ティ', 'tu': 'トゥ',
   'la': 'ラ', 'li': 'リ', 'lu': 'ル', 'le': 'レ', 'lo': 'ロ', // Map L to R
-  'v': 'ブ', 'th': 'サ', 'ph': 'フ',
+  'v': 'ヴ', 'th': 'サ', 'ph': 'フ',
   
   // Vowel-less fallbacks (greedy matching handles them last)
-  'b': 'ブ', 'c': 'ク', 'd': 'ド', 'f': 'フ', 'g': 'グ', 'h': 'ホ', 
-  'j': 'ジュ', 'k': 'ク', 'l': 'ル', 'm': 'ム', 'p': 'プ', 
+  'b': 'ブ', 'c': 'ク', 'd': 'ド', 'f': 'フ', 'g': 'グ', 'h': 'ハ', 
+  'j': 'ジュ', 'k': 'ク', 'l': 'ル', 'm': 'ム', 'n': 'ン', 'p': 'プ', 
   'r': 'ル', 's': 'ス', 't': 'ト', 'w': 'ウ', 'z': 'ズ',
   'sh': 'シ', 'ch': 'チ', 'ts': 'ツ',
+  'y': 'イ', 'q': 'ク', 'x': 'エクス',
 };
 
 // Custom replacements for common terms
@@ -140,9 +141,15 @@ export const toKatakana = (text: string): string => {
     }
 
     if (!found) {
-      // Fallback for vowels that aren't in mapping (shouldn't happen but safe)
+      // Ultimate fallback: check if the character itself is in mapping (like 'n')
+      // if not, skip it if it's English to avoid stray letters
       const c = lowerText[i];
-      result += char;
+      if (mapping[c]) {
+        result += mapping[c];
+      } else {
+        // Skip stray English letters that couldn't be matched
+        console.warn(`Unmatched character in toKatakana: ${char}`);
+      }
       i++;
     }
   }
@@ -156,5 +163,5 @@ export const toKatakana = (text: string): string => {
     .replace(/ウゥ/g, 'ウ')
     .replace(/エェ/g, 'エ')
     .replace(/オォ/g, 'オ')
-    .replace(/v/gi, ''); // Remove stray 'v's that might remain from 'vi' etc if greedy fail
+    .replace(/[a-zA-Z]/g, ''); // Final safety check: remove ANY remaining English letters
 };

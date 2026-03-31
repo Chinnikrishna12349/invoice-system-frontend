@@ -47,9 +47,10 @@ const addTextToPdf = async (
                             finalHeight = finalHeight * ratio;
                         }
 
+                        // Adjust positions based on alignment
                         let adjustedX = x;
-                        const paddingOffset = 2 * canvasToMm; 
-                        let adjustedY = y - finalHeight + paddingOffset;
+                        // Use Y as the TOP edge (Image-style) for more reliable stacking
+                        let adjustedY = y;
 
                         if (align === 'right') {
                             adjustedX = x - finalWidth;
@@ -57,6 +58,7 @@ const addTextToPdf = async (
                             adjustedX = x - finalWidth / 2;
                         }
 
+                        // Add image with calculated dimensions
                         doc.addImage(imageData, 'PNG', adjustedX, adjustedY, finalWidth, finalHeight, '', 'FAST');
                         resolve(finalHeight);
                     };
@@ -68,23 +70,25 @@ const addTextToPdf = async (
                 });
                 return heightmm;
             } else {
+                // Fallback to regular text if rendering fails
                 doc.setFont('helvetica', fontStyle);
                 doc.setFontSize(fontSize);
-                doc.text(text, x, y, { align, maxWidth });
-                return fontSize * 0.3527 * 1.2;
+                doc.text(text, x, y + (fontSize * 0.3527), { align, maxWidth }); // Adjusted for top-align simulation
+                return fontSize * 0.3527 * 1.2; 
             }
         } catch (error) {
             console.warn('Error rendering Japanese text, using fallback:', error);
             doc.setFont('helvetica', fontStyle);
             doc.setFontSize(fontSize);
-            doc.text(text, x, y, { align, maxWidth });
+            doc.text(text, x, y + (fontSize * 0.3527), { align, maxWidth });
             return fontSize * 0.3527 * 1.2;
         }
     } else {
         // Use regular jsPDF text for English
         doc.setFont('helvetica', fontStyle);
         doc.setFontSize(fontSize);
-        doc.text(text, x, y, { align, maxWidth });
+        // Standard doc.text uses baseline, so we add approx font height to simulate top-align
+        doc.text(text, x, y + (fontSize * 0.3527), { align, maxWidth });
         
         // Calculate approx height
         // For wrapping text, we should ideally use splitTextToSize
@@ -518,12 +522,12 @@ const drawInvoiceContent = async (
     const senderEmail = invoice.fromEmail || (invoice as any).gmail;
     if (senderEmail && senderEmail.trim()) {
         console.log('PDF Generator: Drawing From Email:', senderEmail);
-        await addTextToPdf(doc, `${t.email || 'Email'}: ${senderEmail.trim()}`, 14, fromY + 2, {
+        const emailLineHeight = await addTextToPdf(doc, `${t.email || 'Email'}: ${senderEmail.trim()}`, 14, fromY + 2, {
             fontSize: 10,
             language,
             maxWidth: 90
         });
-        fromY += 7;
+        fromY += emailLineHeight + 2;
     }
 
 
@@ -560,57 +564,54 @@ const drawInvoiceContent = async (
         // Email
         if (invoice.employeeEmail && invoice.employeeEmail.trim()) {
             const label = language === 'ja' ? `${t.email} : ` : `${t.email}: `;
-            await addTextToPdf(doc, label, billToX, billToY, {
+            const labelH = await addTextToPdf(doc, label, billToX, billToY, {
                 fontSize: 10,
-                fontStyle: 'normal',
                 align: 'left',
                 language
             });
-            const emailHeight = await addTextToPdf(doc, invoice.employeeEmail.trim(), billToX + labelWidth + 2, billToY, {
+            const valueH = await addTextToPdf(doc, invoice.employeeEmail.trim(), billToX + labelWidth + 2, billToY, {
                 fontSize: 10,
                 align: 'left',
                 language,
                 maxWidth: rightColWidth - labelWidth - 2
             });
-            billToY += emailHeight + 2;
+            billToY += Math.max(labelH, valueH) + 2;
         }
 
         // Phone
         if (invoice.employeeMobile && invoice.employeeMobile.trim()) {
             const label = language === 'ja' ? `${t.phone} : ` : `${t.phone}: `;
-            await addTextToPdf(doc, label, billToX, billToY, {
+            const labelH = await addTextToPdf(doc, label, billToX, billToY, {
                 fontSize: 10,
-                fontStyle: 'normal',
                 align: 'left',
                 language
             });
-            const phoneHeight = await addTextToPdf(doc, invoice.employeeMobile.trim(), billToX + labelWidth + 2, billToY, {
+            const valueH = await addTextToPdf(doc, invoice.employeeMobile.trim(), billToX + labelWidth + 2, billToY, {
                 fontSize: 10,
                 align: 'left',
                 language,
                 maxWidth: rightColWidth - labelWidth - 2
             });
-            billToY += phoneHeight + 2;
+            billToY += Math.max(labelH, valueH) + 2;
         }
 
         // Address
         if (invoice.employeeAddress && invoice.employeeAddress.trim()) {
             const label = language === 'ja' ? `${t.address} : ` : `${t.address}: `;
-            await addTextToPdf(doc, label, billToX, billToY, {
+            const labelH = await addTextToPdf(doc, label, billToX, billToY, {
                 fontSize: 10,
-                fontStyle: 'normal',
                 align: 'left',
                 language
             });
             const addressToDisplay = invoice.employeeAddress.replace(/\n/g, ', ').trim();
             const finalAddress = language === 'ja' ? toKatakana(addressToDisplay) : addressToDisplay;
-            const addressHeight = await addTextToPdf(doc, finalAddress, billToX + labelWidth + 2, billToY, {
+            const valueH = await addTextToPdf(doc, finalAddress, billToX + labelWidth + 2, billToY, {
                 fontSize: 10,
                 align: 'left',
                 language,
                 maxWidth: rightColWidth - labelWidth - 2
             });
-            billToY += addressHeight + 2;
+            billToY += Math.max(labelH, valueH) + 2;
         }
     }
 
@@ -630,17 +631,18 @@ const drawInvoiceContent = async (
 
     // Due Date (Right Side)
     if (invoice.dueDate) {
-        await addTextToPdf(doc, `${t.dueDate}${language === 'ja' ? '：' : ': '} ${formatDateInPdf(invoice.dueDate)}`, billToX, commonRowY, {
+        const dueDateHeight = await addTextToPdf(doc, `${t.dueDate}${language === 'ja' ? '：' : ': '} ${formatDateInPdf(invoice.dueDate)}`, billToX, commonRowY, {
             fontSize: 10,
             fontStyle: 'bold',
             align: 'left',
             language,
             maxWidth: rightColWidth
         });
+        commonRowY += dueDateHeight + 2;
     }
 
     // Update Y position for the table start, based on this new row
-    yPosition = commonRowY + 15;
+    yPosition = commonRowY + 10;
 
 
 
