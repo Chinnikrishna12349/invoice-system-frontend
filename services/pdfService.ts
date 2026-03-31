@@ -522,12 +522,23 @@ const drawInvoiceContent = async (
     const senderEmail = invoice.fromEmail || (invoice as any).gmail;
     if (senderEmail && senderEmail.trim()) {
         console.log('PDF Generator: Drawing From Email:', senderEmail);
-        const emailLineHeight = await addTextToPdf(doc, `${t.email || 'Email'}: ${senderEmail.trim()}`, 14, fromY + 2, {
+        const fromLabelX = 14;
+        const fromLabelWidth = 22;
+        const fromColonX = fromLabelX + fromLabelWidth;
+        const fromValueX = fromColonX + 4;
+
+        const emailLabelH = await addTextToPdf(doc, t.email || 'Email', fromLabelX, fromY + 2, {
+            fontSize: 10,
+            language
+        });
+        await addTextToPdf(doc, ':', fromColonX, fromY + 2, { fontSize: 10, language });
+        
+        const emailValueH = await addTextToPdf(doc, senderEmail.trim(), fromValueX, fromY + 2, {
             fontSize: 10,
             language,
-            maxWidth: 90
+            maxWidth: 90 - (fromValueX - fromLabelX)
         });
-        fromY += emailLineHeight + 2;
+        fromY += Math.max(emailLabelH, emailValueH) + 2;
     }
 
 
@@ -559,57 +570,68 @@ const drawInvoiceContent = async (
 
 
         // Bill To: email, phone and address field labels rendered with uniform width for alignment
-        const labelWidth = 18; // mm for uniform label space
+        const labelWidth = 22; // Increased for Japanese labels
+        const colonX = billToX + labelWidth; // Fixed X position for all colons
+        const valueX = colonX + 4; // Values start 4mm after the colon position
 
         // Email
         if (invoice.employeeEmail && invoice.employeeEmail.trim()) {
-            const label = language === 'ja' ? `${t.email} : ` : `${t.email}: `;
+            const label = t.email;
             const labelH = await addTextToPdf(doc, label, billToX, billToY, {
                 fontSize: 10,
                 align: 'left',
                 language
             });
-            const valueH = await addTextToPdf(doc, invoice.employeeEmail.trim(), billToX + labelWidth + 2, billToY, {
+            // Standard colon alignment
+            await addTextToPdf(doc, ':', colonX, billToY, { fontSize: 10, align: 'left', language });
+            
+            const valueH = await addTextToPdf(doc, invoice.employeeEmail.trim(), valueX, billToY, {
                 fontSize: 10,
                 align: 'left',
                 language,
-                maxWidth: rightColWidth - labelWidth - 2
+                maxWidth: rightColWidth - (valueX - billToX)
             });
             billToY += Math.max(labelH, valueH) + 2;
         }
 
         // Phone
         if (invoice.employeeMobile && invoice.employeeMobile.trim()) {
-            const label = language === 'ja' ? `${t.phone} : ` : `${t.phone}: `;
+            const label = t.phone;
             const labelH = await addTextToPdf(doc, label, billToX, billToY, {
                 fontSize: 10,
                 align: 'left',
                 language
             });
-            const valueH = await addTextToPdf(doc, invoice.employeeMobile.trim(), billToX + labelWidth + 2, billToY, {
+            // Standard colon alignment
+            await addTextToPdf(doc, ':', colonX, billToY, { fontSize: 10, align: 'left', language });
+
+            const valueH = await addTextToPdf(doc, invoice.employeeMobile.trim(), valueX, billToY, {
                 fontSize: 10,
                 align: 'left',
                 language,
-                maxWidth: rightColWidth - labelWidth - 2
+                maxWidth: rightColWidth - (valueX - billToX)
             });
             billToY += Math.max(labelH, valueH) + 2;
         }
 
         // Address
         if (invoice.employeeAddress && invoice.employeeAddress.trim()) {
-            const label = language === 'ja' ? `${t.address} : ` : `${t.address}: `;
+            const label = t.address;
             const labelH = await addTextToPdf(doc, label, billToX, billToY, {
                 fontSize: 10,
                 align: 'left',
                 language
             });
+            // Standard colon alignment
+            await addTextToPdf(doc, ':', colonX, billToY, { fontSize: 10, align: 'left', language });
+
             const addressToDisplay = invoice.employeeAddress.replace(/\n/g, ', ').trim();
             const finalAddress = language === 'ja' ? toKatakana(addressToDisplay) : addressToDisplay;
-            const valueH = await addTextToPdf(doc, finalAddress, billToX + labelWidth + 2, billToY, {
+            const valueH = await addTextToPdf(doc, finalAddress, valueX, billToY, {
                 fontSize: 10,
                 align: 'left',
                 language,
-                maxWidth: rightColWidth - labelWidth - 2
+                maxWidth: rightColWidth - (valueX - billToX)
             });
             billToY += Math.max(labelH, valueH) + 2;
         }
@@ -873,19 +895,26 @@ const drawInvoiceContent = async (
         let curY = bankY + 10;
         let accountIdY = bankY + 10; // Default vertical alignment point
 
+        // Set a fixed position for colons and values for perfect alignment
+        const bankColonX = 52; 
+        const bankValueX = 58;
+
         for (const item of validDetails) {
-            // Label
-            await addTextToPdf(doc, item.label, 14, curY, {
+            // Label (e.g. "Bank Name")
+            await addTextToPdf(doc, item.label.replace(/:$/, ''), 14, curY, {
                 fontSize: 10,
-                fontStyle: 'normal',
                 language
             });
 
-            // Value (Offset by 45mm for alignment)
-            // Use translation check for "Account Holder" label for consistent signature alignment
-            await addTextToPdf(doc, item.value || '', 58, curY, {
+            // Colon
+            await addTextToPdf(doc, ':', bankColonX, curY, {
                 fontSize: 10,
-                fontStyle: 'normal',
+                language
+            });
+
+            // Value (e.g. "Global Commerce Bank")
+            await addTextToPdf(doc, item.value || '', bankValueX, curY, {
+                fontSize: 10,
                 language
             });
 
