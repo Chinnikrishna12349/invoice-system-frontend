@@ -30,7 +30,8 @@ export const renderJapaneseText = async (
     div.style.color = '#000000';
     div.style.whiteSpace = 'pre-wrap';
     div.style.width = width > 0 ? `${width}mm` : 'auto';
-    div.style.padding = '2px'; 
+    div.style.padding = '0'; 
+    div.style.lineHeight = '1';
     div.style.boxSizing = 'border-box';
     // CSS properties for sharper text rendering
     // @ts-ignore
