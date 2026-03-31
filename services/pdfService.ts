@@ -4,6 +4,7 @@ import jsPDF from 'jspdf';
 import i18n from '../src/i18n/i18n';
 import { configureJapaneseFont, renderJapaneseText } from './japaneseFontSupport';
 import { getCompanyInfo } from './authService';
+import { toKatakana } from '../src/utils/katakanaConverter';
 import visionAiStamp from '../src/assets/visionai-stamp.png';
 import placeholderLogo from '../src/assets/oryfolks-logo.svg';
 import { VISION_AI_LOGO_BASE64 } from '../src/assets/visionAiLogoBase64';
@@ -467,7 +468,8 @@ const drawInvoiceContent = async (
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
     // Company Name Bold
-    await addTextToPdf(doc, companyInfoToUse?.companyName || invoice.company || t.companyName, 14, fromY, {
+    const displayCompanyName = companyInfoToUse?.companyName || invoice.company || t.companyName;
+    await addTextToPdf(doc, language === 'ja' ? toKatakana(displayCompanyName) : displayCompanyName, 14, fromY, {
         fontSize: 10,
         fontStyle: 'bold',
         language,
@@ -507,7 +509,8 @@ const drawInvoiceContent = async (
 
     for (const line of fromLines) {
         if (line && line.trim()) {
-            await addTextToPdf(doc, line.trim(), 14, fromY, {
+            const displayLine = language === 'ja' ? toKatakana(line.trim()) : line.trim();
+            await addTextToPdf(doc, displayLine, 14, fromY, {
                 fontSize: 10,
                 language,
                 maxWidth: 90
@@ -545,7 +548,7 @@ const drawInvoiceContent = async (
         });
         billToY = fromStartY + 6;
 
-        await addTextToPdf(doc, invoice.employeeName.trim(), billToX, billToY, {
+        await addTextToPdf(doc, language === 'ja' ? toKatakana(invoice.employeeName.trim()) : invoice.employeeName.trim(), billToX, billToY, {
             fontSize: 10,
             fontStyle: 'bold',
             align: 'left',
@@ -604,7 +607,9 @@ const drawInvoiceContent = async (
                 align: 'left',
                 language
             });
-            await addTextToPdf(doc, invoice.employeeAddress.replace(/\n/g, ', ').trim(), billToX + labelWidth + 2, billToY, {
+            const addressToDisplay = invoice.employeeAddress.replace(/\n/g, ', ').trim();
+            const finalAddress = language === 'ja' ? toKatakana(addressToDisplay) : addressToDisplay;
+            await addTextToPdf(doc, finalAddress, billToX + labelWidth + 2, billToY, {
                 fontSize: 10,
                 align: 'left',
                 language,
@@ -712,7 +717,8 @@ const drawInvoiceContent = async (
         // Description
         if (descLines.length === 1) {
             // Check for Japanese in description too
-            await addTextToPdf(doc, descLines[0], (colX[1] + colX[2]) / 2, rowTextY, {
+            const displayDesc = language === 'ja' ? toKatakana(descLines[0]) : descLines[0];
+            await addTextToPdf(doc, displayDesc, (colX[1] + colX[2]) / 2, rowTextY, {
                 align: 'center', language, maxWidth: descWidth, fontSize: 10
             });
         } else {
@@ -721,7 +727,8 @@ const drawInvoiceContent = async (
             // But assuming split works or we just print lines:
             let lineY = yPosition + 4;
             for (const line of descLines) {
-                await addTextToPdf(doc, line, (colX[1] + colX[2]) / 2, lineY, {
+                const displayLine = language === 'ja' ? toKatakana(line) : line;
+                await addTextToPdf(doc, displayLine, (colX[1] + colX[2]) / 2, lineY, {
                     align: 'center', language, maxWidth: descWidth, fontSize: 10
                 });
                 lineY += 5;
