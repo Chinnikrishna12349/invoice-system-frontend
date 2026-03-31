@@ -425,28 +425,42 @@ const drawInvoiceContent = async (
     const rightColWidth = 196 - rightColX;
 
     // Invoice # and Date (top right)
-    // Aligned to right column start
-    // Adjusted Y (yPosition + 5) to align text baseline/visual top with image top
-    let headerTextY = yPosition + 5;
+    // Aligned to right column start 
+    // Top-align with logo (yPosition = 10)
+    let headerTextY = yPosition + 1; // Slight offset for visual balance with logo top
+    
+    // Header Colon Alignment
+    const headerLabelWidth = 25; 
+    const headerColonX = rightColX + headerLabelWidth;
+    const headerValueX = headerColonX + 4;
 
-    // Stamp moved to bottom right as requested
-
-    const invoiceNoHeight = await addTextToPdf(doc, `${t.invoiceNo} ${invoice.invoiceNumber}`, rightColX, headerTextY, {
+    const invoiceNoLabelH = await addTextToPdf(doc, t.invoiceNo.replace(/:$/, ''), rightColX, headerTextY, {
         fontSize: 11,
         fontStyle: 'bold',
-        align: 'left',
-        language,
-        maxWidth: rightColWidth
+        language
     });
-    headerTextY += invoiceNoHeight + 2;
-
-    await addTextToPdf(doc, `${t.date} ${formatDateInPdf(invoice.date)}`, rightColX, headerTextY, {
+    await addTextToPdf(doc, ':', headerColonX, headerTextY, { fontSize: 11, fontStyle: 'bold', language });
+    const invoiceNoValueH = await addTextToPdf(doc, invoice.invoiceNumber, headerValueX, headerTextY, {
         fontSize: 11,
         fontStyle: 'bold',
-        align: 'left',
         language,
-        maxWidth: rightColWidth
+        maxWidth: rightColWidth - (headerValueX - rightColX)
     });
+    headerTextY += Math.max(invoiceNoLabelH, invoiceNoValueH) + 3;
+
+    const dateLabelH = await addTextToPdf(doc, t.date.replace(/:$/, ''), rightColX, headerTextY, {
+        fontSize: 11,
+        fontStyle: 'bold',
+        language
+    });
+    await addTextToPdf(doc, ':', headerColonX, headerTextY, { fontSize: 11, fontStyle: 'bold', language });
+    const dateValueH = await addTextToPdf(doc, formatDateInPdf(invoice.date), headerValueX, headerTextY, {
+        fontSize: 11,
+        fontStyle: 'bold',
+        language,
+        maxWidth: rightColWidth - (headerValueX - rightColX)
+    });
+    headerTextY += Math.max(dateLabelH, dateValueH) + 3;
 
     // Set yPosition for content start
     // Ensure we clear the logo (25mm height) + header and add sufficient padding (12mm)
@@ -523,7 +537,7 @@ const drawInvoiceContent = async (
     if (senderEmail && senderEmail.trim()) {
         console.log('PDF Generator: Drawing From Email:', senderEmail);
         const fromLabelX = 14;
-        const fromLabelWidth = 22;
+        const fromLabelWidth = 25; // Standardized to match other sections
         const fromColonX = fromLabelX + fromLabelWidth;
         const fromValueX = fromColonX + 4;
 
@@ -570,9 +584,9 @@ const drawInvoiceContent = async (
 
 
         // Bill To: email, phone and address field labels rendered with uniform width for alignment
-        const labelWidth = 22; // Increased for Japanese labels
-        const colonX = billToX + labelWidth; // Fixed X position for all colons
-        const valueX = colonX + 4; // Values start 4mm after the colon position
+        const billToLabelWidth = 25; // Standardized to match header
+        const billToColonX = billToX + billToLabelWidth; 
+        const billToValueX = billToColonX + 4; 
 
         // Email
         if (invoice.employeeEmail && invoice.employeeEmail.trim()) {
@@ -583,13 +597,13 @@ const drawInvoiceContent = async (
                 language
             });
             // Standard colon alignment
-            await addTextToPdf(doc, ':', colonX, billToY, { fontSize: 10, align: 'left', language });
+            await addTextToPdf(doc, ':', billToColonX, billToY, { fontSize: 10, align: 'left', language });
             
-            const valueH = await addTextToPdf(doc, invoice.employeeEmail.trim(), valueX, billToY, {
+            const valueH = await addTextToPdf(doc, invoice.employeeEmail.trim(), billToValueX, billToY, {
                 fontSize: 10,
                 align: 'left',
                 language,
-                maxWidth: rightColWidth - (valueX - billToX)
+                maxWidth: rightColWidth - (billToValueX - billToX)
             });
             billToY += Math.max(labelH, valueH) + 2;
         }
@@ -603,13 +617,13 @@ const drawInvoiceContent = async (
                 language
             });
             // Standard colon alignment
-            await addTextToPdf(doc, ':', colonX, billToY, { fontSize: 10, align: 'left', language });
+            await addTextToPdf(doc, ':', billToColonX, billToY, { fontSize: 10, align: 'left', language });
 
-            const valueH = await addTextToPdf(doc, invoice.employeeMobile.trim(), valueX, billToY, {
+            const valueH = await addTextToPdf(doc, invoice.employeeMobile.trim(), billToValueX, billToY, {
                 fontSize: 10,
                 align: 'left',
                 language,
-                maxWidth: rightColWidth - (valueX - billToX)
+                maxWidth: rightColWidth - (billToValueX - billToX)
             });
             billToY += Math.max(labelH, valueH) + 2;
         }
@@ -623,15 +637,15 @@ const drawInvoiceContent = async (
                 language
             });
             // Standard colon alignment
-            await addTextToPdf(doc, ':', colonX, billToY, { fontSize: 10, align: 'left', language });
+            await addTextToPdf(doc, ':', billToColonX, billToY, { fontSize: 10, align: 'left', language });
 
             const addressToDisplay = invoice.employeeAddress.replace(/\n/g, ', ').trim();
             const finalAddress = language === 'ja' ? toKatakana(addressToDisplay) : addressToDisplay;
-            const valueH = await addTextToPdf(doc, finalAddress, valueX, billToY, {
+            const valueH = await addTextToPdf(doc, finalAddress, billToValueX, billToY, {
                 fontSize: 10,
                 align: 'left',
                 language,
-                maxWidth: rightColWidth - (valueX - billToX)
+                maxWidth: rightColWidth - (billToValueX - billToX)
             });
             billToY += Math.max(labelH, valueH) + 2;
         }
@@ -643,24 +657,45 @@ const drawInvoiceContent = async (
 
     // PO Number (Left Side)
     if (invoice.poNumber && invoice.poNumber.trim()) {
-        await addTextToPdf(doc, `${t.poNumber}: ${invoice.poNumber.trim()}`, 14, commonRowY, {
+        const poLabelWidth = 25;
+        const poColonX = 14 + poLabelWidth;
+        const poValueX = poColonX + 4;
+
+        await addTextToPdf(doc, t.poNumber.replace(/:$/, ''), 14, commonRowY, {
+            fontSize: 10,
+            fontStyle: 'bold',
+            language
+        });
+        await addTextToPdf(doc, ':', poColonX, commonRowY, { fontSize: 10, fontStyle: 'bold', language });
+        await addTextToPdf(doc, invoice.poNumber.trim(), poValueX, commonRowY, {
             fontSize: 10,
             fontStyle: 'bold',
             language,
-            maxWidth: 90
+            maxWidth: 90 - (poValueX - 14)
         });
     }
 
     // Due Date (Right Side)
     if (invoice.dueDate) {
-        const dueDateHeight = await addTextToPdf(doc, `${t.dueDate}${language === 'ja' ? '：' : ': '} ${formatDateInPdf(invoice.dueDate)}`, billToX, commonRowY, {
+        const dueDateLabel = t.dueDate;
+        const dueDateLabelX = rightColX;
+        const dueDateColonX = dueDateLabelX + 25;
+        const dueDateValueX = dueDateColonX + 4;
+
+        const labelH = await addTextToPdf(doc, dueDateLabel.replace(/:$/, ''), dueDateLabelX, commonRowY, {
             fontSize: 10,
             fontStyle: 'bold',
-            align: 'left',
-            language,
-            maxWidth: rightColWidth
+            language
         });
-        commonRowY += dueDateHeight + 2;
+        await addTextToPdf(doc, ':', dueDateColonX, commonRowY, { fontSize: 10, fontStyle: 'bold', language });
+        const valueH = await addTextToPdf(doc, formatDateInPdf(invoice.dueDate), dueDateValueX, commonRowY, {
+            fontSize: 10,
+            fontStyle: 'bold',
+            language,
+            maxWidth: rightColWidth - (dueDateValueX - rightColX)
+        });
+        
+        commonRowY += Math.max(labelH, valueH) + 2;
     }
 
     // Update Y position for the table start, based on this new row
@@ -669,11 +704,9 @@ const drawInvoiceContent = async (
 
 
     // Services Table
-    // Adjusted widths to prevent layout breaks for large amounts (T3)
-    // Original: [14, 25, 95, 120, 158, 196]
-    // Refined: [14, 25, 90, 115, 155, 196] (Gives more space to Rate and Amount)
-    const colX = [14, 25, 90, 115, 155, 196];
-    const tableStartY = yPosition;
+    // Refined column widths for better spacing and professional alignment
+    const colX = [14, 25, 105, 125, 160, 196]; 
+    const tableStartY = yPosition + 5; 
 
     doc.setDrawColor(0);
     doc.setLineWidth(0.1);
@@ -688,9 +721,9 @@ const drawInvoiceContent = async (
     await addTextToPdf(doc, t.sNo, (colX[0] + colX[1]) / 2, textY, {
         fontSize: 10, fontStyle: 'bold', align: 'center', language
     });
-    // Description
-    await addTextToPdf(doc, t.description, (colX[1] + colX[2]) / 2, textY, {
-        fontSize: 10, fontStyle: 'bold', align: 'center', language
+    // Description - Left aligned for professional feel
+    await addTextToPdf(doc, t.description, colX[1] + 2, textY, {
+        fontSize: 10, fontStyle: 'bold', align: 'left', language
     });
     // Hours (Right Aligned -4 padding)
     await addTextToPdf(doc, t.hours, colX[3] - 4, textY, {
@@ -734,32 +767,30 @@ const drawInvoiceContent = async (
         doc.text(String(index + 1), (colX[0] + colX[1]) / 2, rowTextY, { align: 'center' });
 
         // Description
+        let lineY = rowTextY - (descLines.length > 1 ? 2 : 0); // Slight offset for multi-line
         if (descLines.length === 1) {
-            // Check for Japanese in description too
             const displayDesc = language === 'ja' ? toKatakana(descLines[0]) : descLines[0];
-            await addTextToPdf(doc, displayDesc, (colX[1] + colX[2]) / 2, rowTextY, {
-                align: 'center', language, maxWidth: descWidth, fontSize: 10
+            await addTextToPdf(doc, displayDesc, colX[1] + 2, rowTextY, {
+                align: 'left', language, maxWidth: colX[2] - colX[1] - 4, fontSize: 10
             });
         } else {
-            // For multi-line, we might need a loop or simple text if no Japanese.
-            // If description has Japanese, doc.splitTextToSize might behave oddly if it doesn't support the font.
-            // But assuming split works or we just print lines:
-            let lineY = yPosition + 4;
             for (const line of descLines) {
                 const displayLine = language === 'ja' ? toKatakana(line) : line;
-                await addTextToPdf(doc, displayLine, (colX[1] + colX[2]) / 2, lineY, {
-                    align: 'center', language, maxWidth: descWidth, fontSize: 10
+                await addTextToPdf(doc, displayLine, colX[1] + 2, lineY, {
+                    align: 'left', language, maxWidth: colX[2] - colX[1] - 4, fontSize: 10
                 });
                 lineY += 5;
             }
         }
 
-        // Hours (Right Aligned) - Formatted specifically for T4/T5
+        // Hours (Right Aligned)
         const formattedHours = Number(service.hours).toLocaleString(undefined, {
             minimumFractionDigits: 0,
             maximumFractionDigits: 2
         });
-        doc.text(formattedHours, colX[3] - 4, rowTextY, { align: 'right' });
+        await addTextToPdf(doc, formattedHours, colX[3] - 4, rowTextY, {
+            align: 'right', language, fontSize: 10, maxWidth: (colX[3] - colX[2]) - 2
+        });
 
         // Unit Price WITH CURRENCY (Right Aligned)
         const formattedRate = formatAmount(service.rate, false);
@@ -768,7 +799,6 @@ const drawInvoiceContent = async (
         });
 
         // Amount WITH CURRENCY (Right Aligned)
-        // Use the same rounded amount for consistency
         const formattedItemAmount = formatAmount(amount, false);
         await addTextToPdf(doc, formattedItemAmount, colX[5] - 4, rowTextY, {
             align: 'right', language, fontSize: 10, maxWidth: (colX[5] - colX[4]) - 2
@@ -797,7 +827,7 @@ const drawInvoiceContent = async (
     const { grandTotal, consumptionTaxRate, consumptionTaxAmount, cgstRate, sgstRate, cgstAmount, sgstAmount } = taxCalculation;
 
     const drawTotalRow = async (label: string, value: string, isBold: boolean = false) => {
-        const rowH = 10; // Increased height to prevent overlap
+        const rowH = 10;
         doc.line(colX[0], yPosition, colX[0], yPosition + rowH);
         doc.line(colX[4], yPosition, colX[4], yPosition + rowH);
         doc.line(colX[5], yPosition, colX[5], yPosition + rowH);
@@ -805,14 +835,12 @@ const drawInvoiceContent = async (
         doc.line(colX[0], yPosition + rowH, colX[5], yPosition + rowH);
 
         const fontSize = 10;
-        const textY = yPosition + 7; // Adjusted baseline for better vertical centering
+        const textY = yPosition + 7;
 
-        await addTextToPdf(doc, label, colX[0] + 2, textY, {
+        await addTextToPdf(doc, label.replace(/:$/, ''), colX[0] + 2, textY, {
             fontSize, fontStyle: isBold ? 'bold' : 'normal', align: 'left', language
         });
 
-        doc.setFont('helvetica', isBold ? 'bold' : 'normal');
-        doc.setFontSize(fontSize);
         // Correctly right-align value at the end of the table
         await addTextToPdf(doc, value, colX[5] - 4, textY, {
             fontSize, 
@@ -895,9 +923,10 @@ const drawInvoiceContent = async (
         let curY = bankY + 10;
         let accountIdY = bankY + 10; // Default vertical alignment point
 
-        // Set a fixed position for colons and values for perfect alignment
-        const bankColonX = 52; 
-        const bankValueX = 58;
+        // Standardized across the whole document (matches header/billTo)
+        const bankLabelWidth = 25; 
+        const bankColonX = 14 + bankLabelWidth;
+        const bankValueX = bankColonX + 4;
 
         for (const item of validDetails) {
             // Label (e.g. "Bank Name")
