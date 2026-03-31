@@ -54,7 +54,7 @@ public class BrevoEmailService implements EmailService, InitializingBean {
     @Value("${brevo.api.key}")
     private String brevoApiKey;
 
-    @Value("${brevo.sender.email:karumanchipavankumar2001@gmail.com}")
+    @Value("${brevo.sender.email:chinnikrishnamaddana@gmail.com}")
     private String senderEmail;
 
     @Value("${brevo.sender.name:Vision AI}")
@@ -159,8 +159,10 @@ public class BrevoEmailService implements EmailService, InitializingBean {
             byte[] pdfBytes = pdfService.generateInvoicePdf(invoice);
             sendInvoiceEmailWithPdf(invoice, pdfBytes, additionalEmails);
         } catch (Exception e) {
-            System.err.println("Error generating PDF or sending email in background: " + e.getMessage());
+            String errorMsg = "Error generating PDF or sending email: " + e.getMessage();
+            System.err.println(errorMsg);
             e.printStackTrace();
+            throw new RuntimeException(errorMsg, e);
         }
     }
 
@@ -896,9 +898,8 @@ public class BrevoEmailService implements EmailService, InitializingBean {
     }
 
     private String resolveSenderEmail(InvoiceDTO invoice) {
-        if (invoice != null && StringUtils.hasText(invoice.getFromEmail())) {
-            return invoice.getFromEmail().trim();
-        }
+        // Always use the verified sender email from configuration to ensure delivery
+        // Previous logic used invoice.getFromEmail() which would fail if not verified in Brevo
         return senderEmail;
     }
 }
