@@ -28,8 +28,9 @@ export const renderJapaneseText = async (
     // Use slightly heavier weight for normal text to match PDF Helvetica
     div.style.fontWeight = fontStyle === 'bold' ? 'bold' : '500';
     div.style.color = '#000000';
-    div.style.whiteSpace = 'pre-wrap';
-    div.style.width = width > 0 ? `${width}mm` : 'auto';
+    div.style.display = 'inline-block';
+    div.style.width = 'auto';
+    div.style.maxWidth = width > 0 ? `${width}mm` : 'none';
     div.style.padding = '5px 0'; 
     div.style.lineHeight = 'normal';
     div.style.boxSizing = 'border-box';

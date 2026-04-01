@@ -38,7 +38,8 @@ const addTextToPdf = async (
                 const img = new Image();
                 const heightmm = await new Promise<number>((resolve) => {
                     img.onload = () => {
-                        const canvasToMm = 0.3527 / 4;
+                        // 1px = 0.2645833 mm (at 96 DPI). Scale is 4.
+                        const canvasToMm = 0.2645833 / 4;
                         let finalWidth = img.width * canvasToMm;
                         let finalHeight = img.height * canvasToMm;
 
@@ -51,8 +52,8 @@ const addTextToPdf = async (
                         // Adjust positions based on alignment
                         let adjustedX = x;
                         // Use Y as the TOP edge (Image-style) for more reliable stacking
-                        // Subtract 1.7635mm to compensate for the 5px top padding in renderJapaneseText
-                        let adjustedY = y - 1.7635;
+                        // Subtract 1.8mm to compensate for the 5px top padding in renderJapaneseText + optical baseline difference
+                        let adjustedY = y - 1.8;
 
                         if (align === 'right') {
                             adjustedX = x - finalWidth;
@@ -764,7 +765,9 @@ const drawInvoiceContent = async (
             doc.line(x, yPosition, x, yPosition + rowHeight);
         }
 
-        const rowTextY = yPosition + (rowHeight / 2) + 1;
+        // Vertically center text in row (rowHeight / 2 - fontSize_in_mm / 2)
+        // fontSize 10pt ≈ 3.5mm. For 12mm row, center is (12-3.5)/2 ≈ 4.25
+        const rowTextY = yPosition + (rowHeight - 3.5) / 2;
 
         // SNO
         await addTextToPdf(doc, String(index + 1), (colX[0] + colX[1]) / 2, rowTextY, {
@@ -840,7 +843,8 @@ const drawInvoiceContent = async (
         doc.line(colX[0], yPosition + rowH, colX[5], yPosition + rowH);
 
         const fontSize = 10;
-        const textY = yPosition + 7;
+        // Center text vertically in the 10mm row (10 - 3.5) / 2 = 3.25
+        const textY = yPosition + 3.25;
 
         await addTextToPdf(doc, label.replace(/[：:]/g, ''), colX[0] + 2, textY, {
             fontSize, fontStyle: isBold ? 'bold' : 'normal', align: 'left', language
