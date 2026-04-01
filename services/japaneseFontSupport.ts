@@ -33,6 +33,7 @@ export const renderJapaneseText = async (
     div.style.maxWidth = width > 0 ? `${width}mm` : 'none';
     div.style.padding = '5px 0'; 
     div.style.lineHeight = 'normal';
+    div.style.wordBreak = 'break-all';
     div.style.boxSizing = 'border-box';
     // CSS properties for sharper text rendering
     // @ts-ignore
