@@ -52,8 +52,8 @@ const addTextToPdf = async (
                         // Adjust positions based on alignment
                         let adjustedX = x;
                         // Use Y as the TOP edge (Image-style) for more reliable stacking
-                        // Subtract 1.8mm to compensate for the 5px top padding in renderJapaneseText + optical baseline difference
-                        let adjustedY = y - 1.8;
+                        // Subtract 2.2mm to compensate for 5px padding + optical baseline gap vs native text
+                        let adjustedY = y - 2.2;
 
                         if (align === 'right') {
                             adjustedX = x - finalWidth;
@@ -88,7 +88,8 @@ const addTextToPdf = async (
         doc.setFont('helvetica', fontStyle);
         doc.setFontSize(fontSize);
         // Standard doc.text now uses the baseline option directly
-        doc.text(text, x, y, { align, maxWidth, baseline });
+        // Nudge English text down by 0.5mm to match the optical top of Japanese renderings
+        doc.text(text, x, y + 0.5, { align, maxWidth, baseline });
 
         // Calculate approx height
         // For wrapping text, we should ideally use splitTextToSize
