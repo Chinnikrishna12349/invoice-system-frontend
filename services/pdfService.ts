@@ -428,12 +428,20 @@ const drawInvoiceContent = async (
     // Top-align with logo (yPosition = 10)
     let headerTextY = yPosition; // Perfectly level with logo top
 
-    // Header Colon Alignment
-    const headerLabelWidth = 22;
-    const headerColonX = rightColX + headerLabelWidth;
+    const invoiceNoLabel = t.invoiceNo.replace(/[：:]/g, '');
+    const dateLabel = (t.dateLabel?.replace(/[：:]/g, '') || t.date.replace(/[：:]/g, ''));
+
+    // Dynamic width calculation for perfect colon alignment
+    const headerLabelWidth = Math.max(
+        doc.getTextWidth(invoiceNoLabel),
+        doc.getTextWidth(dateLabel)
+    );
+    
+    // Add small buffer for aesthetics
+    const headerColonX = rightColX + headerLabelWidth + 2;
     const headerValueX = headerColonX + 4;
 
-    const invoiceNoLabelH = await addTextToPdf(doc, t.invoiceNo.replace(/[：:]/g, ''), rightColX, headerTextY, {
+    const invoiceNoLabelH = await addTextToPdf(doc, invoiceNoLabel, rightColX, headerTextY, {
         fontSize: 11,
         fontStyle: 'bold',
         language
@@ -447,7 +455,7 @@ const drawInvoiceContent = async (
     });
     headerTextY += Math.max(invoiceNoLabelH, invoiceNoValueH) + 3;
 
-    const dateLabelH = await addTextToPdf(doc, t.dateLabel?.replace(/[：:]/g, '') || t.date.replace(/[：:]/g, ''), rightColX, headerTextY, {
+    const dateLabelH = await addTextToPdf(doc, dateLabel, rightColX, headerTextY, {
         fontSize: 11,
         fontStyle: 'bold',
         language
@@ -535,12 +543,12 @@ const drawInvoiceContent = async (
     const senderEmail = invoice.fromEmail || (invoice as any).gmail;
     if (senderEmail && senderEmail.trim()) {
         console.log('PDF Generator: Drawing From Email:', senderEmail);
-        const fromLabelX = 14;
-        const fromLabelWidth = 22; // Standardized to match other sections
-        const fromColonX = fromLabelX + fromLabelWidth;
+        const senderEmailLabel = (t.email || 'Email').replace(/[：:]/g, '');
+        const fromLabelWidth = doc.getTextWidth(senderEmailLabel);
+        const fromColonX = fromLabelX + fromLabelWidth + 2;
         const fromValueX = fromColonX + 4;
 
-        const emailLabelH = await addTextToPdf(doc, (t.email || 'Email').replace(/[：:]/g, ''), fromLabelX, fromY + 2, {
+        const emailLabelH = await addTextToPdf(doc, senderEmailLabel, fromLabelX, fromY + 2, {
             fontSize: 10,
             language,
             baseline: 'top'
@@ -586,14 +594,23 @@ const drawInvoiceContent = async (
 
 
 
-        // Bill To: email, phone and address field labels rendered with uniform width for alignment
-        const billToLabelWidth = 22; // Standardized to match header
-        const billToColonX = billToX + billToLabelWidth;
-        const billToValueX = billToColonX + 4;
+        // DYNAMIC ALIGNMENT for Bill To info
+        const billToEmailLabel = t.email.replace(/[：:]/g, '');
+        const billToPhoneLabel = t.phone.replace(/[：:]/g, '');
+        const billToAddressLabel = t.address.replace(/[：:]/g, '');
+
+        const billToLabelWidth = Math.max(
+            doc.getTextWidth(billToEmailLabel),
+            doc.getTextWidth(billToPhoneLabel),
+            doc.getTextWidth(billToAddressLabel)
+        );
+
+        const billToColonX = billToX + billToLabelWidth + 2; 
+        const billToValueX = billToColonX + 4; 
 
         // Email
         if (invoice.employeeEmail && invoice.employeeEmail.trim()) {
-            const label = t.email.replace(/[：:]/g, '');
+            const label = billToEmailLabel;
             const labelH = await addTextToPdf(doc, label, billToX, billToY, {
                 fontSize: 10,
                 align: 'left',
@@ -613,7 +630,7 @@ const drawInvoiceContent = async (
 
         // Phone
         if (invoice.employeeMobile && invoice.employeeMobile.trim()) {
-            const label = t.phone.replace(/[：:]/g, '');
+            const label = billToPhoneLabel;
             const labelH = await addTextToPdf(doc, label, billToX, billToY, {
                 fontSize: 10,
                 align: 'left',
@@ -633,7 +650,7 @@ const drawInvoiceContent = async (
 
         // Address
         if (invoice.employeeAddress && invoice.employeeAddress.trim()) {
-            const label = t.address.replace(/[：:]/g, '');
+            const label = billToAddressLabel;
             const labelH = await addTextToPdf(doc, label, billToX, billToY, {
                 fontSize: 10,
                 align: 'left',
@@ -660,11 +677,12 @@ const drawInvoiceContent = async (
 
     // PO Number (Left Side)
     if (invoice.poNumber && invoice.poNumber.trim()) {
-        const poLabelWidth = 22;
-        const poColonX = 14 + poLabelWidth;
+        const poLabelRaw = t.poNumber.replace(/[：:]/g, '');
+        const rowLabelWidth = Math.max(doc.getTextWidth(poLabelRaw), doc.getTextWidth(t.dueDate.replace(/[：:]/g, '')));
+        const poColonX = 14 + rowLabelWidth + 2;
         const poValueX = poColonX + 4;
 
-        await addTextToPdf(doc, t.poNumber.replace(/[：:]/g, ''), 14, commonRowY, {
+        await addTextToPdf(doc, poLabelRaw, 14, commonRowY, {
             fontSize: 10,
             fontStyle: 'bold',
             language
@@ -682,10 +700,11 @@ const drawInvoiceContent = async (
     if (invoice.dueDate) {
         const dueDateLabel = t.dueDate;
         const dueDateLabelX = rightColX;
-        const dueDateColonX = dueDateLabelX + 22;
+        const dueDateLabelRaw = t.dueDate.replace(/[：:]/g, '');
+        const dueDateColonX = dueDateLabelX + rowLabelWidth + 2;
         const dueDateValueX = dueDateColonX + 4;
 
-        const labelH = await addTextToPdf(doc, dueDateLabel.replace(/[：:]/g, ''), dueDateLabelX, commonRowY, {
+        const labelH = await addTextToPdf(doc, dueDateLabelRaw, dueDateLabelX, commonRowY, {
             fontSize: 10,
             fontStyle: 'bold',
             language
@@ -928,9 +947,9 @@ const drawInvoiceContent = async (
         let curY = bankY + 10;
         let accountIdY = bankY + 10; // Default vertical alignment point
 
-        // Standardized across the whole document (matches header/billTo)
-        const bankLabelWidth = 22;
-        const bankColonX = 14 + bankLabelWidth;
+        // Start dynamic bank detail rendering
+        const bankLabelWidth = Math.max(...validDetails.map(d => doc.getTextWidth(d.label.replace(/[：:]/g, ''))));
+        const bankColonX = 14 + bankLabelWidth + 2;
         const bankValueX = bankColonX + 4;
 
         for (const item of validDetails) {
@@ -946,10 +965,11 @@ const drawInvoiceContent = async (
                 language
             });
 
-            // Value (e.g. "Global Commerce Bank")
-            await addTextToPdf(doc, item.value || '', bankValueX, curY, {
+            // Value
+            const valH = await addTextToPdf(doc, item.value || '', bankValueX, curY, {
                 fontSize: 10,
-                language
+                language,
+                maxWidth: 90 - (bankValueX - 14)
             });
 
             // Capture Y of Account Holder for horizontal alignment of signature
@@ -957,7 +977,7 @@ const drawInvoiceContent = async (
                 accountIdY = curY;
             }
 
-            curY += 10;
+            curY += valH + 2; // Dynamic spacing
         }
 
         // Authorized Signature (Right) - Aligned with Account Holder row
