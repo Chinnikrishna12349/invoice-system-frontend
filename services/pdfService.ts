@@ -915,8 +915,9 @@ const drawInvoiceContent = async (
             { label: t.accountTypeLabel || (language === 'ja' ? '口座種別：' : 'Account Type:'), value: b?.accountType },
             { label: t.accountNoLabel || (language === 'ja' ? '口座番号：' : 'Account No:'), value: b?.accountNumber },
             { label: t.accountHolderLabel || (language === 'ja' ? '口座名義：' : 'Account Holder:'), value: b?.accountHolderName },
-            { label: t.swiftCodeLabel || (language === 'ja' ? 'SWIFTコード：' : 'SWIFT Code:'), value: (b as any)?.swiftCode },
-            { label: t.ifscCodeLabel || (language === 'ja' ? 'IFSC：' : 'IFSC Code:'), value: b?.ifscCode }
+            // Check both swiftCode and swift for compatibility
+            { label: t.swiftCodeLabel || (language === 'ja' ? 'SWIFTコード：' : 'SWIFT Code:'), value: (b as any)?.swiftCode || (b as any)?.swift },
+            { label: t.ifscCodeLabel || (language === 'ja' ? 'IFSC：' : 'IFSC Code:'), value: b?.ifscCode || (b as any)?.ifsc }
         ];
 
         const validDetails = details.filter(item => item.value && item.value.toString().trim().length > 0);
@@ -930,6 +931,14 @@ const drawInvoiceContent = async (
         const bankValueX = bankColonX + 4;
 
         for (const item of validDetails) {
+            // Page break check for bank details to avoid touching bottom
+            if (curY > 270) {
+                doc.addPage();
+                curY = 20;
+                await addTextToPdf(doc, (t.bankDetailsLabel || 'Bank Details:') + ' (cont.)', 14, curY, { fontSize: 11, fontStyle: 'bold', language });
+                curY += 10;
+            }
+
             // Label (e.g. "Bank Name")
             await addTextToPdf(doc, item.label.replace(/[：:]/g, ''), 14, curY, {
                 fontSize: 10,
@@ -979,10 +988,12 @@ const drawInvoiceContent = async (
         });
 
         // Move Y position for footer bottom sections
-        yPosition = Math.max(curY, signatureY + 15) + 10;
+        // Maintain at least 15mm gap from the bottom of details
+        yPosition = Math.max(curY, signatureY + 15) + 5;
     }
 
     // Centered Footer (Tagline and Thank You)
+    // Page break if we're too close to the bottom (A4 is 297mm)
     if (yPosition > 275) {
         doc.addPage();
         yPosition = 20;
