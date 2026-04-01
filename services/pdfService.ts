@@ -38,7 +38,7 @@ const addTextToPdf = async (
                 const img = new Image();
                 const heightmm = await new Promise<number>((resolve) => {
                     img.onload = () => {
-                        const canvasToMm = 0.3527 / 4; 
+                        const canvasToMm = 0.3527 / 4;
                         let finalWidth = img.width * canvasToMm;
                         let finalHeight = img.height * canvasToMm;
 
@@ -52,7 +52,7 @@ const addTextToPdf = async (
                         let adjustedX = x;
                         // Use Y as the TOP edge (Image-style) for more reliable stacking
                         // Subtract 1.7635mm to compensate for the 5px top padding in renderJapaneseText
-                        let adjustedY = y - 1.7635; 
+                        let adjustedY = y - 1.7635;
 
                         if (align === 'right') {
                             adjustedX = x - finalWidth;
@@ -73,7 +73,7 @@ const addTextToPdf = async (
                 return heightmm;
             } else {
                 doc.text(text, x, y, { align, maxWidth, baseline });
-                return fontSize * 0.3527 * 1.2; 
+                return fontSize * 0.3527 * 1.2;
             }
         } catch (error) {
             console.warn('Error rendering Japanese text, using fallback:', error);
@@ -88,7 +88,7 @@ const addTextToPdf = async (
         doc.setFontSize(fontSize);
         // Standard doc.text now uses the baseline option directly
         doc.text(text, x, y, { align, maxWidth, baseline });
-        
+
         // Calculate approx height
         // For wrapping text, we should ideally use splitTextToSize
         if (maxWidth) {
@@ -392,7 +392,7 @@ const drawInvoiceContent = async (
     t: any,
     companyInfo: CompanyInfo | null | undefined
 ) => {
-    let yPosition = 10;
+    let yPosition = 15;
 
     // Use passed company info
     const companyInfoToUse = companyInfo;
@@ -427,9 +427,9 @@ const drawInvoiceContent = async (
     // Aligned to right column start 
     // Top-align with logo (yPosition = 10)
     let headerTextY = yPosition; // Perfectly level with logo top
-    
+
     // Header Colon Alignment
-    const headerLabelWidth = 22; 
+    const headerLabelWidth = 22;
     const headerColonX = rightColX + headerLabelWidth;
     const headerValueX = headerColonX + 4;
 
@@ -546,7 +546,7 @@ const drawInvoiceContent = async (
             baseline: 'top'
         });
         await addTextToPdf(doc, ':', fromColonX, fromY + 2, { fontSize: 10, language, baseline: 'top' });
-        
+
         const emailValueH = await addTextToPdf(doc, senderEmail.trim(), fromValueX, fromY + 2, {
             fontSize: 10,
             language,
@@ -588,8 +588,8 @@ const drawInvoiceContent = async (
 
         // Bill To: email, phone and address field labels rendered with uniform width for alignment
         const billToLabelWidth = 22; // Standardized to match header
-        const billToColonX = billToX + billToLabelWidth; 
-        const billToValueX = billToColonX + 4; 
+        const billToColonX = billToX + billToLabelWidth;
+        const billToValueX = billToColonX + 4;
 
         // Email
         if (invoice.employeeEmail && invoice.employeeEmail.trim()) {
@@ -601,7 +601,7 @@ const drawInvoiceContent = async (
             });
             // Standard colon alignment
             await addTextToPdf(doc, ':', billToColonX, billToY, { fontSize: 10, align: 'left', language });
-            
+
             const valueH = await addTextToPdf(doc, invoice.employeeEmail.trim(), billToValueX, billToY, {
                 fontSize: 10,
                 align: 'left',
@@ -697,7 +697,7 @@ const drawInvoiceContent = async (
             language,
             maxWidth: rightColWidth - (dueDateValueX - rightColX)
         });
-        
+
         commonRowY += Math.max(labelH, valueH) + 2;
     }
 
@@ -708,8 +708,8 @@ const drawInvoiceContent = async (
 
     // Services Table
     // Refined column widths for better spacing and professional alignment
-    const colX = [14, 25, 105, 125, 160, 196]; 
-    const tableStartY = yPosition + 5; 
+    const colX = [14, 25, 105, 125, 160, 196];
+    const tableStartY = yPosition + 5;
 
     doc.setDrawColor(0);
     doc.setLineWidth(0.1);
@@ -848,9 +848,9 @@ const drawInvoiceContent = async (
 
         // Correctly right-align value at the end of the table
         await addTextToPdf(doc, value, colX[5] - 4, textY, {
-            fontSize, 
-            fontStyle: isBold ? 'bold' : 'normal', 
-            align: 'right', 
+            fontSize,
+            fontStyle: isBold ? 'bold' : 'normal',
+            align: 'right',
             language
         });
 
@@ -929,7 +929,7 @@ const drawInvoiceContent = async (
         let accountIdY = bankY + 10; // Default vertical alignment point
 
         // Standardized across the whole document (matches header/billTo)
-        const bankLabelWidth = 22; 
+        const bankLabelWidth = 22;
         const bankColonX = 14 + bankLabelWidth;
         const bankValueX = bankColonX + 4;
 
