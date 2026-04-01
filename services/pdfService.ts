@@ -719,7 +719,8 @@ const drawInvoiceContent = async (
     doc.line(colX[0], tableStartY, colX[5], tableStartY);
 
     const headerHeight = 10;
-    const textY = tableStartY + 6;
+    // Vertically center text: (10mm row - 3.5mm text_height) / 2 = 3.25mm
+    const textY = tableStartY + 3.25;
 
     // SNO
     await addTextToPdf(doc, t.sNo, (colX[0] + colX[1]) / 2, textY, {
