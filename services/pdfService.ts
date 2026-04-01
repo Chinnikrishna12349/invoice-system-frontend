@@ -930,7 +930,7 @@ const drawInvoiceContent = async (
         const validDetails = details.filter(item => item.value && item.value.trim().length > 0);
 
         let curY = bankY + 10;
-        let accountIdY = bankY + 10; // Default vertical alignment point
+        let lastItemY = curY; 
 
         // Standardized across the whole document (matches header/billTo)
         const bankLabelWidth = 22;
@@ -956,17 +956,16 @@ const drawInvoiceContent = async (
                 language
             });
 
-            // Capture Y of Account Holder for horizontal alignment of signature
-            if (item.label === t.accountHolderLabel || item.label === 'Account Holder:') {
-                accountIdY = curY;
-            }
+                language
+            });
 
-            curY += 10;
+            lastItemY = curY;
+            curY += 7; // Reduced spacing to 7mm for compact professional look
         }
 
-        // Authorized Signature (Right) - Aligned with Account Holder row
+        // Signature Section (Right) - Aligned with the last bank detail row
         const signatureX = rightColX + (rightColWidth / 2);
-        const signatureY = accountIdY;
+        const signatureY = lastItemY;
 
         // Custom signature takes precedence; fallback to Vision AI Stamp if applicable
         if (invoice.signatureUrl) {
@@ -983,6 +982,35 @@ const drawInvoiceContent = async (
         await addTextToPdf(doc, t.authorisedSignature || 'Authorised Signature', rightColX + (rightColWidth / 2), signatureY + 5, {
             fontSize: 10,
             fontStyle: 'bold',
+            align: 'center',
+            language
+        });
+
+        // Move Y position for footer bottom sections
+        yPosition = Math.max(curY, signatureY + 15) + 10;
+    }
+
+    // Centered Footer (Tagline and Thank You)
+    if (yPosition > 275) {
+        doc.addPage();
+        yPosition = 20;
+    }
+
+    // Thank You Message
+    if (t.thankYouMessage) {
+        await addTextToPdf(doc, t.thankYouMessage, 105, yPosition, {
+            fontSize: 10,
+            fontStyle: 'normal',
+            align: 'center',
+            language
+        });
+    }
+
+    // Tagline (A bit below Thank You)
+    if (t.companyTagline) {
+        await addTextToPdf(doc, t.companyTagline, 105, yPosition + 7, {
+            fontSize: 9,
+            fontStyle: 'normal',
             align: 'center',
             language
         });
