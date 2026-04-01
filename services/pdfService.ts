@@ -543,6 +543,7 @@ const drawInvoiceContent = async (
     const senderEmail = invoice.fromEmail || (invoice as any).gmail;
     if (senderEmail && senderEmail.trim()) {
         console.log('PDF Generator: Drawing From Email:', senderEmail);
+        const fromLabelX = 14;
         const senderEmailLabel = (t.email || 'Email').replace(/[：:]/g, '');
         const fromLabelWidth = doc.getTextWidth(senderEmailLabel);
         const fromColonX = fromLabelX + fromLabelWidth + 2;
