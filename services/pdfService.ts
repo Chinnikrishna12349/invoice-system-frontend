@@ -51,7 +51,8 @@ const addTextToPdf = async (
                         // Adjust positions based on alignment
                         let adjustedX = x;
                         // Use Y as the TOP edge (Image-style) for more reliable stacking
-                        let adjustedY = y;
+                        // Subtract 1.7635mm to compensate for the 5px top padding in renderJapaneseText
+                        let adjustedY = y - 1.7635; 
 
                         if (align === 'right') {
                             adjustedX = x - finalWidth;
