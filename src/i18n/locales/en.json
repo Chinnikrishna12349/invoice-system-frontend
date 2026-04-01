@@ -92,6 +92,7 @@
     "instructions": "Payment Details",
     "bankName": "Bank Name:",
     "branchName": "Branch Name:",
+    "bankCode": "Bank Code:",
     "accountType": "Account Type:",
     "accountNumber": "Account No:",
     "accountName": "Account Name:",

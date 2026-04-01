@@ -164,6 +164,7 @@ const getTranslations = async (language: 'en' | 'ja') => {
         accountNoLabel: i18n.t('payment.accountNumber'),
         accountHolderLabel: i18n.t('payment.accountName'),
         swiftCodeLabel: i18n.t('payment.swiftCode') || 'Swift Code:',
+        bankCodeLabel: i18n.t('payment.bankCode') || (language === 'ja' ? '銀行コード：' : 'Bank Code:'),
         ifscCodeLabel: i18n.t('payment.ifsc')
     };
 
@@ -905,29 +906,20 @@ const drawInvoiceContent = async (
         await addTextToPdf(doc, t.bankDetailsLabel || 'Bank Details:', 14, bankY, { fontSize: 11, fontStyle: 'bold', language });
         doc.setFont('helvetica', 'normal');
 
+        const b = companyInfoToUse?.bankDetails;
         const details = [
-            { label: t.bankNameLabel || 'Bank Name:', value: companyInfoToUse?.bankDetails?.bankName },
-            { label: t.branchLabel || 'Branch:', value: companyInfoToUse?.bankDetails?.branchName },
-            { label: t.branchCodeLabel || 'Branch Code:', value: companyInfoToUse?.bankDetails?.branchCode },
-            { label: t.accountTypeLabel || 'Account Type:', value: companyInfoToUse?.bankDetails?.accountType },
-            { label: t.accountNoLabel || 'Account No:', value: companyInfoToUse?.bankDetails?.accountNumber },
-            { label: t.accountHolderLabel || 'Account Holder:', value: companyInfoToUse?.bankDetails?.accountHolderName },
+            { label: t.bankNameLabel || (language === 'ja' ? '銀行名：' : 'Bank Name:'), value: b?.bankName },
+            { label: t.bankCodeLabel || (language === 'ja' ? '銀行コード：' : 'Bank Code:'), value: (b as any)?.bankCode },
+            { label: t.branchLabel || (language === 'ja' ? '支店名：' : 'Branch Name:'), value: b?.branchName },
+            { label: t.branchCodeLabel || (language === 'ja' ? '支店コード：' : 'Branch Code:'), value: b?.branchCode },
+            { label: t.accountTypeLabel || (language === 'ja' ? '口座種別：' : 'Account Type:'), value: b?.accountType },
+            { label: t.accountNoLabel || (language === 'ja' ? '口座番号：' : 'Account No:'), value: b?.accountNumber },
+            { label: t.accountHolderLabel || (language === 'ja' ? '口座名義：' : 'Account Holder:'), value: b?.accountHolderName },
+            { label: t.swiftCodeLabel || (language === 'ja' ? 'SWIFTコード：' : 'SWIFT Code:'), value: (b as any)?.swiftCode },
+            { label: t.ifscCodeLabel || (language === 'ja' ? 'IFSC：' : 'IFSC Code:'), value: b?.ifscCode }
         ];
 
-        // Add IFSC or Swift Code based on logic matching InvoiceLayout
-        const swift = companyInfoToUse?.bankDetails?.swiftCode?.trim();
-        const ifsc = companyInfoToUse?.bankDetails?.ifscCode?.trim();
-        const isJapan = effectiveCountry === 'japan';
-
-        if (isJapan || (swift && swift.length > 0)) {
-            if (swift || ifsc) {
-                details.push({ label: t.swiftCodeLabel || 'Swift Code:', value: (swift && swift.length > 0) ? swift : ifsc });
-            }
-        } else if (ifsc && ifsc.length > 0) {
-            details.push({ label: t.ifscCodeLabel || 'IFSC Code:', value: ifsc });
-        }
-
-        const validDetails = details.filter(item => item.value && item.value.trim().length > 0);
+        const validDetails = details.filter(item => item.value && item.value.toString().trim().length > 0);
 
         let curY = bankY + 10;
         let lastItemY = curY; 

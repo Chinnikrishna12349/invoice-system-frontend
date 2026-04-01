@@ -95,6 +95,7 @@
     "instructions": "お支払い方法",
     "bankName": "銀行名：",
     "branchName": "支店名：",
+    "bankCode": "銀行コード：",
     "accountType": "口座種別：",
     "accountNumber": "口座番号：",
     "accountName": "口座名義：",
