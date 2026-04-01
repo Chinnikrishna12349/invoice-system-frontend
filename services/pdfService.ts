@@ -27,11 +27,10 @@ const addTextToPdf = async (
     const { fontSize = 10, fontStyle = 'normal', align = 'left', language = 'en', maxWidth = 100, baseline = 'top' } = options;
 
     // Check for Japanese characters OR specific currency symbols (¥, ₹)
-    const hasJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF\u00A5\u20B9]/.test(text);
-    const isPureAscii = /^[\u0020-\u007E]*$/.test(text); // Check for printable ASCII
-
-    if (hasJapanese || (language === 'ja' && !isPureAscii)) {
-        // Use html2canvas for Japanese text
+    // In Japanese mode, force ALL text (including colons and values) through the image renderer
+    // to ensure 100% baseline parity between labels, colons, and data.
+    if (language === 'ja' || hasJapanese || (language === 'ja' && !isPureAscii)) {
+        // Use html2canvas for ALL text in Japanese context
         try {
             const imageData = await renderJapaneseText(text, fontSize, fontStyle, maxWidth, align);
             if (imageData && imageData !== 'data:,') {
@@ -52,8 +51,8 @@ const addTextToPdf = async (
                         // Adjust positions based on alignment
                         let adjustedX = x;
                         // Use Y as the TOP edge (Image-style) for more reliable stacking
-                        // Subtract 2.2mm to compensate for 5px padding + optical baseline gap vs native text
-                        let adjustedY = y - 2.2;
+                        // Subtract 1.35mm to compensate for the 5px top padding in renderJapaneseText (approx 1.323mm)
+                        let adjustedY = y - 1.35;
 
                         if (align === 'right') {
                             adjustedX = x - finalWidth;
@@ -84,12 +83,11 @@ const addTextToPdf = async (
             return fontSize * 0.3527 * 1.2;
         }
     } else {
-        // Use regular jsPDF text for English
+        // Use regular jsPDF text for English version
         doc.setFont('helvetica', fontStyle);
         doc.setFontSize(fontSize);
         // Standard doc.text now uses the baseline option directly
-        // Nudge English text down by 0.5mm to match the optical top of Japanese renderings
-        doc.text(text, x, y + 0.5, { align, maxWidth, baseline });
+        doc.text(text, x, y, { align, maxWidth, baseline });
 
         // Calculate approx height
         // For wrapping text, we should ideally use splitTextToSize
