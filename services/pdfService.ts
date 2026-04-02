@@ -936,7 +936,7 @@ const drawInvoiceContent = async (
         let lastItemY = curY; 
 
         // Standardized across the whole document (matches header/billTo)
-        const bankLabelWidth = 25; 
+        const bankLabelWidth = 28; 
         const bankColonX = 14 + bankLabelWidth;
         const bankValueX = bankColonX + 4;
 
@@ -963,21 +963,19 @@ const drawInvoiceContent = async (
             });
 
             // Value (e.g. "Global Commerce Bank")
-            await addTextToPdf(doc, item.value || '', bankValueX, curY, {
+            const rowH = await addTextToPdf(doc, item.value || '', bankValueX, curY, {
                 fontSize: 10,
-                language
-            });
-
-                language
+                language,
+                maxWidth: 105 - (bankValueX - 14) // Limit value width to stay in left column
             });
 
             lastItemY = curY;
-            curY += 7; // Reduced spacing to 7mm for compact professional look
+            curY += Math.max(7, rowH + 2); 
         }
 
-        // Signature Section (Right) - Aligned with the last bank detail row
+        // Signature Section (Right) - Aligned to bottom of bank detail block
         const signatureX = rightColX + (rightColWidth / 2);
-        const signatureY = lastItemY;
+        const signatureY = curY - 5; 
 
         // Custom signature takes precedence; fallback to Vision AI Stamp if applicable
         if (invoice.signatureUrl) {
