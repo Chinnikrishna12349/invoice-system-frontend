@@ -418,6 +418,9 @@ const drawInvoiceContent = async (
         logoToUse = VISION_AI_LOGO_BASE64;
     }
 
+    const rightColX = 120;
+    const rightColWidth = 196 - rightColX;
+
     // Helper to draw the header on every page
     const drawPageHeader = async (targetDoc: typeof doc, startY: number) => {
         // Logo
@@ -462,14 +465,15 @@ const drawInvoiceContent = async (
             
             const b = companyInfoToUse?.bankDetails;
             const details = [
-                { label: t.bankNameLabel || 'Bank Name:', value: b?.bankName },
-                { label: t.bankCodeLabel || 'Bank Code:', value: (b as any)?.bankCode },
-                { label: t.branchLabel || 'Branch Name:', value: b?.branchName },
-                { label: t.branchCodeLabel || 'Branch Code:', value: b?.branchCode },
-                { label: t.accountTypeLabel || 'Account Type:', value: b?.accountType },
-                { label: t.accountNoLabel || 'Account No:', value: b?.accountNumber },
-                { label: t.accountHolderLabel || 'Account Holder:', value: b?.accountHolderName },
-                { label: t.swiftCodeLabel || 'SWIFT Code:', value: (b as any)?.swiftCode || (b as any)?.swift }
+                { label: t.bankNameLabel || (language === 'ja' ? '銀行名：' : 'Bank Name:'), value: b?.bankName },
+                { label: t.bankCodeLabel || (language === 'ja' ? '銀行コード：' : 'Bank Code:'), value: (b as any)?.bankCode },
+                { label: t.branchLabel || (language === 'ja' ? '支店名：' : 'Branch Name:'), value: b?.branchName },
+                { label: t.branchCodeLabel || (language === 'ja' ? '支店コード：' : 'Branch Code:'), value: b?.branchCode },
+                { label: t.accountTypeLabel || (language === 'ja' ? '口座種別：' : 'Account Type:'), value: b?.accountType },
+                { label: t.accountNoLabel || (language === 'ja' ? '口座番号：' : 'Account No:'), value: b?.accountNumber },
+                { label: t.accountHolderLabel || (language === 'ja' ? '口座名義：' : 'Account Holder:'), value: b?.accountHolderName },
+                { label: t.swiftCodeLabel || (language === 'ja' ? 'SWIFTコード：' : 'SWIFT Code:'), value: (b as any)?.swiftCode || (b as any)?.swift },
+                { label: t.ifscCodeLabel || (language === 'ja' ? 'IFSC：' : 'IFSC Code:'), value: b?.ifscCode || (b as any)?.ifsc }
             ];
 
             const validDetails = details.filter(item => item.value && item.value.toString().trim().length > 0);
@@ -499,12 +503,10 @@ const drawInvoiceContent = async (
     };
 
     // Initial Header
-    await drawPageHeader(doc, curY);
+    yPosition = await drawPageHeader(doc, 9);
 
-    // Set yPosition for content start
-    yPosition = curY + 37;
-
-    // Set yPosition for content start
+    // Ensure we clear the logo and add padding (yPosition already points to bottom of header)
+    yPosition += 15;
     // Ensure we clear the logo (25mm height) + header and add sufficient padding (12mm)
     // Logo Y: 18, Height: 25 -> Bottom: 43.
     // New Y targets: 18 + 37 = 55. Gap = 12mm.
@@ -586,7 +588,8 @@ const drawInvoiceContent = async (
         const emailLabelH = await addTextToPdf(doc, (t.email || 'Email').replace(/[：:]/g, ''), fromLabelX, fromY + 2, {
             fontSize: 10,
             language,
-            baseline: 'top'
+            baseline: 'top',
+            maxWidth: fromLabelWidth - 2
         });
         await addTextToPdf(doc, ':', fromColonX, fromY + 2, { fontSize: 10, language, baseline: 'top' });
 
@@ -640,7 +643,8 @@ const drawInvoiceContent = async (
             const labelH = await addTextToPdf(doc, label, billToX, billToY, {
                 fontSize: 10,
                 align: 'left',
-                language
+                language,
+                maxWidth: billToLabelWidth - 2
             });
             // Standard colon alignment
             await addTextToPdf(doc, ':', billToColonX, billToY, { fontSize: 10, align: 'left', language });
@@ -660,7 +664,8 @@ const drawInvoiceContent = async (
             const labelH = await addTextToPdf(doc, label, billToX, billToY, {
                 fontSize: 10,
                 align: 'left',
-                language
+                language,
+                maxWidth: billToLabelWidth - 2
             });
             // Standard colon alignment
             await addTextToPdf(doc, ':', billToColonX, billToY, { fontSize: 10, align: 'left', language });
@@ -680,7 +685,8 @@ const drawInvoiceContent = async (
             const labelH = await addTextToPdf(doc, label, billToX, billToY, {
                 fontSize: 10,
                 align: 'left',
-                language
+                language,
+                maxWidth: billToLabelWidth - 2
             });
             // Standard colon alignment
             await addTextToPdf(doc, ':', billToColonX, billToY, { fontSize: 10, align: 'left', language });
@@ -898,6 +904,15 @@ const drawInvoiceContent = async (
 
     const drawTotalRow = async (label: string, value: string, isBold: boolean = false) => {
         const rowH = 10;
+        
+        // Page break check for total rows
+        if (yPosition > 215) {
+            await drawPageFooter(doc);
+            doc.addPage();
+            await drawPageHeader(doc, 9);
+            yPosition = 55;
+        }
+
         doc.line(colX[0], yPosition, colX[0], yPosition + rowH);
         doc.line(colX[4], yPosition, colX[4], yPosition + rowH);
         doc.line(colX[5], yPosition, colX[5], yPosition + rowH);
