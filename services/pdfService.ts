@@ -455,13 +455,15 @@ const drawInvoiceContent = async (
     };
 
     // New Sticky Footer Helper
-    const drawPageFooter = async (targetDoc: typeof doc) => {
+    const drawPageFooter = async (targetDoc: typeof doc, showLabel: boolean = true) => {
         const hasBankDetails = companyInfoToUse?.bankDetails &&
             Object.values(companyInfoToUse.bankDetails).some(v => v && v.toString().trim().length > 0);
 
         if (hasBankDetails) {
             const footerStartY = 225; // Fixed position near bottom
-            await addTextToPdf(targetDoc, t.bankDetailsLabel || 'Bank Details:', 14, footerStartY, { fontSize: 11, fontStyle: 'bold', language });
+            if (showLabel) {
+                await addTextToPdf(targetDoc, t.bankDetailsLabel || 'Bank Details:', 14, footerStartY, { fontSize: 11, fontStyle: 'bold', language });
+            }
             
             const b = companyInfoToUse?.bankDetails;
             const details = [
@@ -501,6 +503,8 @@ const drawInvoiceContent = async (
             await addTextToPdf(targetDoc, t.authorisedSignature || 'Authorised Signature', sigX, sigY + 4, { fontSize: 9, fontStyle: 'bold', align: 'center', language });
         }
     };
+
+    let footerLabelDrawn = false;
 
     // Initial Header
     yPosition = await drawPageHeader(doc, 9);
@@ -872,7 +876,8 @@ const drawInvoiceContent = async (
         doc.line(colX[0], yPosition + rowHeight, colX[5], yPosition + rowHeight);
 
         if (yPosition > 215) { // Reduced threshold for sticky footer
-            await drawPageFooter(doc);
+            await drawPageFooter(doc, !footerLabelDrawn);
+            footerLabelDrawn = true;
             doc.addPage();
             await drawPageHeader(doc, 9);
             yPosition = 55;
@@ -907,7 +912,8 @@ const drawInvoiceContent = async (
         
         // Page break check for total rows
         if (yPosition > 215) {
-            await drawPageFooter(doc);
+            await drawPageFooter(doc, !footerLabelDrawn);
+            footerLabelDrawn = true;
             doc.addPage();
             await drawPageHeader(doc, 9);
             yPosition = 55;
@@ -973,7 +979,7 @@ const drawInvoiceContent = async (
     yPosition += 15;
 
     // Final Page Footer
-    await drawPageFooter(doc);
+    await drawPageFooter(doc, !footerLabelDrawn);
 
     // Thank You Message (Centered at absolute bottom)
     if (t.thankYouMessage) {
