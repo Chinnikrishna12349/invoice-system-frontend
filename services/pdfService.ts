@@ -418,51 +418,91 @@ const drawInvoiceContent = async (
         logoToUse = VISION_AI_LOGO_BASE64;
     }
 
-    await addLogoToPdf(doc, 14, yPosition, logoToUse, 50);
+    // Helper to draw the header on every page
+    const drawPageHeader = async (targetDoc: typeof doc, startY: number) => {
+        // Logo
+        if (companyInfoToUse?.companyLogoUrl || invoice.logoUrl) {
+            await addLogoToPdf(targetDoc, 14, startY, companyInfoToUse?.companyLogoUrl || invoice.logoUrl, 50, 25);
+        }
 
-    // Right Column Start Position (Aligned for Header and Bill To)
-    const rightColX = 120;
-    const rightColWidth = 196 - rightColX;
+        // Header Colon Alignment
+        const headerLabelWidth = 25;
+        const headerColonX = rightColX + headerLabelWidth;
+        const headerValueX = headerColonX + 4;
 
-    // Invoice # and Date (top right)
-    // Aligned to right column start 
-    // Top-align with logo (yPosition = 10)
-    let headerTextY = yPosition; // Perfectly level with logo top
+        let headY = startY;
+        const invoiceNoLabelH = await addTextToPdf(targetDoc, t.invoiceNo.replace(/[：:]/g, ''), rightColX, headY, {
+            fontSize: 11, fontStyle: 'bold', language, maxWidth: headerLabelWidth - 2 
+        });
+        await addTextToPdf(targetDoc, ':', headerColonX, headY, { fontSize: 11, fontStyle: 'bold', language });
+        const invoiceNoValueH = await addTextToPdf(targetDoc, invoice.invoiceNumber, headerValueX, headY, {
+            fontSize: 11, fontStyle: 'bold', language, maxWidth: rightColWidth - (headerValueX - rightColX)
+        });
+        headY += Math.max(invoiceNoLabelH, invoiceNoValueH) + 3;
 
-    // Header Colon Alignment
-    const headerLabelWidth = 25; // Standardized to 25mm to avoid Japanese label collision
-    const headerColonX = rightColX + headerLabelWidth;
-    const headerValueX = headerColonX + 4;
+        const dateLabelH = await addTextToPdf(targetDoc, t.dateLabel?.replace(/[：:]/g, '') || t.date.replace(/[：:]/g, ''), rightColX, headY, {
+            fontSize: 11, fontStyle: 'bold', language, maxWidth: headerLabelWidth - 2
+        });
+        await addTextToPdf(targetDoc, ':', headerColonX, headY, { fontSize: 11, fontStyle: 'bold', language });
+        const dateValueH = await addTextToPdf(targetDoc, formatDateInPdf(invoice.date), headerValueX, headY, {
+            fontSize: 11, fontStyle: 'bold', language, maxWidth: rightColWidth - (headerValueX - rightColX)
+        });
+        headY += Math.max(dateLabelH, dateValueH) + 3;
+        return headY;
+    };
 
-    const invoiceNoLabelH = await addTextToPdf(doc, t.invoiceNo.replace(/[：:]/g, ''), rightColX, headerTextY, {
-        fontSize: 11,
-        fontStyle: 'bold',
-        language,
-        maxWidth: headerLabelWidth - 2 
-    });
-    await addTextToPdf(doc, ':', headerColonX, headerTextY, { fontSize: 11, fontStyle: 'bold', language });
-    const invoiceNoValueH = await addTextToPdf(doc, invoice.invoiceNumber, headerValueX, headerTextY, {
-        fontSize: 11,
-        fontStyle: 'bold',
-        language,
-        maxWidth: rightColWidth - (headerValueX - rightColX)
-    });
-    headerTextY += Math.max(invoiceNoLabelH, invoiceNoValueH) + 3;
+    // New Sticky Footer Helper
+    const drawPageFooter = async (targetDoc: typeof doc) => {
+        const hasBankDetails = companyInfoToUse?.bankDetails &&
+            Object.values(companyInfoToUse.bankDetails).some(v => v && v.toString().trim().length > 0);
 
-    const dateLabelH = await addTextToPdf(doc, t.dateLabel?.replace(/[：:]/g, '') || t.date.replace(/[：:]/g, ''), rightColX, headerTextY, {
-        fontSize: 11,
-        fontStyle: 'bold',
-        language,
-        maxWidth: headerLabelWidth - 2
-    });
-    await addTextToPdf(doc, ':', headerColonX, headerTextY, { fontSize: 11, fontStyle: 'bold', language });
-    const dateValueH = await addTextToPdf(doc, formatDateInPdf(invoice.date), headerValueX, headerTextY, {
-        fontSize: 11,
-        fontStyle: 'bold',
-        language,
-        maxWidth: rightColWidth - (headerValueX - rightColX)
-    });
-    headerTextY += Math.max(dateLabelH, dateValueH) + 3;
+        if (hasBankDetails) {
+            const footerStartY = 225; // Fixed position near bottom
+            await addTextToPdf(targetDoc, t.bankDetailsLabel || 'Bank Details:', 14, footerStartY, { fontSize: 11, fontStyle: 'bold', language });
+            
+            const b = companyInfoToUse?.bankDetails;
+            const details = [
+                { label: t.bankNameLabel || 'Bank Name:', value: b?.bankName },
+                { label: t.bankCodeLabel || 'Bank Code:', value: (b as any)?.bankCode },
+                { label: t.branchLabel || 'Branch Name:', value: b?.branchName },
+                { label: t.branchCodeLabel || 'Branch Code:', value: b?.branchCode },
+                { label: t.accountTypeLabel || 'Account Type:', value: b?.accountType },
+                { label: t.accountNoLabel || 'Account No:', value: b?.accountNumber },
+                { label: t.accountHolderLabel || 'Account Holder:', value: b?.accountHolderName },
+                { label: t.swiftCodeLabel || 'SWIFT Code:', value: (b as any)?.swiftCode || (b as any)?.swift }
+            ];
+
+            const validDetails = details.filter(item => item.value && item.value.toString().trim().length > 0);
+            let fCurY = footerStartY + 8;
+            const bLabelWidth = 28;
+            const bColonX = 14 + bLabelWidth;
+            const bValueX = bColonX + 4;
+
+            for (const item of validDetails.slice(0, 5)) { // Show top 5 items in sticky footer
+                await addTextToPdf(targetDoc, item.label.replace(/[：:]/g, ''), 14, fCurY, { fontSize: 9, language, maxWidth: bLabelWidth - 2 });
+                await addTextToPdf(targetDoc, ':', bColonX, fCurY, { fontSize: 9, language });
+                await addTextToPdf(targetDoc, item.value || '', bValueX, fCurY, { fontSize: 9, language, maxWidth: 70 });
+                fCurY += 6;
+            }
+
+            // Signature Section
+            const sigX = rightColX + (rightColWidth / 2);
+            const sigY = 255;
+            if (invoice.signatureUrl) {
+                await addLogoToPdf(targetDoc, sigX - 15, sigY - 15, invoice.signatureUrl, 30, 15);
+            } else if (isVisionAI) {
+                await addStaticStampToPdf(targetDoc, sigX - 8, sigY - 15, visionAiStamp, 16, 16);
+            }
+            targetDoc.line(rightColX + 5, sigY, 196, sigY);
+            await addTextToPdf(targetDoc, t.authorisedSignature || 'Authorised Signature', sigX, sigY + 4, { fontSize: 9, fontStyle: 'bold', align: 'center', language });
+        }
+    };
+
+    // Initial Header
+    await drawPageHeader(doc, curY);
+
+    // Set yPosition for content start
+    yPosition = curY + 37;
 
     // Set yPosition for content start
     // Ensure we clear the logo (25mm height) + header and add sufficient padding (12mm)
@@ -825,13 +865,24 @@ const drawInvoiceContent = async (
 
         doc.line(colX[0], yPosition + rowHeight, colX[5], yPosition + rowHeight);
 
-        yPosition += rowHeight;
-
-
-        if (yPosition > 250) {
+        if (yPosition > 215) { // Reduced threshold for sticky footer
+            await drawPageFooter(doc);
             doc.addPage();
-            yPosition = 20;
-            // Draw header again on new page? (Optional, but good for production ready)
+            await drawPageHeader(doc, 9);
+            yPosition = 55;
+            
+            // Redraw table headers
+            doc.setDrawColor(0);
+            doc.setLineWidth(0.4);
+            doc.line(colX[0], yPosition, colX[5], yPosition);
+            doc.line(colX[0], yPosition + 10, colX[5], yPosition + 10);
+            const textY = yPosition + 3.25;
+            await addTextToPdf(doc, t.sNo, (colX[0] + colX[1]) / 2, textY, { fontSize: 10, align: 'center', language });
+            await addTextToPdf(doc, t.description, (colX[1] + colX[2]) / 2, textY, { fontSize: 10, align: 'center', language });
+            await addTextToPdf(doc, t.hours, (colX[2] + colX[3]) / 2, textY, { fontSize: 10, align: 'center', language });
+            await addTextToPdf(doc, t.unitPrice, (colX[3] + colX[4]) / 2, textY, { fontSize: 10, align: 'center', language });
+            await addTextToPdf(doc, t.amount, (colX[4] + colX[5]) / 2, textY, { fontSize: 10, align: 'center', language });
+            yPosition += 10;
         }
     }
 
@@ -906,127 +957,14 @@ const drawInvoiceContent = async (
 
     yPosition += 15;
 
-    // Footer: Bank Details (Left) and Signature (Right)
-    const hasBankDetails = companyInfoToUse?.bankDetails &&
-        Object.values(companyInfoToUse.bankDetails).some(v => v && v.toString().trim().length > 0);
+    // Final Page Footer
+    await drawPageFooter(doc);
 
-    if (hasBankDetails) {
-        const bankY = yPosition;
-
-        await addTextToPdf(doc, t.bankDetailsLabel || 'Bank Details:', 14, bankY, { fontSize: 11, fontStyle: 'bold', language });
-        doc.setFont('helvetica', 'normal');
-
-        const b = companyInfoToUse?.bankDetails;
-        const details = [
-            { label: t.bankNameLabel || (language === 'ja' ? '銀行名：' : 'Bank Name:'), value: b?.bankName },
-            { label: t.bankCodeLabel || (language === 'ja' ? '銀行コード：' : 'Bank Code:'), value: (b as any)?.bankCode },
-            { label: t.branchLabel || (language === 'ja' ? '支店名：' : 'Branch Name:'), value: b?.branchName },
-            { label: t.branchCodeLabel || (language === 'ja' ? '支店コード：' : 'Branch Code:'), value: b?.branchCode },
-            { label: t.accountTypeLabel || (language === 'ja' ? '口座種別：' : 'Account Type:'), value: b?.accountType },
-            { label: t.accountNoLabel || (language === 'ja' ? '口座番号：' : 'Account No:'), value: b?.accountNumber },
-            { label: t.accountHolderLabel || (language === 'ja' ? '口座名義：' : 'Account Holder:'), value: b?.accountHolderName },
-            // Check both swiftCode and swift for compatibility
-            { label: t.swiftCodeLabel || (language === 'ja' ? 'SWIFTコード：' : 'SWIFT Code:'), value: (b as any)?.swiftCode || (b as any)?.swift },
-            { label: t.ifscCodeLabel || (language === 'ja' ? 'IFSC：' : 'IFSC Code:'), value: b?.ifscCode || (b as any)?.ifsc }
-        ];
-
-        const validDetails = details.filter(item => item.value && item.value.toString().trim().length > 0);
-
-        let curY = bankY + 10;
-        let lastItemY = curY; 
-
-        // Standardized across the whole document (matches header/billTo)
-        const bankLabelWidth = 28; 
-        const bankColonX = 14 + bankLabelWidth;
-        const bankValueX = bankColonX + 4;
-
-        for (const item of validDetails) {
-            // Page break check for bank details to avoid touching bottom
-            if (curY > 270) {
-                doc.addPage();
-                curY = 20;
-                await addTextToPdf(doc, (t.bankDetailsLabel || 'Bank Details:') + ' (cont.)', 14, curY, { fontSize: 11, fontStyle: 'bold', language });
-                curY += 10;
-            }
-
-            // Label (e.g. "Bank Name")
-            await addTextToPdf(doc, item.label.replace(/[：:]/g, ''), 14, curY, {
-                fontSize: 10,
-                language,
-                maxWidth: bankLabelWidth - 2
-            });
-
-            // Colon
-            await addTextToPdf(doc, ':', bankColonX, curY, {
-                fontSize: 10,
-                language
-            });
-
-            // Value (e.g. "Global Commerce Bank")
-            const rowH = await addTextToPdf(doc, item.value || '', bankValueX, curY, {
-                fontSize: 10,
-                language,
-                maxWidth: 105 - (bankValueX - 14) // Limit value width to stay in left column
-            });
-
-            lastItemY = curY;
-            curY += Math.max(7, rowH + 2); 
-        }
-
-        // Signature Section (Right) - Aligned to bottom of bank detail block
-        const signatureX = rightColX + (rightColWidth / 2);
-        const signatureY = curY - 5; 
-
-        // Custom signature takes precedence; fallback to Vision AI Stamp if applicable
-        if (invoice.signatureUrl) {
-            await addLogoToPdf(doc, signatureX - 15, signatureY - 19, invoice.signatureUrl, 30, 18);
-        } else if (isVisionAI) {
-            const stampSize = 18;
-            await addStaticStampToPdf(doc, signatureX - (stampSize / 2), signatureY - 20, visionAiStamp, stampSize, stampSize);
-        }
-
-        doc.setDrawColor(0);
-        doc.setLineWidth(0.2);
-        doc.line(rightColX + 5, signatureY, colX[5] - 5, signatureY);
-
-        await addTextToPdf(doc, t.authorisedSignature || 'Authorised Signature', rightColX + (rightColWidth / 2), signatureY + 5, {
-            fontSize: 10,
-            fontStyle: 'bold',
-            align: 'center',
-            language
-        });
-
-        // Move Y position for footer bottom sections
-        // Maintain at least 15mm gap from the bottom of details
-        yPosition = Math.max(curY, signatureY + 15) + 5;
-    }
-
-    // Centered Footer (Tagline and Thank You)
-    // Page break if we're too close to the bottom (A4 is 297mm)
-    if (yPosition > 275) {
-        doc.addPage();
-        yPosition = 20;
-    }
-
-    // Thank You Message
+    // Thank You Message (Centered at absolute bottom)
     if (t.thankYouMessage) {
-        await addTextToPdf(doc, t.thankYouMessage, 105, yPosition, {
-            fontSize: 10,
-            fontStyle: 'normal',
-            align: 'center',
-            language
-        });
+        await addTextToPdf(doc, t.thankYouMessage, 105, 280, { fontSize: 9, align: 'center', language });
     }
-
-    // Tagline (A bit below Thank You)
-    if (t.companyTagline) {
-        await addTextToPdf(doc, t.companyTagline, 105, yPosition + 7, {
-            fontSize: 9,
-            fontStyle: 'normal',
-            align: 'center',
-            language
-        });
-    }
+}
 }
 
 
