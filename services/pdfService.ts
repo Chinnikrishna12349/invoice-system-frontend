@@ -980,11 +980,6 @@ const drawInvoiceContent = async (
 
     // Final Page Footer
     await drawPageFooter(doc, !footerLabelDrawn);
-
-    // Thank You Message (Centered at absolute bottom)
-    if (t.thankYouMessage) {
-        await addTextToPdf(doc, t.thankYouMessage, 105, 280, { fontSize: 9, align: 'center', language });
-    }
 }
 }
 
