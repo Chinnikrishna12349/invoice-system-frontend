@@ -490,24 +490,26 @@ public class PdfService {
                                 String swiftCode = getValue(bank.getSwiftCode());
                                 String ifscCode = getValue(bank.getIfscCode());
 
-                                if (isJapan || !swiftCode.isEmpty()) {
-                                        // Prefer Swift Code if available or if Japan
-                                        String codeLabel = "Swift Code: ";
-                                        String codeValue = !swiftCode.isEmpty() ? swiftCode : ifscCode; // Fallback to
-                                                                                                        // IFSC field if
-                                                                                                        // Swift is
-                                                                                                        // empty
-                                        if (!codeValue.isEmpty()) {
+                                if (isJapan) {
+                                        // In Japan, ONLY show Swift Code if explicitly provided. Do NOT fallback to IFSC.
+                                        if (!swiftCode.isEmpty()) {
                                                 bankCell.add(new Paragraph()
-                                                                .add(new Text(codeLabel).setFont(boldFont)
+                                                                .add(new Text("Swift Code: ").setFont(boldFont)
                                                                                 .setFontSize(11))
-                                                                .add(new Text(codeValue).setFont(regularFont)
+                                                                .add(new Text(swiftCode).setFont(regularFont)
                                                                                 .setFontSize(11))
                                                                 .setFixedLeading(lineSpacing).setMargin(0));
                                         }
                                 } else {
-                                        // Default to IFSC for others
-                                        if (!ifscCode.isEmpty()) {
+                                        // For other countries (India, etc.), prefer Swift Code if available, fallback to IFSC
+                                        if (!swiftCode.isEmpty()) {
+                                                bankCell.add(new Paragraph()
+                                                                .add(new Text("Swift Code: ").setFont(boldFont)
+                                                                                .setFontSize(11))
+                                                                .add(new Text(swiftCode).setFont(regularFont)
+                                                                                .setFontSize(11))
+                                                                .setFixedLeading(lineSpacing).setMargin(0));
+                                        } else if (!ifscCode.isEmpty()) {
                                                 bankCell.add(new Paragraph()
                                                                 .add(new Text("IFSC Code: ").setFont(boldFont)
                                                                                 .setFontSize(11))

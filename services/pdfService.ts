@@ -475,7 +475,7 @@ const drawInvoiceContent = async (
                 { label: t.accountNoLabel || (language === 'ja' ? '口座番号：' : 'Account No:'), value: b?.accountNumber },
                 { label: t.accountHolderLabel || (language === 'ja' ? '口座名義：' : 'Account Holder:'), value: b?.accountHolderName },
                 { label: t.swiftCodeLabel || (language === 'ja' ? 'SWIFTコード：' : 'SWIFT Code:'), value: (b as any)?.swiftCode || (b as any)?.swift },
-                { label: t.ifscCodeLabel || (language === 'ja' ? 'IFSC：' : 'IFSC Code:'), value: b?.ifscCode || (b as any)?.ifsc }
+                ...(language !== 'ja' ? [{ label: t.ifscCodeLabel || 'IFSC Code:', value: b?.ifscCode || (b as any)?.ifsc }] : [])
             ];
 
             const validDetails = details.filter(item => item.value && item.value.toString().trim().length > 0);
