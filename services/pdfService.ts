@@ -514,12 +514,8 @@ const drawInvoiceContent = async (
     // Initial Header
     yPosition = await drawPageHeader(doc, 9);
 
-    // Ensure we clear the logo and add padding (yPosition already points to bottom of header)
-    yPosition += 15;
-    // Ensure we clear the logo (25mm height) + header and add sufficient padding (12mm)
-    // Logo Y: 18, Height: 25 -> Bottom: 43.
-    // New Y targets: 18 + 37 = 55. Gap = 12mm.
-    yPosition += 37;
+    // Add small padding after header (drawPageHeader already returns bottom y)
+    yPosition += 8; 
 
     // From Address (Company Details) - Left side
     const fromStartY = yPosition;
@@ -827,10 +823,10 @@ const drawInvoiceContent = async (
         const descLines = doc.splitTextToSize(service.description || '-', descWidth);
         const rowHeight = Math.max(12, descLines.length * 5 + 4);
 
-        // Page break check BEFORE drawing the row to prevent overlap with footer
-        if (yPosition + rowHeight > 220) {
-            await drawPageFooter(doc, !footerLabelDrawn);
-            footerLabelDrawn = true;
+        // Page break check BEFORE drawing the row to prevent overlap
+        // Increased threshold to 265mm since we removed sticky footer from breaks
+        if (yPosition + rowHeight > 265) {
+            // SKIP drawPageFooter here to prevent interrupting the table
             doc.addPage();
             await drawPageHeader(doc, 9);
             yPosition = 55;
@@ -915,10 +911,9 @@ const drawInvoiceContent = async (
     const drawTotalRow = async (label: string, value: string, isBold: boolean = false) => {
         const rowH = 10;
         
-        // Page break check for total rows - keep totals section together
-        if (yPosition > 200) {
-            await drawPageFooter(doc, !footerLabelDrawn);
-            footerLabelDrawn = true;
+        // Page break check for total rows - increased threshold
+        if (yPosition > 255) {
+            // SKIP drawPageFooter here
             doc.addPage();
             await drawPageHeader(doc, 9);
             yPosition = 55;
