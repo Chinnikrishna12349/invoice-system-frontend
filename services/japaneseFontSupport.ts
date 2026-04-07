@@ -26,7 +26,7 @@ export const renderJapaneseText = async (
     div.style.fontSize = `${fontSize}pt`;
     div.style.fontFamily = "'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
     // Use slightly heavier weight for normal text to match PDF Helvetica
-    div.style.fontWeight = fontStyle === 'bold' ? 'bold' : '500';
+    div.style.fontWeight = fontStyle === 'bold' ? 'bold' : 'normal';
     div.style.color = '#000000';
     div.style.display = 'inline-block';
     div.style.width = 'auto';
