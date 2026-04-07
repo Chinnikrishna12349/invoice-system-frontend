@@ -167,7 +167,7 @@ const getTranslations = async (language: 'en' | 'ja') => {
         accountTypeLabel: i18n.t('payment.accountType'),
         accountNoLabel: i18n.t('payment.accountNumber'),
         accountHolderLabel: i18n.t('payment.accountName'),
-        swiftCodeLabel: i18n.t('payment.swiftCode') || 'Swift Code:',
+        swiftCodeLabel: i18n.t('payment.swiftCode') || 'SWIFT Code',
         bankCodeLabel: i18n.t('payment.bankCode') || (language === 'ja' ? '銀行コード：' : 'Bank Code:'),
         ifscCodeLabel: i18n.t('payment.ifsc')
     };
@@ -505,19 +505,33 @@ const drawInvoiceContent = async (
                 const valueH = await addTextToPdf(targetDoc, val.toString(), bValueX, fCurY, { fontSize: 9, language, maxWidth: 100, forceImage: forceImg } as any);
                 fCurY += Math.max(labelH, valueH) + 1.5;
             }
-
-            // Signature Section
-            const sigX = rightColX + (rightColWidth / 2);
-            // Move signature section further down if needed, but relative to footerStartY
-            const sigY = Math.max(260, fCurY + 15); 
-            if (invoice.signatureUrl) {
-                await addLogoToPdf(targetDoc, sigX - 15, sigY - 18, invoice.signatureUrl, 30, 15);
-            } else if (isVisionAI) {
-                await addStaticStampToPdf(targetDoc, sigX - 8, sigY - 18, visionAiStamp, 16, 16);
-            }
-            targetDoc.line(rightColX + 5, sigY, 196, sigY);
-            await addTextToPdf(targetDoc, t.authorisedSignature || 'Authorised Signature', sigX, sigY + 5, { fontSize: 10, fontStyle: 'bold', align: 'center', language });
         }
+
+        // Signature Section - Drawn on every page or just final?
+        // Usually, signature is on every page footer or just the last?
+        // Based on screenshots, it's at the end.
+        // Move OUTSIDE hasBankDetails to ensure it appears in Japanese PDF too
+        const sigX = rightColX + (rightColWidth / 2);
+        const sigY = startY ? Math.max(startY + 10, 255) : 255; 
+        
+        // If startY is provided (final footer), align it to the RIGHT of the bank details block if there's space
+        let finalSigY = sigY;
+        let finalSigX = sigX;
+
+        if (startY && (companyInfoToUse?.bankDetails && Object.values(companyInfoToUse.bankDetails).some(v => v && v.toString().trim().length > 0))) {
+            // Reposition TO THE RIGHT of payment details for a "straight" professional look
+            // Payment details start at footerStartY and go down.
+            // Place signature horizontally starting at footerStartY + 5
+            finalSigY = (startY || 225) + 10;
+        }
+
+        if (invoice.signatureUrl) {
+            await addLogoToPdf(targetDoc, finalSigX - 15, finalSigY - 18, invoice.signatureUrl, 30, 15);
+        } else if (isVisionAI) {
+            await addStaticStampToPdf(targetDoc, finalSigX - 8, finalSigY - 18, visionAiStamp, 16, 16);
+        }
+        targetDoc.line(rightColX + 5, finalSigY, 196, finalSigY);
+        await addTextToPdf(targetDoc, t.authorisedSignature || 'Authorised Signature', finalSigX, finalSigY + 5, { fontSize: 10, fontStyle: 'bold', align: 'center', language });
     };
 
     let footerLabelDrawn = false;
