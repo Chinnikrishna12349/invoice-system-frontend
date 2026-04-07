@@ -486,7 +486,7 @@ public class PdfService {
                                                         .add(new Text(bHolder).setFont(regularFont).setFontSize(13))
                                                         .setFixedLeading(lineSpacing).setMargin(0));
 
-                                boolean isJapan = "japan".equalsIgnoreCase(invoice.getCountry());
+                                boolean isJapan = "japan".equalsIgnoreCase(invoice.getCountry()) || "jp".equalsIgnoreCase(invoice.getCountry());
                                 String swiftCode = getValue(bank.getSwiftCode());
                                 String ifscCode = getValue(bank.getIfscCode());
 
@@ -510,12 +510,14 @@ public class PdfService {
                                                                                 .setFontSize(11))
                                                                 .setFixedLeading(lineSpacing).setMargin(0));
                                         } else if (!ifscCode.isEmpty()) {
-                                                bankCell.add(new Paragraph()
+                                                if (!isJapan) {
+                                                    bankCell.add(new Paragraph()
                                                                 .add(new Text("IFSC Code: ").setFont(boldFont)
                                                                                 .setFontSize(11))
                                                                 .add(new Text(ifscCode).setFont(regularFont)
                                                                                 .setFontSize(11))
                                                                 .setFixedLeading(lineSpacing).setMargin(0));
+                                                }
                                         }
                                 }
 

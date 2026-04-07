@@ -532,14 +532,18 @@ public class PdfGeneratorService {
                 .setWidth(UnitValue.createPercentValue(100))
                 .setMarginTop(50);
 
+        boolean isJapan = "japan".equalsIgnoreCase(invoice.getCountry());
+        String bankDetailsText = "Account Name: \n" +
+                                 "Account No: \n";
+        
+        if (!isJapan) {
+            bankDetailsText += "IFSC: \n";
+        }
+        bankDetailsText += "Branch Code: ";
+
         Paragraph bankPara = new Paragraph()
                 .add(new Text("Bank Details:\n").setFont(bold).setFontSize(10))
-                .add(new Text(
-                        "Account Name: Ory Folks Pvt Ltd\n" +
-                        "Account No: 123456789012\n" +
-                        "IFSC: SBIN0001234\n" +
-                        "Branch Code: 01234"
-                ).setFont(regular).setFontSize(10));
+                .add(new Text(bankDetailsText).setFont(regular).setFontSize(10));
 
         footerTable.addCell(new Cell().setBorder(Border.NO_BORDER).add(bankPara));
 

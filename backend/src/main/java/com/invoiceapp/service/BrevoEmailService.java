@@ -674,7 +674,8 @@ public class BrevoEmailService implements EmailService, InitializingBean {
                     body.append("Account Name: ").append(escapeHtml(bank.getAccountHolderName())).append("<br>");
                 if (StringUtils.hasText(bank.getAccountNumber()))
                     body.append("Account Number: ").append(escapeHtml(bank.getAccountNumber())).append("<br>");
-                if ("japan".equalsIgnoreCase(invoice.getCountry())) {
+                boolean isJapan = "japan".equalsIgnoreCase(invoice.getCountry()) || "jp".equalsIgnoreCase(invoice.getCountry());
+                if (isJapan) {
                     if (StringUtils.hasText(bank.getSwiftCode()))
                         body.append("Swift Code: ").append(escapeHtml(bank.getSwiftCode())).append("<br>");
                 } else {
@@ -693,7 +694,11 @@ public class BrevoEmailService implements EmailService, InitializingBean {
             body.append("<p>If you have any questions about this invoice, please contact our support team at ");
             body.append("<a href='mailto:support@example.com' style='color: #3498db; text-decoration: none;'>");
             body.append("support@example.com</a> or call us at +1 (123) 456-7890.</p>");
-            body.append("<p>Thank you for your business!</p>");
+            
+            boolean isJapanForFooter = "japan".equalsIgnoreCase(invoice.getCountry()) || "jp".equalsIgnoreCase(invoice.getCountry());
+            if (!isJapanForFooter) {
+                body.append("<p>Thank you for your business!</p>");
+            }
             body.append("</div>");
 
             body.append("</div>"); // Close the main container

@@ -36,6 +36,7 @@ interface InvoiceLayoutProps {
     bankName: string; // Added
     accountName: string;
     accountNumber: string;
+    ifsc?: string;
     swiftCode?: string;
     bankCode?: string;
     branchName?: string;
@@ -267,26 +268,38 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
           )}
 
           {(() => {
-            const isJapan = country === 'japan';
+            const isJapan = country === 'japan' || country === 'jp';
             const swift = bankDetails.swiftCode?.trim();
             const ifsc = bankDetails.ifsc?.trim();
 
-            if (isJapan || (swift && swift.length > 0)) {
-              const codeValue = (swift && swift.length > 0) ? swift : ifsc;
-              if (!codeValue) return null;
-              return (
-                <p className="flex gap-1 leading-tight">
-                  <span className="min-w-[166px]">Swift Code:</span>
-                  <span>{codeValue}</span>
-                </p>
-              );
-            } else if (ifsc && ifsc.length > 0) {
-              return (
-                <p className="flex gap-1 leading-tight">
-                  <span className="min-w-[166px]">IFSC Code:</span>
-                  <span>{ifsc}</span>
-                </p>
-              );
+            if (isJapan) {
+              // In Japan, ONLY show Swift Code if provided. Do NOT show or fallback to IFSC.
+              if (swift && swift.length > 0) {
+                return (
+                  <p className="flex gap-1 leading-tight">
+                    <span className="min-w-[166px]">Swift Code:</span>
+                    <span>{swift}</span>
+                  </p>
+                );
+              }
+              return null;
+            } else {
+              // For other countries, prefer Swift then IFSC
+              if (swift && swift.length > 0) {
+                return (
+                  <p className="flex gap-1 leading-tight">
+                    <span className="min-w-[166px]">Swift Code:</span>
+                    <span>{swift}</span>
+                  </p>
+                );
+              } else if (ifsc && ifsc.length > 0) {
+                return (
+                  <p className="flex gap-1 leading-tight">
+                    <span className="min-w-[166px]">IFSC Code:</span>
+                    <span>{ifsc}</span>
+                  </p>
+                );
+              }
             }
             return null;
           })()}

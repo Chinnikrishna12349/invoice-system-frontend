@@ -134,7 +134,7 @@ const getTranslations = async (language: 'en' | 'ja') => {
         email: i18n.t('invoice.email'),
         phone: i18n.t('invoice.phone'),
         address: i18n.t('invoice.address'),
-        thankYouMessage: language === 'ja' ? '今後ともご愛顧のほどよろしくお願い申し上げます。' : i18n.t('invoice.thankYou'),
+        thankYouMessage: language === 'ja' ? '' : i18n.t('invoice.thankYou'),
         companySeal: language === 'ja' ? '〒 (会社印)' : '',
         paymentInstructions: i18n.t('payment.instructions'),
         bankName: i18n.t('payment.bankName'),
@@ -976,14 +976,21 @@ const drawInvoiceContent = async (
 
     await drawTotalRow(`${t.grandTotal} (${currencyCode})`, formatAmount(finalGrandTotal, false, true), true);
 
-    yPosition += 15;
+    // Add Thank You Message ONLY if not Japanese and translation exists
+    if (language !== 'ja' && t.thankYou && t.thankYou.trim().length > 0) {
+        yPosition += 5;
+        await addTextToPdf(doc, t.thankYou, 105, yPosition, {
+            fontSize: 10,
+            fontStyle: 'bold',
+            align: 'center',
+            language
+        });
+        yPosition += 10;
+    }
 
     // Final Page Footer
     await drawPageFooter(doc, !footerLabelDrawn);
 }
-}
-
-
 
 
 // Generate PDF and return as bytes for email attachment

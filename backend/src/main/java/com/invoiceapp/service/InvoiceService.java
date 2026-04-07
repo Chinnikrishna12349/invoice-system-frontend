@@ -167,7 +167,6 @@ public class InvoiceService {
         invoice.setClientType(dto.getClientType()); // Added clientType mapping
         invoice.setSignatureUrl(dto.getSignatureUrl()); // Added signatureUrl mapping
         invoice.setCompany(dto.getCompany()); // Added company mapping
-        invoice.setUserId(dto.getUserId());
 
         // Map CompanyInfo DTO to Entity
         if (dto.getCompanyInfo() != null) {
@@ -202,7 +201,6 @@ public class InvoiceService {
         InvoiceDTO dto = new InvoiceDTO();
         dto.setId(entity.getId());
         dto.setInvoiceNumber(entity.getInvoiceNumber());
-        dto.setUserId(entity.getUserId());
         dto.setUserId(entity.getUserId());
 
         // Map CompanyInfo Entity to DTO

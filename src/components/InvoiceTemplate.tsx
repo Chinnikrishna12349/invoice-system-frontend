@@ -1,7 +1,11 @@
 import React from 'react';
 import './InvoiceTemplate.css';
 
-const InvoiceTemplate = () => {
+interface InvoiceTemplateProps {
+  country?: string;
+}
+
+const InvoiceTemplate: React.FC<InvoiceTemplateProps> = ({ country = 'india' }) => {
   return (
     <div className="invoice-container">
       {/* Header Section */}
@@ -93,7 +97,8 @@ const InvoiceTemplate = () => {
           <h3>Bank Details:</h3>
           <p>Account Name: Your Account Name</p>
           <p>Account No: ---</p>
-          <p>IFSC: ---</p>
+          {/* IFSC hidden for Japanese version as per requirement */}
+          {country !== 'japan' && country !== 'jp' && <p>IFSC: ---</p>}
           <p>Branch Code: ---</p>
         </div>
         <div className="signature">
@@ -104,7 +109,8 @@ const InvoiceTemplate = () => {
 
       {/* Footer */}
       <footer className="footer">
-        <p>Thank you for your business!</p>
+        {/* 'Thank you' hidden for Japanese version as per requirement */}
+        {country !== 'japan' && country !== 'jp' && <p>Thank you for your business!</p>}
       </footer>
     </div>
   );
