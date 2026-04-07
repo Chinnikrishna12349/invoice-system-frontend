@@ -539,7 +539,13 @@ const drawInvoiceContent = async (
             await addStaticStampToPdf(targetDoc, finalSigX - 8, finalSigY - 18, visionAiStamp, 16, 16);
         }
         targetDoc.line(rightColX + 5, finalSigY, 196, finalSigY);
-        await addTextToPdf(targetDoc, t.authorisedSignature || 'Authorised Signature', finalSigX, finalSigY + 5, { fontSize: 10, fontStyle: 'bold', align: 'center', language });
+        await addTextToPdf(targetDoc, t.authorisedSignature || 'Authorised Signature', finalSigX, finalSigY + 5, { 
+            fontSize: 10, 
+            fontStyle: 'bold', 
+            align: 'center', 
+            language,
+            forceImage: true 
+        } as any);
     };
 
     let footerLabelDrawn = false;
