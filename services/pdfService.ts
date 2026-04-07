@@ -29,7 +29,10 @@ const addTextToPdf = async (
     // Check for Japanese characters OR specific currency symbols (¥, ₹)
     // In Japanese mode, force ALL text (including colons and values) through the image renderer
     // to ensure 100% baseline parity between labels, colons, and data.
-    if (language === 'ja' || hasJapanese || (language === 'ja' && !isPureAscii)) {
+    const hasJapanese = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff66-\uff9f]/.test(text);
+    const isPureAscii = /^[\x00-\x7f]*$/.test(text);
+
+    if (language === 'ja' || hasJapanese || (!isPureAscii)) {
         // Use html2canvas for ALL text in Japanese context
         try {
             const imageData = await renderJapaneseText(text, fontSize, fontStyle, maxWidth, align);
