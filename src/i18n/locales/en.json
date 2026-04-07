@@ -52,7 +52,10 @@
     "address": "Address",
     "invoiceNo": "Invoice #:",
     "dateLabel": "Date:",
-    "dueLabel": "Due:"
+    "dueLabel": "Due:",
+    "sNo": "S.No",
+    "poNumber": "PO Number",
+    "roundOff": "Round Off"
   },
   "form": {
     "required": "This field is required",
@@ -90,14 +93,14 @@
   },
   "payment": {
     "instructions": "Payment Details",
-    "bankName": "Bank Name:",
-    "branchName": "Branch Name:",
-    "bankCode": "Bank Code:",
-    "accountType": "Account Type:",
-    "accountNumber": "Account No:",
-    "accountName": "Account Name:",
-    "ifsc": "IFSC:",
-    "branchCode": "Branch Code:",
+    "bankName": "Bank Name",
+    "branchName": "Branch Name",
+    "bankCode": "Bank Code",
+    "accountType": "Account Type",
+    "accountNumber": "Account No",
+    "accountName": "Account Name",
+    "ifsc": "IFSC",
+    "branchCode": "Branch Code",
     "note": "Please pay within 15 days from invoice issue date.",
     "authorisedSignature": "Authorised Signature"
   },

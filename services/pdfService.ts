@@ -116,7 +116,7 @@ const getTranslations = async (language: 'en' | 'ja') => {
 
     const t = {
         invoice: i18n.t('invoice.title') || (language === 'ja' ? '請求書' : 'INVOICE'),
-        sNo: i18n.t('invoice.sNo') || 'SNo',
+        sNo: i18n.t('invoice.sNo') || 'S.No',
         companyName: i18n.t('invoice.companyName'),
         from: i18n.t('invoice.from'),
         billTo: i18n.t('invoice.to'),
@@ -488,15 +488,16 @@ const drawInvoiceContent = async (
 
             const validDetails = details.filter(item => item.value && item.value.toString().trim().length > 0);
             let fCurY = footerStartY + 8;
-            const bLabelWidth = 28;
+            const bLabelWidth = 32; // Increased for better alignment
             const bColonX = 14 + bLabelWidth;
             const bValueX = bColonX + 4;
 
-            for (const item of validDetails.slice(0, 5)) { // Show top 5 items in sticky footer
-                await addTextToPdf(targetDoc, item.label.replace(/[：:]/g, ''), 14, fCurY, { fontSize: 9, language, maxWidth: bLabelWidth - 2 });
+            for (const item of validDetails.slice(0, 6)) { // Show up to 6 items
+                const label = item.label.replace(/[：:]/g, '');
+                const labelH = await addTextToPdf(targetDoc, label, 14, fCurY, { fontSize: 9, language, maxWidth: bLabelWidth - 2 });
                 await addTextToPdf(targetDoc, ':', bColonX, fCurY, { fontSize: 9, language });
-                await addTextToPdf(targetDoc, item.value || '', bValueX, fCurY, { fontSize: 9, language, maxWidth: 70 });
-                fCurY += 6;
+                const valueH = await addTextToPdf(targetDoc, item.value || '', bValueX, fCurY, { fontSize: 9, language, maxWidth: 100 });
+                fCurY += Math.max(labelH, valueH) + 1.5;
             }
 
             // Signature Section
