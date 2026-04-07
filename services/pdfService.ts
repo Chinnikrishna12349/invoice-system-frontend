@@ -455,11 +455,16 @@ const drawInvoiceContent = async (
     };
 
     // New Sticky Footer Helper
-    const drawPageFooter = async (targetDoc: typeof doc, showLabel: boolean = true) => {
+    const drawPageFooter = async (targetDoc: jsPDF, showLabel: boolean = true) => {
         const hasBankDetails = companyInfoToUse?.bankDetails &&
             Object.values(companyInfoToUse.bankDetails).some(v => v && v.toString().trim().length > 0);
 
         if (hasBankDetails) {
+            // Prevent double drawing on the same page
+            const currentPage = (targetDoc as any).internal.getCurrentPageInfo().pageNumber;
+            if ((targetDoc as any).lastFooterPage === currentPage) return;
+            (targetDoc as any).lastFooterPage = currentPage;
+
             const footerStartY = 225; // Fixed position near bottom
             if (showLabel) {
                 await addTextToPdf(targetDoc, t.bankDetailsLabel || 'Bank Details:', 14, footerStartY, { fontSize: 11, fontStyle: 'bold', language });
@@ -822,12 +827,32 @@ const drawInvoiceContent = async (
         const descLines = doc.splitTextToSize(service.description || '-', descWidth);
         const rowHeight = Math.max(12, descLines.length * 5 + 4);
 
+        // Page break check BEFORE drawing the row to prevent overlap with footer
+        if (yPosition + rowHeight > 220) {
+            await drawPageFooter(doc, !footerLabelDrawn);
+            footerLabelDrawn = true;
+            doc.addPage();
+            await drawPageHeader(doc, 9);
+            yPosition = 55;
+            
+            // Redraw table headers
+            doc.setDrawColor(0);
+            doc.setLineWidth(0.4);
+            doc.line(colX[0], yPosition, colX[5], yPosition);
+            doc.line(colX[0], yPosition + 10, colX[5], yPosition + 10);
+            const textY = yPosition + 3.25;
+            await addTextToPdf(doc, t.sNo, (colX[0] + colX[1]) / 2, textY, { fontSize: 10, align: 'center', language });
+            await addTextToPdf(doc, t.description, (colX[1] + colX[2]) / 2, textY, { fontSize: 10, align: 'center', language });
+            await addTextToPdf(doc, t.hours, (colX[2] + colX[3]) / 2, textY, { fontSize: 10, align: 'center', language });
+            await addTextToPdf(doc, t.unitPrice, (colX[3] + colX[4]) / 2, textY, { fontSize: 10, align: 'center', language });
+            await addTextToPdf(doc, t.amount, (colX[4] + colX[5]) / 2, textY, { fontSize: 10, align: 'center', language });
+            yPosition += 10;
+        }
+
         for (const x of colX) {
             doc.line(x, yPosition, x, yPosition + rowHeight);
         }
 
-        // Vertically center text in row (rowHeight / 2 - fontSize_in_mm / 2)
-        // fontSize 10pt ≈ 3.5mm. For 12mm row, center is (12-3.5)/2 ≈ 4.25
         const rowTextY = yPosition + (rowHeight - 3.5) / 2;
 
         // SNO
@@ -874,27 +899,7 @@ const drawInvoiceContent = async (
         });
 
         doc.line(colX[0], yPosition + rowHeight, colX[5], yPosition + rowHeight);
-
-        if (yPosition > 215) { // Reduced threshold for sticky footer
-            await drawPageFooter(doc, !footerLabelDrawn);
-            footerLabelDrawn = true;
-            doc.addPage();
-            await drawPageHeader(doc, 9);
-            yPosition = 55;
-            
-            // Redraw table headers
-            doc.setDrawColor(0);
-            doc.setLineWidth(0.4);
-            doc.line(colX[0], yPosition, colX[5], yPosition);
-            doc.line(colX[0], yPosition + 10, colX[5], yPosition + 10);
-            const textY = yPosition + 3.25;
-            await addTextToPdf(doc, t.sNo, (colX[0] + colX[1]) / 2, textY, { fontSize: 10, align: 'center', language });
-            await addTextToPdf(doc, t.description, (colX[1] + colX[2]) / 2, textY, { fontSize: 10, align: 'center', language });
-            await addTextToPdf(doc, t.hours, (colX[2] + colX[3]) / 2, textY, { fontSize: 10, align: 'center', language });
-            await addTextToPdf(doc, t.unitPrice, (colX[3] + colX[4]) / 2, textY, { fontSize: 10, align: 'center', language });
-            await addTextToPdf(doc, t.amount, (colX[4] + colX[5]) / 2, textY, { fontSize: 10, align: 'center', language });
-            yPosition += 10;
-        }
+        yPosition += rowHeight;
     }
 
     // Totals Section
@@ -910,8 +915,8 @@ const drawInvoiceContent = async (
     const drawTotalRow = async (label: string, value: string, isBold: boolean = false) => {
         const rowH = 10;
         
-        // Page break check for total rows
-        if (yPosition > 215) {
+        // Page break check for total rows - keep totals section together
+        if (yPosition > 200) {
             await drawPageFooter(doc, !footerLabelDrawn);
             footerLabelDrawn = true;
             doc.addPage();
