@@ -489,6 +489,7 @@ const drawInvoiceContent = async (
 
             const validDetails = details.filter(item => item.value && item.value.toString().trim().length > 0);
             let fCurY = footerStartY + 8;
+            let swiftY = fCurY + 30; // Fallback
             const bLabelWidth = 40; // Increased to ensure perfect "straight-aligned" output
             const bColonX = 14 + bLabelWidth;
             const bValueX = bColonX + 4;
@@ -503,6 +504,11 @@ const drawInvoiceContent = async (
                 const labelH = await addTextToPdf(targetDoc, label, 14, fCurY, { fontSize: 9, language, maxWidth: bLabelWidth - 2, forceImage: forceImg } as any);
                 await addTextToPdf(targetDoc, ':', bColonX, fCurY, { fontSize: 9, language, forceImage: forceImg } as any);
                 const valueH = await addTextToPdf(targetDoc, val.toString(), bValueX, fCurY, { fontSize: 9, language, maxWidth: 100, forceImage: forceImg } as any);
+                
+                if (label.toLowerCase().includes('swift')) {
+                    swiftY = fCurY;
+                }
+                
                 fCurY += Math.max(labelH, valueH) + 1.5;
             }
         }
@@ -520,9 +526,8 @@ const drawInvoiceContent = async (
 
         if (startY && (companyInfoToUse?.bankDetails && Object.values(companyInfoToUse.bankDetails).some(v => v && v.toString().trim().length > 0))) {
             // Reposition TO THE RIGHT of payment details for a "straight" professional look
-            // Payment details start at footerStartY and go down.
-            // Place signature horizontally starting at footerStartY + 5
-            finalSigY = (startY || 225) + 20;
+            // Aligned exactly straight to the SWIFT code row if found
+            finalSigY = (swiftY as any) + 5; 
         }
 
         if (invoice.signatureUrl) {
