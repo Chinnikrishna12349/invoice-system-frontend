@@ -46,6 +46,13 @@ export const renderJapaneseText = async (
     div.appendChild(textNode);
 
     document.body.appendChild(div);
+    
+    // Wait for fonts to be ready to prevent empty rendering
+    if ((document as any).fonts && (document as any).fonts.ready) {
+        await (document as any).fonts.ready;
+    }
+    // Small additional delay to ensure layout stability
+    await new Promise(resolve => setTimeout(resolve, 50));
 
     // Render to canvas
     const canvas = await html2canvas(div, {

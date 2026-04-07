@@ -539,7 +539,8 @@ const drawInvoiceContent = async (
             await addStaticStampToPdf(targetDoc, finalSigX - 8, finalSigY - 18, visionAiStamp, 16, 16);
         }
         targetDoc.line(rightColX + 5, finalSigY, 196, finalSigY);
-        await addTextToPdf(targetDoc, t.authorisedSignature || 'Authorised Signature', finalSigX, finalSigY + 5, { 
+        const sigLabel = language === 'ja' ? '承認された署名' : (t.authorisedSignature || 'Authorised Signature');
+        await addTextToPdf(targetDoc, sigLabel, finalSigX, finalSigY + 5, { 
             fontSize: 10, 
             fontStyle: 'bold', 
             align: 'center', 
