@@ -460,16 +460,19 @@ const drawInvoiceContent = async (
 
     // New Sticky Footer Helper
     const drawPageFooter = async (targetDoc: jsPDF, showLabel: boolean = true, startY?: number) => {
+        // Prevent double drawing on the same page
+        const currentPage = (targetDoc as any).internal.getCurrentPageInfo().pageNumber;
+        if ((targetDoc as any).lastFooterPage === currentPage) return;
+        (targetDoc as any).lastFooterPage = currentPage;
+
         const hasBankDetails = companyInfoToUse?.bankDetails &&
             Object.values(companyInfoToUse.bankDetails).some(v => v && v.toString().trim().length > 0);
 
+        const footerStartY = startY || 225; // Default to bottom if not specified
+        let swiftY = footerStartY + 30; // Fallback for signature alignment
+        
         if (hasBankDetails) {
             // Prevent double drawing on the same page
-            const currentPage = (targetDoc as any).internal.getCurrentPageInfo().pageNumber;
-            if ((targetDoc as any).lastFooterPage === currentPage) return;
-            (targetDoc as any).lastFooterPage = currentPage;
-
-            const footerStartY = startY || 225; // Default to bottom if not specified
             if (showLabel) {
                 await addTextToPdf(targetDoc, t.bankDetailsLabel || 'Bank Details:', 14, footerStartY, { fontSize: 11, fontStyle: 'bold', language });
             }
@@ -489,7 +492,7 @@ const drawInvoiceContent = async (
 
             const validDetails = details.filter(item => item.value && item.value.toString().trim().length > 0);
             let fCurY = footerStartY + 8;
-            let swiftY = fCurY + 30; // Fallback
+            swiftY = fCurY + 30; // More specific fallback if bank details block exists
             const bLabelWidth = 40; // Increased to ensure perfect "straight-aligned" output
             const bColonX = 14 + bLabelWidth;
             const bValueX = bColonX + 4;
