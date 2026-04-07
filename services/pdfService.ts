@@ -512,7 +512,7 @@ const drawInvoiceContent = async (
         // Based on screenshots, it's at the end.
         // Move OUTSIDE hasBankDetails to ensure it appears in Japanese PDF too
         const sigX = rightColX + (rightColWidth / 2);
-        const sigY = startY ? Math.max(startY + 10, 255) : 255; 
+        const sigY = startY ? Math.max(startY + 20, 255) : 255; 
         
         // If startY is provided (final footer), align it to the RIGHT of the bank details block if there's space
         let finalSigY = sigY;
@@ -522,7 +522,7 @@ const drawInvoiceContent = async (
             // Reposition TO THE RIGHT of payment details for a "straight" professional look
             // Payment details start at footerStartY and go down.
             // Place signature horizontally starting at footerStartY + 5
-            finalSigY = (startY || 225) + 10;
+            finalSigY = (startY || 225) + 20;
         }
 
         if (invoice.signatureUrl) {
