@@ -31,8 +31,9 @@ const addTextToPdf = async (
     // to ensure 100% baseline parity between labels, colons, and data.
     const hasJapanese = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff66-\uff9f]/.test(text);
     const isPureAscii = /^[\x00-\x7f]*$/.test(text);
+    const forceImage = (options as any).forceImage === true;
 
-    if (language === 'ja' || hasJapanese || (!isPureAscii)) {
+    if (language === 'ja' || hasJapanese || (!isPureAscii) || forceImage) {
         // Use html2canvas for ALL text in Japanese context
         try {
             const imageData = await renderJapaneseText(text, fontSize, fontStyle, maxWidth, align);
@@ -51,11 +52,11 @@ const addTextToPdf = async (
                             finalHeight = finalHeight * ratio;
                         }
 
-                        // Adjust positions based on alignment
                         let adjustedX = x;
-                        // Use Y as the TOP edge (Image-style) for more reliable stacking
-                        // Subtract 1.35mm to compensate for the 5px top padding in renderJapaneseText (approx 1.323mm)
-                        let adjustedY = y - 1.35;
+                        // Use Y as the TOP edge
+                        // Compendsate for padding/baseline differences. 
+                        // Increase compensation slightly to 1.8mm for better alignment with Helvetica Top baseline
+                        let adjustedY = y - 1.8;
 
                         if (align === 'right') {
                             adjustedX = x - finalWidth;
@@ -494,9 +495,13 @@ const drawInvoiceContent = async (
 
             for (const item of validDetails.slice(0, 6)) { // Show up to 6 items
                 const label = item.label.replace(/[：:]/g, '');
-                const labelH = await addTextToPdf(targetDoc, label, 14, fCurY, { fontSize: 9, language, maxWidth: bLabelWidth - 2 });
-                await addTextToPdf(targetDoc, ':', bColonX, fCurY, { fontSize: 9, language });
-                const valueH = await addTextToPdf(targetDoc, item.value || '', bValueX, fCurY, { fontSize: 9, language, maxWidth: 100 });
+                const val = item.value || '';
+                // If value has Japanese, force the label and colon to use the same renderer for parity
+                const hasJaValue = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(val.toString());
+                
+                const labelH = await addTextToPdf(targetDoc, label, 14, fCurY, { fontSize: 9, language, maxWidth: bLabelWidth - 2, forceImage: hasJaValue } as any);
+                await addTextToPdf(targetDoc, ':', bColonX, fCurY, { fontSize: 9, language, forceImage: hasJaValue } as any);
+                const valueH = await addTextToPdf(targetDoc, val.toString(), bValueX, fCurY, { fontSize: 9, language, maxWidth: 100 });
                 fCurY += Math.max(labelH, valueH) + 1.5;
             }
 
