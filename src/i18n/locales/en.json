@@ -94,7 +94,7 @@
   "payment": {
     "instructions": "Payment Details",
     "bankName": "Bank Name",
-    "branchName": "支店名",
+    "branchName": "Branch Name",
     "bankCode": "Bank Code",
     "accountType": "Account Type",
     "accountNumber": "Account No",

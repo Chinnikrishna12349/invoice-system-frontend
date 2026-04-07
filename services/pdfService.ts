@@ -475,20 +475,20 @@ const drawInvoiceContent = async (
             
             const b = companyInfoToUse?.bankDetails;
             const details = [
-                { label: t.bankNameLabel || (language === 'ja' ? '銀行名：' : 'Bank Name:'), value: b?.bankName },
-                { label: t.bankCodeLabel || (language === 'ja' ? '銀行コード：' : 'Bank Code:'), value: (b as any)?.bankCode },
-                { label: t.branchLabel || (language === 'ja' ? '支店名：' : 'Branch Name:'), value: b?.branchName },
-                { label: t.branchCodeLabel || (language === 'ja' ? '支店コード：' : 'Branch Code:'), value: b?.branchCode },
-                { label: t.accountTypeLabel || (language === 'ja' ? '口座種別：' : 'Account Type:'), value: b?.accountType },
-                { label: t.accountNoLabel || (language === 'ja' ? '口座番号：' : 'Account No:'), value: b?.accountNumber },
-                { label: t.accountHolderLabel || (language === 'ja' ? '口座名義：' : 'Account Holder:'), value: b?.accountHolderName },
-                { label: t.swiftCodeLabel || (language === 'ja' ? 'SWIFTコード：' : 'SWIFT Code:'), value: (b as any)?.swiftCode || (b as any)?.swift },
-                ...(language !== 'ja' ? [{ label: t.ifscCodeLabel || 'IFSC Code:', value: b?.ifscCode || (b as any)?.ifsc }] : [])
+                { label: t.bankNameLabel || 'Bank Name', value: b?.bankName },
+                { label: t.bankCodeLabel || 'Bank Code', value: (b as any)?.bankCode },
+                { label: t.branchLabel || 'Branch Name', value: b?.branchName },
+                { label: t.branchCodeLabel || 'Branch Code', value: b?.branchCode },
+                { label: t.accountTypeLabel || 'Account Type', value: b?.accountType },
+                { label: t.accountNoLabel || 'Account No', value: b?.accountNumber },
+                { label: t.accountHolderLabel || 'Account Name', value: b?.accountHolderName },
+                { label: t.swiftCodeLabel || 'SWIFT Code', value: (b as any)?.swiftCode || (b as any)?.swift },
+                ...(language !== 'ja' ? [{ label: t.ifscCodeLabel || 'IFSC', value: b?.ifscCode || (b as any)?.ifsc }] : [])
             ];
 
             const validDetails = details.filter(item => item.value && item.value.toString().trim().length > 0);
             let fCurY = footerStartY + 8;
-            const bLabelWidth = 32; // Increased for better alignment
+            const bLabelWidth = 40; // Increased to ensure perfect "straight-aligned" output
             const bColonX = 14 + bLabelWidth;
             const bValueX = bColonX + 4;
 
