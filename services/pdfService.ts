@@ -459,7 +459,7 @@ const drawInvoiceContent = async (
     };
 
     // New Sticky Footer Helper
-    const drawPageFooter = async (targetDoc: jsPDF, showLabel: boolean = true) => {
+    const drawPageFooter = async (targetDoc: jsPDF, showLabel: boolean = true, startY?: number) => {
         const hasBankDetails = companyInfoToUse?.bankDetails &&
             Object.values(companyInfoToUse.bankDetails).some(v => v && v.toString().trim().length > 0);
 
@@ -469,7 +469,7 @@ const drawInvoiceContent = async (
             if ((targetDoc as any).lastFooterPage === currentPage) return;
             (targetDoc as any).lastFooterPage = currentPage;
 
-            const footerStartY = 225; // Fixed position near bottom
+            const footerStartY = startY || 225; // Default to bottom if not specified
             if (showLabel) {
                 await addTextToPdf(targetDoc, t.bankDetailsLabel || 'Bank Details:', 14, footerStartY, { fontSize: 11, fontStyle: 'bold', language });
             }
@@ -493,28 +493,30 @@ const drawInvoiceContent = async (
             const bColonX = 14 + bLabelWidth;
             const bValueX = bColonX + 4;
 
-            for (const item of validDetails.slice(0, 6)) { // Show up to 6 items
+            for (const item of validDetails.slice(0, 7)) { // Show up to 7 items
                 const label = item.label.replace(/[：:]/g, '');
                 const val = item.value || '';
-                // If value has Japanese, force the label and colon to use the same renderer for parity
-                const hasJaValue = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(val.toString());
+                // FORCE image renderer for ALL bank detail rows in English/Japanese to ensure 100% parity
+                // (font matching, boldness, and alignment)
+                const forceImg = true; 
                 
-                const labelH = await addTextToPdf(targetDoc, label, 14, fCurY, { fontSize: 9, language, maxWidth: bLabelWidth - 2, forceImage: hasJaValue } as any);
-                await addTextToPdf(targetDoc, ':', bColonX, fCurY, { fontSize: 9, language, forceImage: hasJaValue } as any);
-                const valueH = await addTextToPdf(targetDoc, val.toString(), bValueX, fCurY, { fontSize: 9, language, maxWidth: 100 });
+                const labelH = await addTextToPdf(targetDoc, label, 14, fCurY, { fontSize: 9, language, maxWidth: bLabelWidth - 2, forceImage: forceImg } as any);
+                await addTextToPdf(targetDoc, ':', bColonX, fCurY, { fontSize: 9, language, forceImage: forceImg } as any);
+                const valueH = await addTextToPdf(targetDoc, val.toString(), bValueX, fCurY, { fontSize: 9, language, maxWidth: 100, forceImage: forceImg } as any);
                 fCurY += Math.max(labelH, valueH) + 1.5;
             }
 
             // Signature Section
             const sigX = rightColX + (rightColWidth / 2);
-            const sigY = 255;
+            // Move signature section further down if needed, but relative to footerStartY
+            const sigY = Math.max(260, fCurY + 15); 
             if (invoice.signatureUrl) {
-                await addLogoToPdf(targetDoc, sigX - 15, sigY - 15, invoice.signatureUrl, 30, 15);
+                await addLogoToPdf(targetDoc, sigX - 15, sigY - 18, invoice.signatureUrl, 30, 15);
             } else if (isVisionAI) {
-                await addStaticStampToPdf(targetDoc, sigX - 8, sigY - 15, visionAiStamp, 16, 16);
+                await addStaticStampToPdf(targetDoc, sigX - 8, sigY - 18, visionAiStamp, 16, 16);
             }
             targetDoc.line(rightColX + 5, sigY, 196, sigY);
-            await addTextToPdf(targetDoc, t.authorisedSignature || 'Authorised Signature', sigX, sigY + 4, { fontSize: 9, fontStyle: 'bold', align: 'center', language });
+            await addTextToPdf(targetDoc, t.authorisedSignature || 'Authorised Signature', sigX, sigY + 5, { fontSize: 10, fontStyle: 'bold', align: 'center', language });
         }
     };
 
@@ -998,7 +1000,9 @@ const drawInvoiceContent = async (
     }
 
     // Final Page Footer
-    await drawPageFooter(doc, !footerLabelDrawn);
+    // Final Page Footer - Pass dynamic yPosition to remove empty space
+    // and ensure it follows the table/Thank You message closely (min 15mm gap)
+    await drawPageFooter(doc, !footerLabelDrawn, Math.max(160, yPosition + 15));
 }
 
 
