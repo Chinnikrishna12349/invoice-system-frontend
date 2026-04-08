@@ -459,22 +459,24 @@ const drawInvoiceContent = async (
         const headerRows = await Promise.all(headerJobs);
 
         for (const row of headerRows) {
-            const hL = ((img: any) => {
-                const i = new Image(); i.src = img;
-                let w = i.width * imgScaleFactor; let h = i.height * imgScaleFactor;
+            const hL = ((res: any) => {
+                if (!res) return 0;
+                let w = res.width * imgScaleFactor; let h = res.height * imgScaleFactor;
                 if (w > headerLabelWidth - 2) { h = h * ((headerLabelWidth - 2) / w); w = headerLabelWidth - 2; }
-                targetDoc.addImage(img, 'PNG', rightColX, headY - 1.8, w, h, '', 'FAST');
+                targetDoc.addImage(res.dataUrl, 'PNG', rightColX, headY - 1.8, w, h, '', 'FAST');
                 return h;
             })(row.labelImg);
 
-            targetDoc.addImage(row.colonImg, 'PNG', headerColonX, headY - 1.8, 0, 0, '', 'FAST'); // Auto size for colon
+            if (row.colonImg) {
+                targetDoc.addImage(row.colonImg.dataUrl, 'PNG', headerColonX, headY - 1.8, row.colonImg.width * imgScaleFactor, row.colonImg.height * imgScaleFactor, '', 'FAST');
+            }
 
-            const hV = ((img: any) => {
-                const i = new Image(); i.src = img;
-                let w = i.width * imgScaleFactor; let h = i.height * imgScaleFactor;
+            const hV = ((res: any) => {
+                if (!res) return 0;
+                let w = res.width * imgScaleFactor; let h = res.height * imgScaleFactor;
                 const maxW = rightColWidth - (headerValueX - rightColX);
                 if (w > maxW) { h = h * (maxW / w); w = maxW; }
-                targetDoc.addImage(img, 'PNG', headerValueX, headY - 1.8, w, h, '', 'FAST');
+                targetDoc.addImage(res.dataUrl, 'PNG', headerValueX, headY - 1.8, w, h, '', 'FAST');
                 return h;
             })(row.valueImg);
 
@@ -543,16 +545,14 @@ const drawInvoiceContent = async (
             for (const row of rows) {
                 // Sequential drawing to jsPDF is fast since images are pre-rendered
                 const { label, val, labelImg, colonImg, valueImg } = row;
-
-                // Draw pre-rendered images to PDF
-                // We use helper to calculate exact height for Y increment
-                const drawImg = (imgData: string, x: number, y: number, maxW: number) => {
-                    const img = new Image();
-                    img.src = imgData;
-                    let w = img.width * imgScaleFactor;
-                    let h = img.height * imgScaleFactor;
+                
+                // Draw pre-rendered images to PDF using returned dimensions
+                const drawImg = (res: any, x: number, y: number, maxW: number) => {
+                    if (!res) return 0;
+                    let w = res.width * imgScaleFactor;
+                    let h = res.height * imgScaleFactor;
                     if (w > maxW) { h = h * (maxW / w); w = maxW; }
-                    targetDoc.addImage(imgData, 'PNG', x, y - 1.8, w, h, '', 'FAST');
+                    targetDoc.addImage(res.dataUrl, 'PNG', x, y - 1.8, w, h, '', 'FAST');
                     return h;
                 };
 
@@ -668,12 +668,11 @@ const drawInvoiceContent = async (
     });
     const fromImages = await Promise.all(fromJobs);
 
-    for (const imgData of fromImages) {
-        if (imgData) {
-            const img = new Image(); img.src = imgData;
-            let w = img.width * imgScaleFactor; let h = img.height * imgScaleFactor;
+    for (const res of fromImages) {
+        if (res) {
+            let w = res.width * imgScaleFactor; let h = res.height * imgScaleFactor;
             if (w > 90) { h = h * (90 / w); w = 90; }
-            doc.addImage(imgData, 'PNG', 14, fromY - 1.8, w, h, '', 'FAST');
+            doc.addImage(res.dataUrl, 'PNG', 14, fromY - 1.8, w, h, '', 'FAST');
             fromY += h + 1;
         }
     }
@@ -748,11 +747,11 @@ const drawInvoiceContent = async (
 
         for (const item of billToRendered) {
             if (item.isRow) {
-                const draw = (imgData: string, x: number, y: number, maxW: number) => {
-                    const img = new Image(); img.src = imgData;
-                    let w = img.width * imgScaleFactor; let h = img.height * imgScaleFactor;
+                const draw = (res: any, x: number, y: number, maxW: number) => {
+                    if (!res) return 0;
+                    let w = res.width * imgScaleFactor; let h = res.height * imgScaleFactor;
                     if (w > maxW) { h = h * (maxW / w); w = maxW; }
-                    doc.addImage(imgData, 'PNG', x, y - 1.8, w, h, '', 'FAST');
+                    doc.addImage(res.dataUrl, 'PNG', x, y - 1.8, w, h, '', 'FAST');
                     return h;
                 };
                 const hL = draw(item.lImg!, billToX, billToY, billToLabelWidth - 2);
@@ -760,11 +759,13 @@ const drawInvoiceContent = async (
                 const hV = draw(item.vImg!, billToValueX, billToY, rightColWidth - (billToValueX - billToX));
                 billToY += Math.max(hL, hV) + 2;
             } else {
-                const img = new Image(); img.src = item.img!;
-                let w = img.width * imgScaleFactor; let h = img.height * imgScaleFactor;
-                if (w > rightColWidth) { h = h * (rightColWidth / w); w = rightColWidth; }
-                doc.addImage(item.img!, 'PNG', billToX, billToY - 1.8, w, h, '', 'FAST');
-                billToY += h + (item.isRow ? 2 : 3);
+                const res = item.img as any;
+                if (res) {
+                    let w = res.width * imgScaleFactor; let h = res.height * imgScaleFactor;
+                    if (w > rightColWidth) { h = h * (rightColWidth / w); w = rightColWidth; }
+                    doc.addImage(res.dataUrl, 'PNG', billToX, billToY - 1.8, w, h, '', 'FAST');
+                    billToY += h + (item.isRow ? 2 : 3);
+                }
             }
         }
     }
@@ -923,14 +924,14 @@ const drawInvoiceContent = async (
 
         const rowTextY = yPosition + (row.rowHeight - 3.5) / 2;
 
-        const drawCell = (img: string, x: number, y: number, maxW: number, align: 'left' | 'center' | 'right') => {
-            const i = new Image(); i.src = img;
-            let w = i.width * imgScaleFactor; let h = i.height * imgScaleFactor;
+        const drawCell = (res: any, x: number, y: number, maxW: number, align: 'left' | 'center' | 'right') => {
+            if (!res) return;
+            let w = res.width * imgScaleFactor; let h = res.height * imgScaleFactor;
             if (w > maxW) { h = h * (maxW / w); w = maxW; }
             let finalX = x;
             if (align === 'center') finalX = x - w/2;
             else if (align === 'right') finalX = x - w;
-            doc.addImage(img, 'PNG', finalX, y - 1.8, w, h, '', 'FAST');
+            doc.addImage(res.dataUrl, 'PNG', finalX, y - 1.8, w, h, '', 'FAST');
         };
 
         drawCell(row.idImg, (colX[0] + colX[1]) / 2, rowTextY, (colX[1] - colX[0]) - 2, 'center');
@@ -939,8 +940,8 @@ const drawInvoiceContent = async (
         drawCell(row.amountImg, colX[5] - 4, rowTextY, (colX[5] - colX[4]) - 2, 'right');
 
         let lineY = rowTextY - (row.descLines.length > 1 ? 2 : 0);
-        for (const img of row.descImgs) {
-            drawCell(img, colX[1] + 2, lineY, colX[2] - colX[1] - 4, 'left');
+        for (const res of row.descImgs) {
+            drawCell(res, colX[1] + 2, lineY, colX[2] - colX[1] - 4, 'left');
             lineY += 5;
         }
 
