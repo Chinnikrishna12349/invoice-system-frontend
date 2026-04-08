@@ -1,14 +1,14 @@
-import jsPDF from 'jspdf';
+/**
+ * Japanese font support for jsPDF
+ * Ensures proper rendering of Japanese characters using html2canvas
+ */
 
-export interface RenderedJapaneseText {
-  dataUrl: string;
-  width: number;
-  height: number;
-}
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 /**
  * Render Japanese text as image and add to PDF
- * Optimized to use native Canvas fillText instead of html2canvas for 100x better performance.
+ * This is necessary because jsPDF's default fonts don't support Japanese characters
  */
 export const renderJapaneseText = async (
   text: string,
@@ -16,55 +16,61 @@ export const renderJapaneseText = async (
   fontStyle: 'normal' | 'bold' = 'normal',
   width: number = 100,
   align: 'left' | 'center' | 'right' = 'left'
-): Promise<RenderedJapaneseText | null> => {
-  // Check cache first
-  const cacheKey = `${text}_${fontSize}_${fontStyle}_${width}_${align}`;
-  const cached = (window as any)._japaneseImageCache?.[cacheKey];
-  if (cached) return cached;
-
+): Promise<string> => {
   try {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return null;
+    // Create a temporary div element
+    const div = document.createElement('div');
+    div.style.position = 'absolute';
+    div.style.left = '-9999px';
+    div.style.top = '-9999px';
+    div.style.fontSize = `${fontSize}pt`;
+    div.style.fontFamily = "'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+    // Use slightly heavier weight for normal text to match PDF Helvetica
+    div.style.fontWeight = fontStyle === 'bold' ? 'bold' : 'normal';
+    div.style.color = '#000000';
+    div.style.display = 'inline-block';
+    div.style.width = 'auto';
+    div.style.maxWidth = width > 0 ? `${width}mm` : 'none';
+    div.style.padding = '5px 0'; 
+    div.style.lineHeight = 'normal';
+    div.style.wordBreak = 'break-all';
+    div.style.boxSizing = 'border-box';
+    // CSS properties for sharper text rendering
+    // @ts-ignore
+    div.style.textRendering = 'geometricPrecision';
+    // @ts-ignore
+    div.style.webkitFontSmoothing = 'antialiased';
 
-    const ptToPx = 1.333;
-    const scale = 2;
+    div.style.overflow = 'visible';
+    const textNode = document.createTextNode(text);
+    div.appendChild(textNode);
+
+    document.body.appendChild(div);
     
-    const fontStack = "'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif";
-    const boldPrefix = fontStyle === 'bold' ? 'bold ' : '';
-    const font = `${boldPrefix}${fontSize}pt ${fontStack}`;
-    ctx.font = font;
+    // Wait for fonts to be ready to prevent empty rendering
+    if ((document as any).fonts && (document as any).fonts.ready) {
+        await (document as any).fonts.ready;
+    }
+    // Small additional delay to ensure layout stability
+    await new Promise(resolve => setTimeout(resolve, 50));
 
-    const metrics = ctx.measureText(text);
-    const measuredWidth = metrics.width;
-    const measuredHeight = fontSize * ptToPx * 1.3; // Slightly more height for safer rendering
+    // Render to canvas
+    const canvas = await html2canvas(div, {
+      backgroundColor: null, // Transparent background
+      scale: 4, // Higher scale for better definition
+      logging: false,
+      useCORS: true,
+      allowTaint: true
+    });
 
-    canvas.width = (measuredWidth + 4) * scale;
-    canvas.height = (measuredHeight + 4) * scale;
-    
-    ctx.scale(scale, scale);
-    ctx.font = font;
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#000000';
-    ctx.imageSmoothingEnabled = true;
+    // Remove the temporary element
+    document.body.removeChild(div);
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillText(text, 2, measuredHeight / 2);
-
-    const result = {
-      dataUrl: canvas.toDataURL('image/png'),
-      width: canvas.width,
-      height: canvas.height
-    };
-    
-    // Simple global cache to persist across calls
-    if (!(window as any)._japaneseImageCache) (window as any)._japaneseImageCache = {};
-    (window as any)._japaneseImageCache[cacheKey] = result;
-    
-    return result;
+    // Convert to data URL
+    return canvas.toDataURL('image/png');
   } catch (error) {
     console.error('Error rendering Japanese text:', error);
-    return null;
+    return '';
   }
 };
 
