@@ -674,7 +674,7 @@ const drawInvoiceContent = async (
             const img = new Image(); img.src = imgData;
             let w = img.width * s; let h = img.height * s;
             if (w > 90) { h = h * (90 / w); w = 90; }
-            targetDoc.addImage(imgData, 'PNG', 14, fromY - 1.8, w, h, '', 'FAST');
+            doc.addImage(imgData, 'PNG', 14, fromY - 1.8, w, h, '', 'FAST');
             fromY += h + 1;
         }
     }
@@ -754,7 +754,7 @@ const drawInvoiceContent = async (
                     const img = new Image(); img.src = imgData;
                     let w = img.width * s; let h = img.height * s;
                     if (w > maxW) { h = h * (maxW / w); w = maxW; }
-                    targetDoc.addImage(imgData, 'PNG', x, y - 1.8, w, h, '', 'FAST');
+                    doc.addImage(imgData, 'PNG', x, y - 1.8, w, h, '', 'FAST');
                     return h;
                 };
                 const hL = draw(item.lImg!, billToX, billToY, billToLabelWidth - 2);
@@ -765,7 +765,7 @@ const drawInvoiceContent = async (
                 const img = new Image(); img.src = item.img!;
                 let w = img.width * s; let h = img.height * s;
                 if (w > rightColWidth) { h = h * (rightColWidth / w); w = rightColWidth; }
-                targetDoc.addImage(item.img!, 'PNG', billToX, billToY - 1.8, w, h, '', 'FAST');
+                doc.addImage(item.img!, 'PNG', billToX, billToY - 1.8, w, h, '', 'FAST');
                 billToY += h + (item.isRow ? 2 : 3);
             }
         }
