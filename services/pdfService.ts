@@ -110,8 +110,11 @@ const getTranslations = async (language: 'en' | 'ja') => {
     console.log('Changing language from', currentLang, 'to', language);
     await i18n.changeLanguage(language);
 
-    // Wait a bit to ensure translations are loaded
-    console.log('Current i18n language after change:', i18n.language);
+    // Wait for fonts to be ready to ensure Japanese text renders correctly
+    if (language === 'ja' && (document as any).fonts && (document as any).fonts.ready) {
+        console.log('PDF Generator: Waiting for Japanese fonts to be ready...');
+        await (document as any).fonts.ready;
+    }
 
     const t = {
         invoice: i18n.t('invoice.title') || (language === 'ja' ? '請求書' : 'INVOICE'),
