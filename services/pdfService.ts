@@ -453,12 +453,12 @@ const drawInvoiceContent = async (
         });
 
         const headerRows = await Promise.all(headerJobs);
-        const s = 0.2645833 / 2;
+        const imgScaleFactor = 0.2645833 / 2;
 
         for (const row of headerRows) {
             const hL = ((img: any) => {
                 const i = new Image(); i.src = img;
-                let w = i.width * s; let h = i.height * s;
+                let w = i.width * imgScaleFactor; let h = i.height * imgScaleFactor;
                 if (w > headerLabelWidth - 2) { h = h * ((headerLabelWidth - 2) / w); w = headerLabelWidth - 2; }
                 targetDoc.addImage(img, 'PNG', rightColX, headY - 1.8, w, h, '', 'FAST');
                 return h;
@@ -468,7 +468,7 @@ const drawInvoiceContent = async (
 
             const hV = ((img: any) => {
                 const i = new Image(); i.src = img;
-                let w = i.width * s; let h = i.height * s;
+                let w = i.width * imgScaleFactor; let h = i.height * imgScaleFactor;
                 const maxW = rightColWidth - (headerValueX - rightColX);
                 if (w > maxW) { h = h * (maxW / w); w = maxW; }
                 targetDoc.addImage(img, 'PNG', headerValueX, headY - 1.8, w, h, '', 'FAST');
@@ -542,15 +542,15 @@ const drawInvoiceContent = async (
                 const { label, val, labelImg, colonImg, valueImg } = row;
                 
                 // Scale factor for canvas conversion (matches addTextToPdf)
-                const s = 0.2645833 / 2; 
+                const imgScaleFactor = 0.2645833 / 2; 
 
                 // Draw pre-rendered images to PDF
                 // We use helper to calculate exact height for Y increment
                 const drawImg = (imgData: string, x: number, y: number, maxW: number) => {
                     const img = new Image();
                     img.src = imgData;
-                    let w = img.width * s;
-                    let h = img.height * s;
+                    let w = img.width * imgScaleFactor;
+                    let h = img.height * imgScaleFactor;
                     if (w > maxW) { h = h * (maxW / w); w = maxW; }
                     targetDoc.addImage(imgData, 'PNG', x, y - 1.8, w, h, '', 'FAST');
                     return h;
@@ -667,12 +667,12 @@ const drawInvoiceContent = async (
         return renderJapaneseText(displayLine, 10, 'normal', 90, 'left');
     });
     const fromImages = await Promise.all(fromJobs);
-    const s = 0.2645833 / 2;
+    const imgScaleFactor = 0.2645833 / 2;
 
     for (const imgData of fromImages) {
         if (imgData) {
             const img = new Image(); img.src = imgData;
-            let w = img.width * s; let h = img.height * s;
+            let w = img.width * imgScaleFactor; let h = img.height * imgScaleFactor;
             if (w > 90) { h = h * (90 / w); w = 90; }
             doc.addImage(imgData, 'PNG', 14, fromY - 1.8, w, h, '', 'FAST');
             fromY += h + 1;
@@ -746,13 +746,13 @@ const drawInvoiceContent = async (
         });
 
         const billToRendered = await Promise.all(billToJobs);
-        const s = 0.2645833 / 2;
+        const imgScaleFactor = 0.2645833 / 2;
 
         for (const item of billToRendered) {
             if (item.isRow) {
                 const draw = (imgData: string, x: number, y: number, maxW: number) => {
                     const img = new Image(); img.src = imgData;
-                    let w = img.width * s; let h = img.height * s;
+                    let w = img.width * imgScaleFactor; let h = img.height * imgScaleFactor;
                     if (w > maxW) { h = h * (maxW / w); w = maxW; }
                     doc.addImage(imgData, 'PNG', x, y - 1.8, w, h, '', 'FAST');
                     return h;
@@ -763,7 +763,7 @@ const drawInvoiceContent = async (
                 billToY += Math.max(hL, hV) + 2;
             } else {
                 const img = new Image(); img.src = item.img!;
-                let w = img.width * s; let h = img.height * s;
+                let w = img.width * imgScaleFactor; let h = img.height * imgScaleFactor;
                 if (w > rightColWidth) { h = h * (rightColWidth / w); w = rightColWidth; }
                 doc.addImage(item.img!, 'PNG', billToX, billToY - 1.8, w, h, '', 'FAST');
                 billToY += h + (item.isRow ? 2 : 3);
@@ -908,7 +908,7 @@ const drawInvoiceContent = async (
     });
 
     const renderedRows = await Promise.all(serviceJobs);
-    const s = 0.2645833 / 2; // Scale 2 factor
+    const imgScaleFactor = 0.2645833 / 2; // Scale 2 factor
 
     for (const row of renderedRows) {
         if (yPosition + row.rowHeight > 265) {
@@ -928,7 +928,7 @@ const drawInvoiceContent = async (
 
         const drawCell = (img: string, x: number, y: number, maxW: number, align: 'left' | 'center' | 'right') => {
             const i = new Image(); i.src = img;
-            let w = i.width * s; let h = i.height * s;
+            let w = i.width * imgScaleFactor; let h = i.height * imgScaleFactor;
             if (w > maxW) { h = h * (maxW / w); w = maxW; }
             let finalX = x;
             if (align === 'center') finalX = x - w/2;
