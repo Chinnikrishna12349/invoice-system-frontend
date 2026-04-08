@@ -422,6 +422,7 @@ const drawInvoiceContent = async (
 
     const rightColX = 120;
     const rightColWidth = 196 - rightColX;
+    const imgScaleFactor = 0.2645833 / 2;
 
     // Helper to draw the header on every page
     const drawPageHeader = async (targetDoc: typeof doc, startY: number) => {
@@ -453,7 +454,6 @@ const drawInvoiceContent = async (
         });
 
         const headerRows = await Promise.all(headerJobs);
-        const imgScaleFactor = 0.2645833 / 2;
 
         for (const row of headerRows) {
             const hL = ((img: any) => {
@@ -540,9 +540,6 @@ const drawInvoiceContent = async (
             for (const row of rows) {
                 // Sequential drawing to jsPDF is fast since images are pre-rendered
                 const { label, val, labelImg, colonImg, valueImg } = row;
-                
-                // Scale factor for canvas conversion (matches addTextToPdf)
-                const imgScaleFactor = 0.2645833 / 2; 
 
                 // Draw pre-rendered images to PDF
                 // We use helper to calculate exact height for Y increment
@@ -667,7 +664,6 @@ const drawInvoiceContent = async (
         return renderJapaneseText(displayLine, 10, 'normal', 90, 'left');
     });
     const fromImages = await Promise.all(fromJobs);
-    const imgScaleFactor = 0.2645833 / 2;
 
     for (const imgData of fromImages) {
         if (imgData) {
@@ -746,7 +742,6 @@ const drawInvoiceContent = async (
         });
 
         const billToRendered = await Promise.all(billToJobs);
-        const imgScaleFactor = 0.2645833 / 2;
 
         for (const item of billToRendered) {
             if (item.isRow) {
@@ -908,7 +903,6 @@ const drawInvoiceContent = async (
     });
 
     const renderedRows = await Promise.all(serviceJobs);
-    const imgScaleFactor = 0.2645833 / 2; // Scale 2 factor
 
     for (const row of renderedRows) {
         if (yPosition + row.rowHeight > 265) {
