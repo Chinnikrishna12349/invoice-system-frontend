@@ -6,6 +6,9 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
+// Simple cache to store rendered images of Japanese text to avoid expensive re-rendering
+const japaneseImageCache = new Map<string, string>();
+
 /**
  * Render Japanese text as image and add to PDF
  * This is necessary because jsPDF's default fonts don't support Japanese characters
@@ -17,6 +20,12 @@ export const renderJapaneseText = async (
   width: number = 100,
   align: 'left' | 'center' | 'right' = 'left'
 ): Promise<string> => {
+  // Check cache first
+  const cacheKey = `${text}_${fontSize}_${fontStyle}_${width}_${align}`;
+  if (japaneseImageCache.has(cacheKey)) {
+    return japaneseImageCache.get(cacheKey) || '';
+  }
+
   try {
     // Create a temporary div element
     const div = document.createElement('div');
@@ -31,7 +40,7 @@ export const renderJapaneseText = async (
     div.style.display = 'inline-block';
     div.style.width = 'auto';
     div.style.maxWidth = width > 0 ? `${width}mm` : 'none';
-    div.style.padding = '5px 0'; 
+    div.style.padding = '2px 0'; // Reduced padding for faster layout
     div.style.lineHeight = 'normal';
     div.style.wordBreak = 'break-all';
     div.style.boxSizing = 'border-box';
@@ -51,23 +60,27 @@ export const renderJapaneseText = async (
     if ((document as any).fonts && (document as any).fonts.ready) {
         await (document as any).fonts.ready;
     }
-    // Small additional delay to ensure layout stability
-    await new Promise(resolve => setTimeout(resolve, 50));
 
     // Render to canvas
     const canvas = await html2canvas(div, {
       backgroundColor: null, // Transparent background
-      scale: 4, // Higher scale for better definition
+      scale: 2, // Reduced from 3 to 2 for significant speed boost while maintaining great clarity
       logging: false,
       useCORS: true,
-      allowTaint: true
+      allowTaint: true,
+      imageTimeout: 0 // Disable timeout check for faster start
     });
 
     // Remove the temporary element
     document.body.removeChild(div);
 
     // Convert to data URL
-    return canvas.toDataURL('image/png');
+    const imageData = canvas.toDataURL('image/png');
+    
+    // Store in cache
+    japaneseImageCache.set(cacheKey, imageData);
+    
+    return imageData;
   } catch (error) {
     console.error('Error rendering Japanese text:', error);
     return '';

@@ -41,8 +41,8 @@ const addTextToPdf = async (
                 const img = new Image();
                 const heightmm = await new Promise<number>((resolve) => {
                     img.onload = () => {
-                        // 1px = 0.2645833 mm (at 96 DPI). Scale is 4.
-                        const canvasToMm = 0.2645833 / 4;
+                        // 1px = 0.2645833 mm (at 96 DPI). Scale is 2.
+                        const canvasToMm = 0.2645833 / 2;
                         let finalWidth = img.width * canvasToMm;
                         let finalHeight = img.height * canvasToMm;
 
@@ -111,8 +111,6 @@ const getTranslations = async (language: 'en' | 'ja') => {
     await i18n.changeLanguage(language);
 
     // Wait a bit to ensure translations are loaded
-    await new Promise(resolve => setTimeout(resolve, 100));
-
     console.log('Current i18n language after change:', i18n.language);
 
     const t = {
@@ -438,23 +436,48 @@ const drawInvoiceContent = async (
         const headerValueX = headerColonX + 4;
 
         let headY = startY;
-        const invoiceNoLabelH = await addTextToPdf(targetDoc, t.invoiceNo.replace(/[：:]/g, ''), rightColX, headY, {
-            fontSize: 11, fontStyle: 'bold', language, maxWidth: headerLabelWidth - 2 
-        });
-        await addTextToPdf(targetDoc, ':', headerColonX, headY, { fontSize: 11, fontStyle: 'bold', language });
-        const invoiceNoValueH = await addTextToPdf(targetDoc, invoice.invoiceNumber, headerValueX, headY, {
-            fontSize: 11, fontStyle: 'bold', language, maxWidth: rightColWidth - (headerValueX - rightColX)
-        });
-        headY += Math.max(invoiceNoLabelH, invoiceNoValueH) + 3;
 
-        const dateLabelH = await addTextToPdf(targetDoc, t.dateLabel?.replace(/[：:]/g, '') || t.date.replace(/[：:]/g, ''), rightColX, headY, {
-            fontSize: 11, fontStyle: 'bold', language, maxWidth: headerLabelWidth - 2
+        // Parallelize Header Sections
+        const headerData = [
+            { label: t.invoiceNo.replace(/[：:]/g, ''), value: invoice.invoiceNumber },
+            { label: t.dateLabel?.replace(/[：:]/g, '') || t.date.replace(/[：:]/g, ''), value: formatDateInPdf(invoice.date) }
+        ];
+
+        const headerJobs = headerData.map(async (item) => {
+            const [labelImg, colonImg, valueImg] = await Promise.all([
+                renderJapaneseText(item.label, 11, 'bold', headerLabelWidth - 2, 'left'),
+                renderJapaneseText(':', 11, 'bold', 5, 'left'),
+                renderJapaneseText(item.value, 11, 'bold', rightColWidth - (headerValueX - rightColX), 'left')
+            ]);
+            return { labelImg, colonImg, valueImg };
         });
-        await addTextToPdf(targetDoc, ':', headerColonX, headY, { fontSize: 11, fontStyle: 'bold', language });
-        const dateValueH = await addTextToPdf(targetDoc, formatDateInPdf(invoice.date), headerValueX, headY, {
-            fontSize: 11, fontStyle: 'bold', language, maxWidth: rightColWidth - (headerValueX - rightColX)
-        });
-        headY += Math.max(dateLabelH, dateValueH) + 3;
+
+        const headerRows = await Promise.all(headerJobs);
+        const s = 0.2645833 / 2;
+
+        for (const row of headerRows) {
+            const hL = ((img: any) => {
+                const i = new Image(); i.src = img;
+                let w = i.width * s; let h = i.height * s;
+                if (w > headerLabelWidth - 2) { h = h * ((headerLabelWidth - 2) / w); w = headerLabelWidth - 2; }
+                targetDoc.addImage(img, 'PNG', rightColX, headY - 1.8, w, h, '', 'FAST');
+                return h;
+            })(row.labelImg);
+
+            targetDoc.addImage(row.colonImg, 'PNG', headerColonX, headY - 1.8, 0, 0, '', 'FAST'); // Auto size for colon
+
+            const hV = ((img: any) => {
+                const i = new Image(); i.src = img;
+                let w = i.width * s; let h = i.height * s;
+                const maxW = rightColWidth - (headerValueX - rightColX);
+                if (w > maxW) { h = h * (maxW / w); w = maxW; }
+                targetDoc.addImage(img, 'PNG', headerValueX, headY - 1.8, w, h, '', 'FAST');
+                return h;
+            })(row.valueImg);
+
+            headY += Math.max(hL, hV) + 3;
+        }
+
         return headY;
     };
 
@@ -497,22 +520,51 @@ const drawInvoiceContent = async (
             const bColonX = 14 + bLabelWidth;
             const bValueX = bColonX + 4;
 
-            for (const item of validDetails.slice(0, 7)) { // Show up to 7 items
+            // Parallelize image generation for all rows to maximize speed
+            const rowJobs = validDetails.slice(0, 7).map(async (item) => {
                 const label = item.label.replace(/[：:]/g, '');
                 const val = item.value || '';
-                // FORCE image renderer for ALL bank detail rows in English/Japanese to ensure 100% parity
-                // (font matching, boldness, and alignment)
-                const forceImg = true; 
                 
-                const labelH = await addTextToPdf(targetDoc, label, 14, fCurY, { fontSize: 9, language, maxWidth: bLabelWidth - 2, forceImage: forceImg } as any);
-                await addTextToPdf(targetDoc, ':', bColonX, fCurY, { fontSize: 9, language, forceImage: forceImg } as any);
-                const valueH = await addTextToPdf(targetDoc, val.toString(), bValueX, fCurY, { fontSize: 9, language, maxWidth: 100, forceImage: forceImg } as any);
+                // Parallel rendering of label, colon, and value images
+                const [labelImg, colonImg, valueImg] = await Promise.all([
+                    renderJapaneseText(label, 9, 'normal', bLabelWidth - 2, 'left'),
+                    renderJapaneseText(':', 9, 'normal', 5, 'left'),
+                    renderJapaneseText(val.toString(), 9, 'normal', 100, 'left')
+                ]);
+                
+                return { label, val, labelImg, colonImg, valueImg };
+            });
+
+            const rows = await Promise.all(rowJobs);
+            
+            for (const row of rows) {
+                // Sequential drawing to jsPDF is fast since images are pre-rendered
+                const { label, val, labelImg, colonImg, valueImg } = row;
+                
+                // Scale factor for canvas conversion (matches addTextToPdf)
+                const s = 0.2645833 / 2; 
+
+                // Draw pre-rendered images to PDF
+                // We use helper to calculate exact height for Y increment
+                const drawImg = (imgData: string, x: number, y: number, maxW: number) => {
+                    const img = new Image();
+                    img.src = imgData;
+                    let w = img.width * s;
+                    let h = img.height * s;
+                    if (w > maxW) { h = h * (maxW / w); w = maxW; }
+                    targetDoc.addImage(imgData, 'PNG', x, y - 1.8, w, h, '', 'FAST');
+                    return h;
+                };
+
+                const hL = drawImg(labelImg, 14, fCurY, bLabelWidth - 2);
+                drawImg(colonImg, bColonX, fCurY, 5);
+                const hV = drawImg(valueImg, bValueX, fCurY, 100);
                 
                 if (label.toLowerCase().includes('swift')) {
                     swiftY = fCurY;
                 }
                 
-                fCurY += Math.max(labelH, valueH) + 1.5;
+                fCurY += Math.max(hL, hV) + 1.5;
             }
         }
 
@@ -609,15 +661,21 @@ const drawInvoiceContent = async (
     // ideally we should fetch extended info. 
     // However, for "Company Address", I will definitely use `companyInfo.companyAddress`.
 
-    for (const line of fromLines) {
-        if (line && line.trim()) {
-            const displayLine = language === 'ja' ? toKatakana(line.trim()) : line.trim();
-            const lineHeight = await addTextToPdf(doc, displayLine, 14, fromY, {
-                fontSize: 10,
-                language,
-                maxWidth: 90
-            });
-            fromY += lineHeight + 1;
+    // Parallelize and draw From Lines
+    const fromJobs = fromLines.map(async (line) => {
+        const displayLine = language === 'ja' ? toKatakana(line.trim()) : line.trim();
+        return renderJapaneseText(displayLine, 10, 'normal', 90, 'left');
+    });
+    const fromImages = await Promise.all(fromJobs);
+    const s = 0.2645833 / 2;
+
+    for (const imgData of fromImages) {
+        if (imgData) {
+            const img = new Image(); img.src = imgData;
+            let w = img.width * s; let h = img.height * s;
+            if (w > 90) { h = h * (90 / w); w = 90; }
+            targetDoc.addImage(imgData, 'PNG', 14, fromY - 1.8, w, h, '', 'FAST');
+            fromY += h + 1;
         }
     }
 
@@ -655,96 +713,61 @@ const drawInvoiceContent = async (
     let billToY = fromStartY;
 
     if (invoice.employeeName && invoice.employeeName.trim() && invoice.employeeName !== 'N/A') {
-        await addTextToPdf(doc, t.billTo, billToX, billToY, {
-            fontSize: 10,
-            fontStyle: 'bold',
-            align: 'left',
-            language,
-            maxWidth: rightColWidth,
-            baseline: 'top'
-        });
-        billToY = fromStartY + 6;
+        // Parallelize Bill To text generation
+        const billToItems = [
+            { text: t.billTo, fontSize: 10, isBold: true, isLabel: true },
+            { text: language === 'ja' ? toKatakana(invoice.employeeName.trim()) : invoice.employeeName.trim(), fontSize: 10, isBold: true, isLabel: false }
+        ];
 
-        const employeeNameHeight = await addTextToPdf(doc, language === 'ja' ? toKatakana(invoice.employeeName.trim()) : invoice.employeeName.trim(), billToX, billToY, {
-            fontSize: 10,
-            fontStyle: 'bold',
-            align: 'left',
-            language,
-            maxWidth: rightColWidth,
-            baseline: 'top'
-        });
-        billToY += employeeNameHeight + 3; // Increased gap after bold client name
+        // Add optional fields
+        if (invoice.employeeEmail?.trim()) billToItems.push({ text: t.email.replace(/[：:]/g, ''), value: invoice.employeeEmail.trim(), fontSize: 10, isBold: false, isLabel: true } as any);
+        if (invoice.employeeMobile?.trim()) billToItems.push({ text: t.phone.replace(/[：:]/g, ''), value: invoice.employeeMobile.trim(), fontSize: 10, isBold: false, isLabel: true } as any);
+        if (invoice.employeeAddress?.trim()) {
+            const addr = invoice.employeeAddress.replace(/\n/g, ', ').trim();
+            billToItems.push({ text: t.address.replace(/[：:]/g, ''), value: language === 'ja' ? toKatakana(addr) : addr, fontSize: 10, isBold: false, isLabel: true } as any);
+        }
 
-
-
-        // Bill To: email, phone and address field labels rendered with uniform width for alignment
-        const billToLabelWidth = 25; // Standardized to match header
+        const billToLabelWidth = 25;
         const billToColonX = billToX + billToLabelWidth;
         const billToValueX = billToColonX + 4;
 
-        // Email
-        if (invoice.employeeEmail && invoice.employeeEmail.trim()) {
-            const label = t.email.replace(/[：:]/g, '');
-            const labelH = await addTextToPdf(doc, label, billToX, billToY, {
-                fontSize: 10,
-                align: 'left',
-                language,
-                maxWidth: billToLabelWidth - 2
-            });
-            // Standard colon alignment
-            await addTextToPdf(doc, ':', billToColonX, billToY, { fontSize: 10, align: 'left', language });
+        const billToJobs = billToItems.map(async (item: any) => {
+            if (item.value !== undefined) {
+                const [lImg, cImg, vImg] = await Promise.all([
+                    renderJapaneseText(item.text, item.fontSize, item.isBold ? 'bold' : 'normal', billToLabelWidth - 2, 'left'),
+                    renderJapaneseText(':', item.fontSize, 'normal', 5, 'left'),
+                    renderJapaneseText(item.value, item.fontSize, 'normal', rightColWidth - (billToValueX - billToX), 'left')
+                ]);
+                return { isRow: true, lImg, cImg, vImg };
+            } else {
+                const img = await renderJapaneseText(item.text, item.fontSize, item.isBold ? 'bold' : 'normal', rightColWidth, 'left');
+                return { isRow: false, img };
+            }
+        });
 
-            const valueH = await addTextToPdf(doc, invoice.employeeEmail.trim(), billToValueX, billToY, {
-                fontSize: 10,
-                align: 'left',
-                language,
-                maxWidth: rightColWidth - (billToValueX - billToX)
-            });
-            billToY += Math.max(labelH, valueH) + 2;
-        }
+        const billToRendered = await Promise.all(billToJobs);
+        const s = 0.2645833 / 2;
 
-        // Phone
-        if (invoice.employeeMobile && invoice.employeeMobile.trim()) {
-            const label = t.phone.replace(/[：:]/g, '');
-            const labelH = await addTextToPdf(doc, label, billToX, billToY, {
-                fontSize: 10,
-                align: 'left',
-                language,
-                maxWidth: billToLabelWidth - 2
-            });
-            // Standard colon alignment
-            await addTextToPdf(doc, ':', billToColonX, billToY, { fontSize: 10, align: 'left', language });
-
-            const valueH = await addTextToPdf(doc, invoice.employeeMobile.trim(), billToValueX, billToY, {
-                fontSize: 10,
-                align: 'left',
-                language,
-                maxWidth: rightColWidth - (billToValueX - billToX)
-            });
-            billToY += Math.max(labelH, valueH) + 2;
-        }
-
-        // Address
-        if (invoice.employeeAddress && invoice.employeeAddress.trim()) {
-            const label = t.address.replace(/[：:]/g, '');
-            const labelH = await addTextToPdf(doc, label, billToX, billToY, {
-                fontSize: 10,
-                align: 'left',
-                language,
-                maxWidth: billToLabelWidth - 2
-            });
-            // Standard colon alignment
-            await addTextToPdf(doc, ':', billToColonX, billToY, { fontSize: 10, align: 'left', language });
-
-            const addressToDisplay = invoice.employeeAddress.replace(/\n/g, ', ').trim();
-            const finalAddress = language === 'ja' ? toKatakana(addressToDisplay) : addressToDisplay;
-            const valueH = await addTextToPdf(doc, finalAddress, billToValueX, billToY, {
-                fontSize: 10,
-                align: 'left',
-                language,
-                maxWidth: rightColWidth - (billToValueX - billToX)
-            });
-            billToY += Math.max(labelH, valueH) + 2;
+        for (const item of billToRendered) {
+            if (item.isRow) {
+                const draw = (imgData: string, x: number, y: number, maxW: number) => {
+                    const img = new Image(); img.src = imgData;
+                    let w = img.width * s; let h = img.height * s;
+                    if (w > maxW) { h = h * (maxW / w); w = maxW; }
+                    targetDoc.addImage(imgData, 'PNG', x, y - 1.8, w, h, '', 'FAST');
+                    return h;
+                };
+                const hL = draw(item.lImg!, billToX, billToY, billToLabelWidth - 2);
+                draw(item.cImg!, billToColonX, billToY, 5);
+                const hV = draw(item.vImg!, billToValueX, billToY, rightColWidth - (billToValueX - billToX));
+                billToY += Math.max(hL, hV) + 2;
+            } else {
+                const img = new Image(); img.src = item.img!;
+                let w = img.width * s; let h = img.height * s;
+                if (w > rightColWidth) { h = h * (rightColWidth / w); w = rightColWidth; }
+                targetDoc.addImage(item.img!, 'PNG', billToX, billToY - 1.8, w, h, '', 'FAST');
+                billToY += h + (item.isRow ? 2 : 3);
+            }
         }
     }
 
@@ -856,86 +879,76 @@ const drawInvoiceContent = async (
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
 
-    // Use for..of loop to support await inside
-    for (const [index, service] of invoice.services.entries()) {
+    // Parallelize all service row image rendering to maximize download speed
+    const serviceJobs = invoice.services.map(async (service, index) => {
         const amount = Math.round((service.hours * service.rate) * 100) / 100;
         const descWidth = colX[2] - colX[1] - 4;
         const descLines = doc.splitTextToSize(service.description || '-', descWidth);
         const rowHeight = Math.max(12, descLines.length * 5 + 4);
 
-        // Page break check BEFORE drawing the row to prevent overlap
-        // Increased threshold to 265mm since we removed sticky footer from breaks
-        if (yPosition + rowHeight > 265) {
-            // SKIP drawPageFooter here to prevent interrupting the table
+        const formattedHours = Number(service.hours).toLocaleString(undefined, {
+            minimumFractionDigits: 0, maximumFractionDigits: 2
+        });
+        const formattedUnitPrice = formatAmount(service.rate, false);
+        const formattedAmount = formatAmount(amount, false);
+
+        // Pre-render all cell images for this row in parallel using optimized scale
+        const [idImg, hoursImg, rateImg, amountImg, descImgs] = await Promise.all([
+            renderJapaneseText(String(index + 1), 10, 'normal', (colX[1] - colX[0]) - 2, 'center'),
+            renderJapaneseText(formattedHours, 10, 'normal', (colX[3] - colX[2]) - 2, 'right'),
+            renderJapaneseText(formattedUnitPrice, 10, 'normal', (colX[4] - colX[3]) - 2, 'right'),
+            renderJapaneseText(formattedAmount, 10, 'normal', (colX[5] - colX[4]) - 2, 'right'),
+            Promise.all(descLines.map(line => {
+                const displayLine = language === 'ja' ? toKatakana(line) : line;
+                return renderJapaneseText(displayLine, 10, 'normal', descWidth, 'left');
+            }))
+        ]);
+
+        return { index, rowHeight, descLines, idImg, hoursImg, rateImg, amountImg, descImgs };
+    });
+
+    const renderedRows = await Promise.all(serviceJobs);
+    const s = 0.2645833 / 2; // Scale 2 factor
+
+    for (const row of renderedRows) {
+        if (yPosition + row.rowHeight > 265) {
             doc.addPage();
             await drawPageHeader(doc, 9);
             yPosition = 55;
-            
-            // Redraw table headers
-            doc.setDrawColor(0);
-            doc.setLineWidth(0.4);
             doc.line(colX[0], yPosition, colX[5], yPosition);
             doc.line(colX[0], yPosition + 10, colX[5], yPosition + 10);
-            const textY = yPosition + 3.25;
-            await addTextToPdf(doc, t.sNo, (colX[0] + colX[1]) / 2, textY, { fontSize: 10, align: 'center', language });
-            await addTextToPdf(doc, t.description, (colX[1] + colX[2]) / 2, textY, { fontSize: 10, align: 'center', language });
-            await addTextToPdf(doc, t.hours, (colX[2] + colX[3]) / 2, textY, { fontSize: 10, align: 'center', language });
-            await addTextToPdf(doc, t.unitPrice, (colX[3] + colX[4]) / 2, textY, { fontSize: 10, align: 'center', language });
-            await addTextToPdf(doc, t.amount, (colX[4] + colX[5]) / 2, textY, { fontSize: 10, align: 'center', language });
             yPosition += 10;
         }
 
         for (const x of colX) {
-            doc.line(x, yPosition, x, yPosition + rowHeight);
+            doc.line(x, yPosition, x, yPosition + row.rowHeight);
         }
 
-        const rowTextY = yPosition + (rowHeight - 3.5) / 2;
+        const rowTextY = yPosition + (row.rowHeight - 3.5) / 2;
 
-        // SNO
-        await addTextToPdf(doc, String(index + 1), (colX[0] + colX[1]) / 2, rowTextY, {
-            fontSize: 10, align: 'center', language
-        });
+        const drawCell = (img: string, x: number, y: number, maxW: number, align: 'left' | 'center' | 'right') => {
+            const i = new Image(); i.src = img;
+            let w = i.width * s; let h = i.height * s;
+            if (w > maxW) { h = h * (maxW / w); w = maxW; }
+            let finalX = x;
+            if (align === 'center') finalX = x - w/2;
+            else if (align === 'right') finalX = x - w;
+            doc.addImage(img, 'PNG', finalX, y - 1.8, w, h, '', 'FAST');
+        };
 
-        // Description
-        let lineY = rowTextY - (descLines.length > 1 ? 2 : 0); // Slight offset for multi-line
-        if (descLines.length === 1) {
-            const displayDesc = language === 'ja' ? toKatakana(descLines[0]) : descLines[0];
-            await addTextToPdf(doc, displayDesc, colX[1] + 2, rowTextY, {
-                align: 'left', language, maxWidth: colX[2] - colX[1] - 4, fontSize: 10
-            });
-        } else {
-            for (const line of descLines) {
-                const displayLine = language === 'ja' ? toKatakana(line) : line;
-                await addTextToPdf(doc, displayLine, colX[1] + 2, lineY, {
-                    align: 'left', language, maxWidth: colX[2] - colX[1] - 4, fontSize: 10
-                });
-                lineY += 5;
-            }
+        drawCell(row.idImg, (colX[0] + colX[1]) / 2, rowTextY, (colX[1] - colX[0]) - 2, 'center');
+        drawCell(row.hoursImg, colX[3] - 4, rowTextY, (colX[3] - colX[2]) - 2, 'right');
+        drawCell(row.rateImg, colX[4] - 4, rowTextY, (colX[4] - colX[3]) - 2, 'right');
+        drawCell(row.amountImg, colX[5] - 4, rowTextY, (colX[5] - colX[4]) - 2, 'right');
+
+        let lineY = rowTextY - (row.descLines.length > 1 ? 2 : 0);
+        for (const img of row.descImgs) {
+            drawCell(img, colX[1] + 2, lineY, colX[2] - colX[1] - 4, 'left');
+            lineY += 5;
         }
 
-        // Hours (Right Aligned)
-        const formattedHours = Number(service.hours).toLocaleString(undefined, {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 2
-        });
-        await addTextToPdf(doc, formattedHours, colX[3] - 4, rowTextY, {
-            align: 'right', language, fontSize: 10, maxWidth: (colX[3] - colX[2]) - 2
-        });
-
-        // Unit Price WITH CURRENCY (Right Aligned)
-        const formattedRate = formatAmount(service.rate, false);
-        await addTextToPdf(doc, formattedRate, colX[4] - 4, rowTextY, {
-            align: 'right', language, fontSize: 10, maxWidth: (colX[4] - colX[3]) - 2
-        });
-
-        // Amount WITH CURRENCY (Right Aligned)
-        const formattedItemAmount = formatAmount(amount, false);
-        await addTextToPdf(doc, formattedItemAmount, colX[5] - 4, rowTextY, {
-            align: 'right', language, fontSize: 10, maxWidth: (colX[5] - colX[4]) - 2
-        });
-
-        doc.line(colX[0], yPosition + rowHeight, colX[5], yPosition + rowHeight);
-        yPosition += rowHeight;
+        doc.line(colX[0], yPosition + row.rowHeight, colX[5], yPosition + row.rowHeight);
+        yPosition += row.rowHeight;
     }
 
     // Totals Section
