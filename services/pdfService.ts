@@ -440,7 +440,7 @@ const drawInvoiceContent = async (
         // Parallelize Header Sections
         const headerData = [
             { label: t.invoiceNo.replace(/[：:]/g, ''), value: invoice.invoiceNumber },
-            { label: t.dateLabel?.replace(/[：:]/g, '') || t.date.replace(/[：:]/g, ''), value: formatDateInPdf(invoice.date) }
+            { label: (t as any).dateLabel?.replace(/[：:]/g, '') || t.date.replace(/[：:]/g, ''), value: formatDateInPdf(invoice.date) }
         ];
 
         const headerJobs = headerData.map(async (item) => {
