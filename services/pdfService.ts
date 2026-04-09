@@ -626,7 +626,7 @@ const drawInvoiceContent = async (
     if (senderEmail && senderEmail.trim()) {
         console.log('PDF Generator: Drawing From Email:', senderEmail);
         const fromLabelX = 14;
-        const fromLabelWidth = 25; // Standardized 
+        const fromLabelWidth = language === 'ja' ? 32 : 25; // Standardized 
         const fromColonX = fromLabelX + fromLabelWidth;
         const fromValueX = fromColonX + 4;
 
@@ -678,7 +678,7 @@ const drawInvoiceContent = async (
 
 
         // Bill To: email, phone and address field labels rendered with uniform width for alignment
-        const billToLabelWidth = 25; // Standardized to match header
+        const billToLabelWidth = language === 'ja' ? 32 : 25; // Increased for Japanese labels
         const billToColonX = billToX + billToLabelWidth;
         const billToValueX = billToColonX + 4;
 
@@ -755,7 +755,7 @@ const drawInvoiceContent = async (
 
     // PO Number (Left Side)
     if (invoice.poNumber && invoice.poNumber.trim()) {
-        const poLabelWidth = 25;
+        const poLabelWidth = language === 'ja' ? 32 : 25;
         const poColonX = 14 + poLabelWidth;
         const poValueX = poColonX + 4;
 
@@ -777,7 +777,7 @@ const drawInvoiceContent = async (
 
     // Due Date (Right Side)
     if (invoice.dueDate) {
-        const dueDateLabelWidth = 25;
+        const dueDateLabelWidth = language === 'ja' ? 32 : 25;
         const dueDateLabelX = rightColX;
         const dueDateColonX = dueDateLabelX + dueDateLabelWidth;
         const dueDateValueX = dueDateColonX + 4;
