@@ -33,12 +33,11 @@ const addTextToPdf = async (
     const isPureAscii = /^[\x00-\x7f]*$/.test(text);
     const forceImage = (options as any).forceImage === true;
 
-    if (language === 'ja' || hasJapanese || (!isPureAscii) || forceImage) {
+    if ((language === 'ja' && !isPureAscii) || hasJapanese || forceImage) {
         // Use high-speed native canvas for Japanese/Special characters
         try {
             const canvas = await renderJapaneseText(text, fontSize, fontStyle, maxWidth, align);
             if (canvas) {
-                // 1px = 0.2645833 mm (at 96 DPI). Scale is 4 (set in renderJapaneseText).
                 const canvasToMm = 0.2645833 / 4;
                 let finalWidth = canvas.width * canvasToMm;
                 let finalHeight = canvas.height * canvasToMm;
@@ -50,7 +49,6 @@ const addTextToPdf = async (
                 }
 
                 let adjustedX = x;
-                // Move slightly up to align with Helvetica baseline
                 let adjustedY = y - 1.8;
 
                 if (align === 'right') {
@@ -59,20 +57,16 @@ const addTextToPdf = async (
                     adjustedX = x - finalWidth / 2;
                 }
 
-                // Add image with calculated dimensions
                 doc.addImage(canvas, 'PNG', adjustedX, adjustedY, finalWidth, finalHeight, '', 'FAST');
                 return finalHeight;
             } else {
-                // Fallback to basic text if canvas fails
-                doc.text(text, x, y, { align, maxWidth, baseline });
+                doc.setFont('helvetica', fontStyle);
+                doc.setFontSize(fontSize);
+                doc.text(text, x, y, { align, maxWidth, baseline: 'top' });
                 return fontSize * 0.3527 * 1.2;
             }
         } catch (error) {
-                doc.text(text, x, y, { align, maxWidth, baseline });
-                return fontSize * 0.3527 * 1.2;
-            }
-        } catch (error) {
-            console.warn('Error rendering Japanese text, using fallback:', error);
+            console.warn('Error rendering Japanese, using fallback:', error);
             doc.setFont('helvetica', fontStyle);
             doc.setFontSize(fontSize);
             doc.text(text, x, y, { align, maxWidth, baseline: 'top' });

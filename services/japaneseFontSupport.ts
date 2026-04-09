@@ -10,6 +10,9 @@ import html2canvas from 'html2canvas';
  * Render Japanese text as image and add to PDF
  * This is necessary because jsPDF's default fonts don't support Japanese characters
  */
+// --- FAST IMAGE CACHE ---
+const canvasCache = new Map<string, HTMLCanvasElement>();
+
 export const renderJapaneseText = async (
   text: string,
   fontSize: number = 10,
@@ -18,6 +21,11 @@ export const renderJapaneseText = async (
   align: 'left' | 'center' | 'right' = 'left'
 ): Promise<HTMLCanvasElement | null> => {
   try {
+    const cacheKey = `${text}_${fontSize}_${fontStyle}_${width}`;
+    if (canvasCache.has(cacheKey)) {
+        return canvasCache.get(cacheKey) || null;
+    }
+
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
@@ -62,6 +70,7 @@ export const renderJapaneseText = async (
         ctx.fillText(line, 0, i * lineHeight + 5);
     });
 
+    canvasCache.set(cacheKey, canvas);
     return canvas;
   } catch (error) {
     console.error('Error rendering Japanese text:', error);
