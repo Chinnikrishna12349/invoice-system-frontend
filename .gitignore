@@ -115,7 +115,7 @@ dist/
 *.tsbuildinfo
 
 # Backend (pushed to separate repo)
-# backend/
+backend/
 
 # Optional stylelint cache
 .stylelintcache
