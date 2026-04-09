@@ -31,9 +31,10 @@ export const renderJapaneseText = async (
     div.style.display = 'inline-block';
     div.style.width = 'auto';
     div.style.maxWidth = width > 0 ? `${width}mm` : 'none';
-    div.style.padding = '5px 0'; 
+    div.style.padding = '5px 8px 5px 0'; // Added right padding to prevent html2canvas clipping last chars
     div.style.lineHeight = 'normal';
-    div.style.wordBreak = 'break-all';
+    div.style.whiteSpace = 'nowrap'; // Prevent unexpected wrapping
+    div.style.wordBreak = 'keep-all';
     div.style.boxSizing = 'border-box';
     // CSS properties for sharper text rendering
     // @ts-ignore
