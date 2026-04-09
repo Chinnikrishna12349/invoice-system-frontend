@@ -1098,6 +1098,7 @@ export const generateInvoicePDF = async (invoice: Invoice, language: 'en' | 'ja'
         setTimeout(() => {
             document.body.removeChild(link);
             URL.revokeObjectURL(pdfUrl);
+            alert('Invoice downloaded successfully!');
         }, 100);
 
     } catch (error) {
