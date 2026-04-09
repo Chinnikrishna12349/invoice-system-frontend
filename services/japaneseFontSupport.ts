@@ -16,62 +16,56 @@ export const renderJapaneseText = async (
   fontStyle: 'normal' | 'bold' = 'normal',
   width: number = 100,
   align: 'left' | 'center' | 'right' = 'left'
-): Promise<string> => {
+): Promise<HTMLCanvasElement | null> => {
   try {
-    // Create a temporary div element
-    const div = document.createElement('div');
-    div.style.position = 'absolute';
-    div.style.left = '-9999px';
-    div.style.top = '-9999px';
-    div.style.fontSize = `${fontSize}pt`;
-    div.style.fontFamily = "'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
-    // Use slightly heavier weight for normal text to match PDF Helvetica
-    div.style.fontWeight = fontStyle === 'bold' ? 'bold' : 'normal';
-    div.style.color = '#000000';
-    div.style.display = 'inline-block';
-    div.style.width = 'auto';
-    div.style.maxWidth = width > 0 ? `${width}mm` : 'none';
-    div.style.padding = '5px 10px 5px 0'; // Increased right padding to prevent html2canvas clipping last chars
-    div.style.lineHeight = '1.2'; // Better spacing for multi-line
-    div.style.whiteSpace = 'normal'; // Allow wrapping as in English PDF
-    div.style.wordBreak = 'break-all'; // Break anywhere for long emails/addresses
-    div.style.boxSizing = 'border-box';
-    // CSS properties for sharper text rendering
-    // @ts-ignore
-    div.style.textRendering = 'geometricPrecision';
-    // @ts-ignore
-    div.style.webkitFontSmoothing = 'antialiased';
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
 
-    div.style.overflow = 'visible';
-    const textNode = document.createTextNode(text);
-    div.appendChild(textNode);
-
-    document.body.appendChild(div);
+    const scale = 4;
+    const ptToPx = 1.333;
+    const pxSize = fontSize * ptToPx;
+    const fontStr = `${fontStyle === 'bold' ? 'bold' : 'normal'} ${pxSize}px 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', sans-serif`;
     
-    // Wait for fonts to be ready to prevent empty rendering
-    if ((document as any).fonts && (document as any).fonts.ready) {
-        await (document as any).fonts.ready;
-    }
-    // Small additional delay to ensure layout stability
-    await new Promise(resolve => setTimeout(resolve, 50));
+    ctx.font = fontStr;
+    const maxWidthPx = (width * 3.78) || 2000;
+    
+    const words = text.split(/(?<=[ ,])/);
+    const lines: string[] = [];
+    let currentLine = '';
 
-    // Render to canvas
-    const canvas = await html2canvas(div, {
-      backgroundColor: null, // Transparent background
-      scale: 4, // Higher scale for better definition
-      logging: false,
-      useCORS: true,
-      allowTaint: true
+    for (const word of words) {
+        const testLine = currentLine + word;
+        const metrics = ctx.measureText(testLine);
+        if (metrics.width > maxWidthPx && currentLine !== '') {
+            lines.push(currentLine.trim());
+            currentLine = word;
+        } else {
+            currentLine = testLine;
+        }
+    }
+    lines.push(currentLine.trim());
+
+    const lineHeight = pxSize * 1.3;
+    const maxLineWidth = Math.max(...lines.map(l => ctx.measureText(l).width));
+    
+    canvas.width = (maxLineWidth + 10) * scale;
+    canvas.height = (lines.length * lineHeight + 10) * scale;
+    
+    ctx.scale(scale, scale);
+    ctx.font = fontStr;
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = '#000000';
+    ctx.imageSmoothingEnabled = false;
+
+    lines.forEach((line, i) => {
+        ctx.fillText(line, 0, i * lineHeight + 5);
     });
 
-    // Remove the temporary element
-    document.body.removeChild(div);
-
-    // Convert to data URL
-    return canvas.toDataURL('image/png');
+    return canvas;
   } catch (error) {
     console.error('Error rendering Japanese text:', error);
-    return '';
+    return null;
   }
 };
 

@@ -34,48 +34,40 @@ const addTextToPdf = async (
     const forceImage = (options as any).forceImage === true;
 
     if (language === 'ja' || hasJapanese || (!isPureAscii) || forceImage) {
-        // Use html2canvas for ALL text in Japanese context
+        // Use high-speed native canvas for Japanese/Special characters
         try {
-            const imageData = await renderJapaneseText(text, fontSize, fontStyle, maxWidth, align);
-            if (imageData && imageData !== 'data:,') {
-                const img = new Image();
-                const heightmm = await new Promise<number>((resolve) => {
-                    img.onload = () => {
-                        // 1px = 0.2645833 mm (at 96 DPI). Scale is 4.
-                        const canvasToMm = 0.2645833 / 4;
-                        let finalWidth = img.width * canvasToMm;
-                        let finalHeight = img.height * canvasToMm;
+            const canvas = await renderJapaneseText(text, fontSize, fontStyle, maxWidth, align);
+            if (canvas) {
+                // 1px = 0.2645833 mm (at 96 DPI). Scale is 4 (set in renderJapaneseText).
+                const canvasToMm = 0.2645833 / 4;
+                let finalWidth = canvas.width * canvasToMm;
+                let finalHeight = canvas.height * canvasToMm;
 
-                        if (finalWidth > maxWidth) {
-                            const ratio = maxWidth / finalWidth;
-                            finalWidth = maxWidth;
-                            finalHeight = finalHeight * ratio;
-                        }
+                if (finalWidth > maxWidth) {
+                    const ratio = maxWidth / finalWidth;
+                    finalWidth = maxWidth;
+                    finalHeight = finalHeight * ratio;
+                }
 
-                        let adjustedX = x;
-                        // Use Y as the TOP edge
-                        // Compendsate for padding/baseline differences. 
-                        // Increase compensation slightly to 1.8mm for better alignment with Helvetica Top baseline
-                        let adjustedY = y - 1.8;
+                let adjustedX = x;
+                // Move slightly up to align with Helvetica baseline
+                let adjustedY = y - 1.8;
 
-                        if (align === 'right') {
-                            adjustedX = x - finalWidth;
-                        } else if (align === 'center') {
-                            adjustedX = x - finalWidth / 2;
-                        }
+                if (align === 'right') {
+                    adjustedX = x - finalWidth;
+                } else if (align === 'center') {
+                    adjustedX = x - finalWidth / 2;
+                }
 
-                        // Add image with calculated dimensions
-                        doc.addImage(imageData, 'PNG', adjustedX, adjustedY, finalWidth, finalHeight, '', 'FAST');
-                        resolve(finalHeight);
-                    };
-                    img.onerror = () => {
-                        console.warn('Image load failed, using fallback');
-                        resolve(0);
-                    };
-                    img.src = imageData;
-                });
-                return heightmm;
+                // Add image with calculated dimensions
+                doc.addImage(canvas, 'PNG', adjustedX, adjustedY, finalWidth, finalHeight, '', 'FAST');
+                return finalHeight;
             } else {
+                // Fallback to basic text if canvas fails
+                doc.text(text, x, y, { align, maxWidth, baseline });
+                return fontSize * 0.3527 * 1.2;
+            }
+        } catch (error) {
                 doc.text(text, x, y, { align, maxWidth, baseline });
                 return fontSize * 0.3527 * 1.2;
             }
