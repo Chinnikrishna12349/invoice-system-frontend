@@ -26,8 +26,8 @@ export const InvoicesPage: React.FC = () => {
     const [selectedLangInvoice, setSelectedLangInvoice] = useState<Invoice | null>(null);
     const [selectedLanguage, setSelectedLanguage] = useState<'en' | 'ja'>('en');
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedDate, setSelectedDate] = useState<string>('');
-    const [dateFilterType, setDateFilterType] = useState<'day' | 'month'>('day');
+    const [fromDate, setFromDate] = useState<string>('');
+    const [toDate, setToDate] = useState<string>('');
     const [downloadedIds, setDownloadedIds] = useState<Set<string>>(new Set());
     const [showPreview, setShowPreview] = useState(false);
     const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
@@ -147,16 +147,11 @@ export const InvoicesPage: React.FC = () => {
 
         // Date filter
         let matchesDate = true;
-        if (selectedDate) {
+        if (fromDate || toDate) {
             try {
-                const normalizedInvoiceDate = normalizeToYYYYMMDD(invoice.date || '');
-                const normalizedFilterDate = selectedDate; // Always YYYY-MM-DD from input
-
-                if (dateFilterType === 'day') {
-                    matchesDate = normalizedInvoiceDate === normalizedFilterDate;
-                } else if (dateFilterType === 'month') {
-                    matchesDate = normalizedInvoiceDate.substring(0, 7) === normalizedFilterDate.substring(0, 7);
-                }
+                const invoiceDate = normalizeToYYYYMMDD(invoice.date || '');
+                if (fromDate && invoiceDate < fromDate) matchesDate = false;
+                if (toDate && invoiceDate > toDate) matchesDate = false;
             } catch (error) {
                 console.error("Date filter error", error);
                 matchesDate = true;
@@ -213,19 +208,36 @@ export const InvoicesPage: React.FC = () => {
 
                             {/* Date Filter - Calendar Icon in Right Corner */}
                             {/* Date Filter - Standard Input */}
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="date"
-                                    value={selectedDate}
-                                    onChange={(e) => setSelectedDate(e.target.value)}
-                                    className="border border-gray-300 rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
-                                    title="Filter invoices by date"
-                                />
-                                {selectedDate && (
+                            {/* Date Filter - Range Input */}
+                            <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm font-medium text-gray-500">From</span>
+                                    <input
+                                        type="date"
+                                        value={fromDate}
+                                        onChange={(e) => setFromDate(e.target.value)}
+                                        className="border border-gray-300 rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
+                                        title="From date"
+                                    />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm font-medium text-gray-500">To</span>
+                                    <input
+                                        type="date"
+                                        value={toDate}
+                                        onChange={(e) => setToDate(e.target.value)}
+                                        className="border border-gray-300 rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
+                                        title="To date"
+                                    />
+                                </div>
+                                {(fromDate || toDate) && (
                                     <button
-                                        onClick={() => setSelectedDate('')}
+                                        onClick={() => {
+                                            setFromDate('');
+                                            setToDate('');
+                                        }}
                                         className="text-gray-500 hover:text-red-600 px-2 transition-colors duration-200"
-                                        title="Clear date"
+                                        title="Clear dates"
                                     >
                                         Clear
                                     </button>
@@ -233,7 +245,7 @@ export const InvoicesPage: React.FC = () => {
                             </div>
                         </div>
 
-                        {(searchTerm || selectedDate) && (
+                        {(searchTerm || fromDate || toDate) && (
                             <div className="mt-3 flex items-center justify-between">
                                 <p className="text-sm text-gray-600">
                                     Showing <span className="font-semibold text-blue-600">{filteredInvoices.length}</span> of <span className="font-semibold">{invoices.length}</span> invoices
@@ -241,7 +253,8 @@ export const InvoicesPage: React.FC = () => {
                                 <button
                                     onClick={() => {
                                         setSearchTerm('');
-                                        setSelectedDate('');
+                                        setFromDate('');
+                                        setToDate('');
                                     }}
                                     className="text-sm text-blue-600 hover:text-blue-800 font-medium"
                                 >
