@@ -1318,15 +1318,21 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                         <div key={service.id || index} className="grid grid-cols-12 gap-2 mb-4 items-end border-b border-gray-50 pb-4 last:border-0">
                             <div className="col-span-2">
                                 <label className={labelClasses}>Overtime <span className="text-red-500">*</span></label>
-                                <select 
-                                    value={service.overtime} 
-                                    onChange={(e) => handleServiceChange(index, 'overtime', e.target.value)}
-                                    className={inputClasses(false)}
-                                >
-                                    <option value="Normal Days">Normal Days</option>
-                                    <option value="Weekends">Weekends</option>
-                                    <option value="Holidays">Holidays</option>
-                                </select>
+                                {index === 0 ? (
+                                    <div className={`${inputClasses(false)} bg-gray-50 flex items-center`}>
+                                        <span className="text-gray-500">{service.overtime}</span>
+                                    </div>
+                                ) : (
+                                    <select 
+                                        value={service.overtime} 
+                                        onChange={(e) => handleServiceChange(index, 'overtime', e.target.value)}
+                                        className={inputClasses(false)}
+                                    >
+                                        <option value="Normal Days">Normal Days</option>
+                                        <option value="Weekends">Weekends</option>
+                                        <option value="Holidays">Holidays</option>
+                                    </select>
+                                )}
                             </div>
                             <div className="col-span-2">
                                 <label className={labelClasses}>Description <span className="text-red-500">*</span></label>
@@ -1334,14 +1340,20 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             </div>
                             <div className="col-span-2">
                                 <label className={labelClasses}>Shift <span className="text-red-500">*</span></label>
-                                <select 
-                                    value={service.shift} 
-                                    onChange={(e) => handleServiceChange(index, 'shift', e.target.value)}
-                                    className={inputClasses(false)}
-                                >
-                                    <option value="9:00 AM – 10:00 PM">9:00 AM – 10:00 PM</option>
-                                    <option value="10:00 PM – 5:00 AM">10:00 PM – 5:00 AM</option>
-                                </select>
+                                {index === 0 ? (
+                                    <div className={`${inputClasses(false)} bg-gray-50 flex items-center`}>
+                                        <span className="text-gray-500">{service.shift}</span>
+                                    </div>
+                                ) : (
+                                    <select 
+                                        value={service.shift} 
+                                        onChange={(e) => handleServiceChange(index, 'shift', e.target.value)}
+                                        className={inputClasses(false)}
+                                    >
+                                        <option value="9:00 AM – 10:00 PM">9:00 AM – 10:00 PM</option>
+                                        <option value="10:00 PM – 5:00 AM">10:00 PM – 5:00 AM</option>
+                                    </select>
+                                )}
                             </div>
                             <div className="col-span-2">
                                 <label className={labelClasses}>Hours <span className="text-red-500">*</span></label>
