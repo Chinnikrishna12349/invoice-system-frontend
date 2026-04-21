@@ -155,7 +155,10 @@ const getTranslations = async (language: 'en' | 'ja') => {
         accountHolderLabel: i18n.t('payment.accountName'),
         swiftCodeLabel: i18n.t('payment.swiftCode') || 'SWIFT Code',
         bankCodeLabel: i18n.t('payment.bankCode') || (language === 'ja' ? '銀行コード：' : 'Bank Code:'),
-        ifscCodeLabel: i18n.t('payment.ifsc')
+        ifscCodeLabel: i18n.t('payment.ifsc'),
+        overtime: language === 'ja' ? '時間外' : 'Overtime',
+        shift: language === 'ja' ? '交代制' : 'Shift',
+        percentage: '%'
     };
 
     // Restore original language
@@ -795,15 +798,15 @@ const drawInvoiceContent = async (
 
 
     // Services Table
-    // Refined column widths for better spacing and professional alignment
-    const colX = [14, 25, 105, 125, 160, 196];
+    // Expanding to 8 columns: S.No, Overtime, Description, Shift, Hours, Rate, %, Amount
+    const colX = [14, 22, 40, 88, 113, 129, 153, 163, 190];
     const tableStartY = yPosition + 5;
 
     doc.setDrawColor(0);
     doc.setLineWidth(0.1);
 
     // Header Row
-    doc.line(colX[0], tableStartY, colX[5], tableStartY);
+    doc.line(colX[0], tableStartY, colX[8], tableStartY);
 
     const headerHeight = 10;
     // Vertically center text: (10mm row - 3.5mm text_height) / 2 = 3.25mm
@@ -813,20 +816,32 @@ const drawInvoiceContent = async (
     await addTextToPdf(doc, t.sNo, (colX[0] + colX[1]) / 2, textY, {
         fontSize: 10, fontStyle: 'bold', align: 'center', language
     });
-    // Description - Left aligned for professional feel
-    await addTextToPdf(doc, t.description, colX[1] + 2, textY, {
+    // Overtime
+    await addTextToPdf(doc, t.overtime, (colX[1] + colX[2]) / 2, textY, {
+        fontSize: 10, fontStyle: 'bold', align: 'center', language
+    });
+    // Description
+    await addTextToPdf(doc, t.description, colX[2] + 2, textY, {
         fontSize: 10, fontStyle: 'bold', align: 'left', language
     });
-    // Hours (Right Aligned -4 padding)
-    await addTextToPdf(doc, t.hours, colX[3] - 4, textY, {
+    // Shift
+    await addTextToPdf(doc, t.shift, (colX[3] + colX[4]) / 2, textY, {
+        fontSize: 10, fontStyle: 'bold', align: 'center', language
+    });
+    // Hours
+    await addTextToPdf(doc, t.hours, colX[5] - 4, textY, {
         fontSize: 10, fontStyle: 'bold', align: 'right', language
     });
-    // Unit Price (Right Aligned -4 padding)
-    await addTextToPdf(doc, t.unitPrice, colX[4] - 4, textY, {
+    // Unit Price
+    await addTextToPdf(doc, t.unitPrice, colX[6] - 4, textY, {
         fontSize: 10, fontStyle: 'bold', align: 'right', language
     });
-    // Amount (Right Aligned -4 padding)
-    await addTextToPdf(doc, t.amount, colX[5] - 4, textY, {
+    // %
+    await addTextToPdf(doc, '%', (colX[6] + colX[7]) / 2, textY, {
+        fontSize: 10, fontStyle: 'bold', align: 'center', language
+    });
+    // Amount
+    await addTextToPdf(doc, t.amount, colX[8] - 4, textY, {
         fontSize: 10, fontStyle: 'bold', align: 'right', language
     });
 
@@ -834,7 +849,7 @@ const drawInvoiceContent = async (
         doc.line(x, tableStartY, x, tableStartY + headerHeight);
     }
 
-    doc.line(colX[0], tableStartY + headerHeight, colX[5], tableStartY + headerHeight);
+    doc.line(colX[0], tableStartY + headerHeight, colX[8], tableStartY + headerHeight);
 
     yPosition = tableStartY + headerHeight;
 
@@ -844,30 +859,29 @@ const drawInvoiceContent = async (
 
     // Use for..of loop to support await inside
     for (const [index, service] of invoice.services.entries()) {
-        const amount = Math.round((service.hours * service.rate) * 100) / 100;
-        const descWidth = colX[2] - colX[1] - 4;
+        const lineBase = Math.round((service.hours * service.rate) * 100) / 100;
+        const amount = lineBase + (lineBase * ((service.percentage || 0) / 100));
+
+        const descWidth = colX[3] - colX[2] - 4;
         const descLines = doc.splitTextToSize(service.description || '-', descWidth);
         const rowHeight = Math.max(12, descLines.length * 5 + 4);
 
-        // Page break check BEFORE drawing the row to prevent overlap
-        // Increased threshold to 265mm since we removed sticky footer from breaks
         if (yPosition + rowHeight > 265) {
-            // SKIP drawPageFooter here to prevent interrupting the table
             doc.addPage();
             await drawPageHeader(doc, 9);
             yPosition = 55;
             
-            // Redraw table headers
-            doc.setDrawColor(0);
-            doc.setLineWidth(0.4);
-            doc.line(colX[0], yPosition, colX[5], yPosition);
-            doc.line(colX[0], yPosition + 10, colX[5], yPosition + 10);
+            doc.line(colX[0], yPosition, colX[8], yPosition);
+            doc.line(colX[0], yPosition + 10, colX[8], yPosition + 10);
             const textY = yPosition + 3.25;
             await addTextToPdf(doc, t.sNo, (colX[0] + colX[1]) / 2, textY, { fontSize: 10, align: 'center', language });
-            await addTextToPdf(doc, t.description, (colX[1] + colX[2]) / 2, textY, { fontSize: 10, align: 'center', language });
-            await addTextToPdf(doc, t.hours, (colX[2] + colX[3]) / 2, textY, { fontSize: 10, align: 'center', language });
-            await addTextToPdf(doc, t.unitPrice, (colX[3] + colX[4]) / 2, textY, { fontSize: 10, align: 'center', language });
-            await addTextToPdf(doc, t.amount, (colX[4] + colX[5]) / 2, textY, { fontSize: 10, align: 'center', language });
+            await addTextToPdf(doc, t.overtime, (colX[1] + colX[2]) / 2, textY, { fontSize: 10, align: 'center', language });
+            await addTextToPdf(doc, t.description, colX[2] + 2, textY, { fontSize: 10, align: 'left', language });
+            await addTextToPdf(doc, t.shift, (colX[3] + colX[4]) / 2, textY, { fontSize: 10, align: 'center', language });
+            await addTextToPdf(doc, t.hours, colX[5] - 4, textY, { fontSize: 10, align: 'right', language });
+            await addTextToPdf(doc, t.unitPrice, colX[6] - 4, textY, { fontSize: 10, align: 'right', language });
+            await addTextToPdf(doc, '%', (colX[6] + colX[7]) / 2, textY, { fontSize: 10, align: 'center', language });
+            await addTextToPdf(doc, t.amount, colX[8] - 4, textY, { fontSize: 10, align: 'right', language });
             yPosition += 10;
         }
 
@@ -878,54 +892,49 @@ const drawInvoiceContent = async (
         const rowTextY = yPosition + (rowHeight - 3.5) / 2;
 
         // SNO
-        await addTextToPdf(doc, String(index + 1), (colX[0] + colX[1]) / 2, rowTextY, {
-            fontSize: 10, align: 'center', language
-        });
+        await addTextToPdf(doc, String(index + 1), (colX[0] + colX[1]) / 2, rowTextY, { fontSize: 10, align: 'center', language });
+
+        // Overtime
+        await addTextToPdf(doc, service.overtime || '-', (colX[1] + colX[2]) / 2, rowTextY, { fontSize: 9, align: 'center', language });
 
         // Description
-        let lineY = rowTextY - (descLines.length > 1 ? 2 : 0); // Slight offset for multi-line
+        let lineY = rowTextY - (descLines.length > 1 ? 2 : 0);
         if (descLines.length === 1) {
             const displayDesc = language === 'ja' ? toKatakana(descLines[0]) : descLines[0];
-            await addTextToPdf(doc, displayDesc, colX[1] + 2, rowTextY, {
-                align: 'left', language, maxWidth: colX[2] - colX[1] - 4, fontSize: 10
-            });
+            await addTextToPdf(doc, displayDesc, colX[2] + 2, rowTextY, { align: 'left', language, maxWidth: descWidth, fontSize: 9 });
         } else {
             for (const line of descLines) {
                 const displayLine = language === 'ja' ? toKatakana(line) : line;
-                await addTextToPdf(doc, displayLine, colX[1] + 2, lineY, {
-                    align: 'left', language, maxWidth: colX[2] - colX[1] - 4, fontSize: 10
-                });
+                await addTextToPdf(doc, displayLine, colX[2] + 2, lineY, { align: 'left', language, maxWidth: descWidth, fontSize: 9 });
                 lineY += 5;
             }
         }
 
-        // Hours (Right Aligned)
-        const formattedHours = Number(service.hours).toLocaleString(undefined, {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 2
-        });
-        await addTextToPdf(doc, formattedHours, colX[3] - 4, rowTextY, {
-            align: 'right', language, fontSize: 10, maxWidth: (colX[3] - colX[2]) - 2
-        });
+        // Shift
+        await addTextToPdf(doc, service.shift || '-', (colX[3] + colX[4]) / 2, rowTextY, { fontSize: 8, align: 'center', language, maxWidth: colX[4] - colX[3] - 2 });
 
-        // Unit Price WITH CURRENCY (Right Aligned)
-        const formattedRate = formatAmount(service.rate, false);
-        await addTextToPdf(doc, formattedRate, colX[4] - 4, rowTextY, {
-            align: 'right', language, fontSize: 10, maxWidth: (colX[4] - colX[3]) - 2
-        });
+        // Hours
+        const formattedHours = Number(service.hours).toLocaleString(undefined, { maximumFractionDigits: 2 });
+        await addTextToPdf(doc, formattedHours, colX[5] - 4, rowTextY, { align: 'right', language, fontSize: 9 });
 
-        // Amount WITH CURRENCY (Right Aligned)
-        const formattedItemAmount = formatAmount(amount, false);
-        await addTextToPdf(doc, formattedItemAmount, colX[5] - 4, rowTextY, {
-            align: 'right', language, fontSize: 10, maxWidth: (colX[5] - colX[4]) - 2
-        });
+        // Unit Price
+        await addTextToPdf(doc, formatAmount(service.rate, false), colX[6] - 4, rowTextY, { align: 'right', language, fontSize: 9 });
 
-        doc.line(colX[0], yPosition + rowHeight, colX[5], yPosition + rowHeight);
+        // %
+        await addTextToPdf(doc, String(service.percentage || 0), (colX[6] + colX[7]) / 2, rowTextY, { align: 'center', language, fontSize: 9 });
+
+        // Amount
+        await addTextToPdf(doc, formatAmount(amount, false), colX[8] - 4, rowTextY, { align: 'right', language, fontSize: 9 });
+
+        doc.line(colX[0], yPosition + rowHeight, colX[8], yPosition + rowHeight);
         yPosition += rowHeight;
     }
 
     // Totals Section
-    const subTotal = invoice.services.reduce((acc, s) => acc + Math.round((s.hours * s.rate) * 100) / 100, 0);
+    const subTotal = invoice.services.reduce((acc, s) => {
+        const lineBase = Math.round((s.hours * s.rate) * 100) / 100;
+        return acc + Math.round((lineBase + (lineBase * ((s.percentage || 0) / 100))) * 100) / 100;
+    }, 0);
     const taxRate = invoice.taxRate || 0;
 
     // Only calculate tax if it's India OR Japanese Consumption Tax toggle is ON

@@ -67,7 +67,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         employeeEmail: '',
         employeeAddress: '',
         employeeMobile: '',
-        services: [{ id: `service-${Date.now()}`, description: '', hours: 0, rate: 0 }],
+        services: [{ id: `service-${Date.now()}`, overtime: 'Normal Days', description: '', shift: '9:00 AM – 10:00 PM', hours: 0, rate: 0, percentage: 0 }],
         taxRate: currentCountry === 'japan' ? 10 : 0,
         cgstRate: 0,
         sgstRate: 0,
@@ -581,7 +581,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             ...prev,
             services: [
                 ...(prev.services || []),
-                { id: `service-${Date.now()}`, description: '', hours: 0, rate: 0 }
+                { id: `service-${Date.now()}`, overtime: 'Normal Days', description: '', shift: '9:00 AM – 10:00 PM', hours: 0, rate: 0, percentage: 0 }
             ]
         }));
     };
@@ -732,7 +732,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         dueDate.setDate(dueDate.getDate() + 45);
 
         // Calculate Round Off and Final Amount
-        const subTotal = (formData.services || []).reduce((sum, s) => sum + Math.round((s.hours * s.rate) * 100) / 100, 0);
+        const subTotal = (formData.services || []).reduce((sum, s) => {
+            const lineBase = Math.round((s.hours * s.rate) * 100) / 100;
+            const lineTotal = lineBase + (lineBase * ((s.percentage || 0) / 100));
+            return sum + Math.round(lineTotal * 100) / 100;
+        }, 0);
 
         let taxAmount = 0;
         if (country === 'india') {
@@ -1311,10 +1315,33 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 </div>
                 {
                     formData.services?.map((service, index) => (
-                        <div key={service.id || index} className="grid grid-cols-12 gap-4 mb-4 items-end border-b border-gray-50 pb-4 last:border-0">
-                            <div className="col-span-6">
+                        <div key={service.id || index} className="grid grid-cols-12 gap-2 mb-4 items-end border-b border-gray-50 pb-4 last:border-0">
+                            <div className="col-span-2">
+                                <label className={labelClasses}>Overtime <span className="text-red-500">*</span></label>
+                                <select 
+                                    value={service.overtime} 
+                                    onChange={(e) => handleServiceChange(index, 'overtime', e.target.value)}
+                                    className={inputClasses(false)}
+                                >
+                                    <option value="Normal Days">Normal Days</option>
+                                    <option value="Weekends">Weekends</option>
+                                    <option value="Holidays">Holidays</option>
+                                </select>
+                            </div>
+                            <div className="col-span-2">
                                 <label className={labelClasses}>Description <span className="text-red-500">*</span></label>
                                 <input type="text" value={service.description} onChange={(e) => handleServiceChange(index, 'description', e.target.value)} className={inputClasses(!!errors[`service-${index}-description`])} />
+                            </div>
+                            <div className="col-span-2">
+                                <label className={labelClasses}>Shift <span className="text-red-500">*</span></label>
+                                <select 
+                                    value={service.shift} 
+                                    onChange={(e) => handleServiceChange(index, 'shift', e.target.value)}
+                                    className={inputClasses(false)}
+                                >
+                                    <option value="9:00 AM – 10:00 PM">9:00 AM – 10:00 PM</option>
+                                    <option value="10:00 PM – 5:00 AM">10:00 PM – 5:00 AM</option>
+                                </select>
                             </div>
                             <div className="col-span-2">
                                 <label className={labelClasses}>Hours <span className="text-red-500">*</span></label>
@@ -1328,7 +1355,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                     className={inputClasses(!!errors[`service-${index}-hours`])}
                                 />
                             </div>
-                            <div className="col-span-3">
+                            <div className="col-span-2">
                                 <label className={labelClasses}>Rate ({getCurrencySymbol(country)}) <span className="text-red-500">*</span></label>
                                 <input
                                     type="number"
@@ -1340,7 +1367,20 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                     className={inputClasses(!!errors[`service-${index}-rate`])}
                                 />
                             </div>
-                            <div className="col-span-1 pb-2">
+                            <div className="col-span-1">
+                                <label className={labelClasses}>Rate %</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={service.percentage || 0}
+                                    onWheel={(e) => (e.target as HTMLElement).blur()}
+                                    onChange={(e) => handleServiceChange(index, 'percentage', parseFloat(e.target.value))}
+                                    className={inputClasses(false)}
+                                    placeholder="%"
+                                />
+                            </div>
+                            <div className="col-span-1 pb-1">
                                 <button type="button" onClick={() => removeService(index)} className="text-red-500 hover:bg-red-50 p-2 rounded-full">🗑️</button>
                             </div>
                         </div>
