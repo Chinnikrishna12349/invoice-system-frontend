@@ -57,8 +57,9 @@ export const renderJapaneseText = async (
     const lineHeight = pxSize * 1.3;
     const maxLineWidth = Math.max(...lines.map(l => ctx.measureText(l).width));
     
-    canvas.width = (maxLineWidth + 10) * scale;
-    canvas.height = (lines.length * lineHeight + 10) * scale;
+    // Tightly bound text to avoid alignment shifts in PDF
+    canvas.width = (maxLineWidth + 2) * scale;
+    canvas.height = (lines.length * lineHeight + 6) * scale;
     
     ctx.scale(scale, scale);
     ctx.font = fontStr;
@@ -67,7 +68,7 @@ export const renderJapaneseText = async (
     ctx.imageSmoothingEnabled = false;
 
     lines.forEach((line, i) => {
-        ctx.fillText(line, 0, i * lineHeight + 5);
+        ctx.fillText(line, 1, i * lineHeight + 2);
     });
 
     canvasCache.set(cacheKey, canvas);

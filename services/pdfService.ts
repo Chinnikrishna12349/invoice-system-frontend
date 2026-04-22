@@ -830,20 +830,20 @@ const drawInvoiceContent = async (
         fontSize: 10, fontStyle: 'bold', align: 'center', language
     });
     // Hours
-    await addTextToPdf(doc, t.hours, colX[5] - 4, textY, {
-        fontSize: 10, fontStyle: 'bold', align: 'right', language
+    await addTextToPdf(doc, t.hours, (colX[4] + colX[5]) / 2, textY, {
+        fontSize: 10, fontStyle: 'bold', align: 'center', language
     });
     // Unit Price
-    await addTextToPdf(doc, t.unitPrice, colX[6] - 4, textY, {
-        fontSize: 10, fontStyle: 'bold', align: 'right', language
+    await addTextToPdf(doc, t.unitPrice, (colX[5] + colX[6]) / 2, textY, {
+        fontSize: 10, fontStyle: 'bold', align: 'center', language
     });
     // %
     await addTextToPdf(doc, '%', (colX[6] + colX[7]) / 2, textY, {
         fontSize: 10, fontStyle: 'bold', align: 'center', language
     });
     // Amount
-    await addTextToPdf(doc, t.amount, colX[8] - 4, textY, {
-        fontSize: 10, fontStyle: 'bold', align: 'right', language
+    await addTextToPdf(doc, t.amount, (colX[7] + colX[8]) / 2, textY, {
+        fontSize: 10, fontStyle: 'bold', align: 'center', language
     });
 
     for (const x of colX) {
@@ -884,10 +884,10 @@ const drawInvoiceContent = async (
             await addTextToPdf(doc, t.overtime, (colX[1] + colX[2]) / 2, textY, { fontSize: 10, align: 'center', language });
             await addTextToPdf(doc, t.description, colX[2] + 2, textY, { fontSize: 10, align: 'left', language });
             await addTextToPdf(doc, t.shift, (colX[3] + colX[4]) / 2, textY, { fontSize: 10, align: 'center', language });
-            await addTextToPdf(doc, t.hours, colX[5] - 4, textY, { fontSize: 10, align: 'right', language });
-            await addTextToPdf(doc, t.unitPrice, colX[6] - 4, textY, { fontSize: 10, align: 'right', language });
+            await addTextToPdf(doc, t.hours, (colX[4] + colX[5]) / 2, textY, { fontSize: 10, align: 'center', language });
+            await addTextToPdf(doc, t.unitPrice, (colX[5] + colX[6]) / 2, textY, { fontSize: 10, align: 'center', language });
             await addTextToPdf(doc, '%', (colX[6] + colX[7]) / 2, textY, { fontSize: 10, align: 'center', language });
-            await addTextToPdf(doc, t.amount, colX[8] - 4, textY, { fontSize: 10, align: 'right', language });
+            await addTextToPdf(doc, t.amount, (colX[7] + colX[8]) / 2, textY, { fontSize: 10, align: 'center', language });
             yPosition += 10;
         }
 
