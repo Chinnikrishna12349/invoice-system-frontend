@@ -67,7 +67,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         employeeEmail: '',
         employeeAddress: '',
         employeeMobile: '',
-        services: [{ id: `service-${Date.now()}`, overtime: 'Normal Days', description: '', shift: '9:00 AM – 10:00 PM', hours: 0, rate: 0, percentage: 0 }],
+        services: [{ id: `service-${Date.now()}`, overtime: 'Working Days', description: '', shift: 'Day Shift', hours: 0, rate: 0, percentage: 0 }],
         taxRate: currentCountry === 'japan' ? 10 : 0,
         cgstRate: 0,
         sgstRate: 0,
@@ -581,7 +581,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             ...prev,
             services: [
                 ...(prev.services || []),
-                { id: `service-${Date.now()}`, overtime: 'Normal Days', description: '', shift: '9:00 AM – 10:00 PM', hours: 0, rate: 0, percentage: 0 }
+                { id: `service-${Date.now()}`, overtime: 'Holidays', description: '', shift: 'Day Shift', hours: 0, rate: 0, percentage: 0 }
             ]
         }));
     };
@@ -1317,7 +1317,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                     formData.services?.map((service, index) => (
                         <div key={service.id || index} className="grid grid-cols-12 gap-2 mb-4 items-end border-b border-gray-50 pb-4 last:border-0">
                             <div className="col-span-2">
-                                <label className={labelClasses}>Overtime <span className="text-red-500">*</span></label>
+                                <label className={labelClasses}>{index === 0 ? 'Work Type' : 'Overtime'} <span className="text-red-500">*</span></label>
                                 {index === 0 ? (
                                     <div className={`${inputClasses(false)} bg-gray-50 flex items-center`}>
                                         <span className="text-gray-500">{service.overtime}</span>
@@ -1340,20 +1340,14 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             </div>
                             <div className="col-span-2">
                                 <label className={labelClasses}>Shift <span className="text-red-500">*</span></label>
-                                {index === 0 ? (
-                                    <div className={`${inputClasses(false)} bg-gray-50 flex items-center`}>
-                                        <span className="text-gray-500">{service.shift}</span>
-                                    </div>
-                                ) : (
-                                    <select 
-                                        value={service.shift} 
-                                        onChange={(e) => handleServiceChange(index, 'shift', e.target.value)}
-                                        className={inputClasses(false)}
-                                    >
-                                        <option value="9:00 AM – 10:00 PM">9:00 AM – 10:00 PM</option>
-                                        <option value="10:00 PM – 5:00 AM">10:00 PM – 5:00 AM</option>
-                                    </select>
-                                )}
+                                <select 
+                                    value={service.shift} 
+                                    onChange={(e) => handleServiceChange(index, 'shift', e.target.value)}
+                                    className={inputClasses(false)}
+                                >
+                                    <option value="Day Shift">Day Shift</option>
+                                    <option value="Night Shift">Night Shift</option>
+                                </select>
                             </div>
                             <div className="col-span-2">
                                 <label className={labelClasses}>Hours <span className="text-red-500">*</span></label>
