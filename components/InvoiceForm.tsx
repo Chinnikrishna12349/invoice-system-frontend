@@ -1377,8 +1377,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 </div>
                 {
                     formData.services?.map((service, index) => (
-                        <div key={service.id || index} className="grid grid-cols-12 gap-2 mb-4 items-end border-b border-gray-50 pb-4 last:border-0">
-                            <div className="col-span-2">
+                        <div key={service.id || index} className="grid grid-cols-[180px_1fr_130px_90px_130px_90px_40px] gap-3 mb-4 items-end border-b border-gray-50 pb-4 last:border-0">
+                            <div>
                                 {index === 0 && <label className={labelClasses}>Work Type <span className="text-red-500">*</span></label>}
                                 {index === 0 ? (
                                     <div className={`${inputClasses(false)} bg-gray-50 flex items-center`}>
@@ -1396,11 +1396,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                     </select>
                                 )}
                             </div>
-                            <div className="col-span-2">
+                            <div>
                                 {index === 0 && <label className={labelClasses}>Description <span className="text-red-500">*</span></label>}
                                 <input type="text" value={service.description} onChange={(e) => handleServiceChange(index, 'description', e.target.value)} className={inputClasses(!!errors[`service-${index}-description`])} />
                             </div>
-                            <div className="col-span-2">
+                            <div>
                                 {index === 0 && <label className={labelClasses}>Shift <span className="text-red-500">*</span></label>}
                                 <select 
                                     value={service.shift} 
@@ -1411,7 +1411,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                     <option value="Night Shift">Night Shift</option>
                                 </select>
                             </div>
-                            <div className="col-span-2">
+                            <div>
                                 {index === 0 && <label className={labelClasses}>Hours <span className="text-red-500">*</span></label>}
                                 <input
                                     type="number"
@@ -1423,7 +1423,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                     className={inputClasses(!!errors[`service-${index}-hours`])}
                                 />
                             </div>
-                            <div className="col-span-2">
+                            <div>
                                 {index === 0 && <label className={labelClasses}>Rate ({getCurrencySymbol(country)}) <span className="text-red-500">*</span></label>}
                                 <input
                                     type="number"
@@ -1435,7 +1435,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                     className={inputClasses(!!errors[`service-${index}-rate`])}
                                 />
                             </div>
-                            <div className="col-span-1">
+                            <div>
                                 {index === 0 && <label className={labelClasses}>Rate %</label>}
                                 <input
                                     type="number"
@@ -1448,8 +1448,10 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                     placeholder="%"
                                 />
                             </div>
-                            <div className="col-span-1 pb-1">
-                                <button type="button" onClick={() => removeService(index)} className="text-red-500 hover:bg-red-50 p-2 rounded-full">🗑️</button>
+                            <div className="flex justify-center items-center pb-1">
+                                {index > 0 && (
+                                    <button type="button" onClick={() => removeService(index)} className="text-red-500 hover:bg-red-50 p-2 rounded-full">🗑️</button>
+                                )}
                             </div>
                         </div>
                     ))
