@@ -858,10 +858,8 @@ const drawInvoiceContent = async (
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
 
-    // Use for..of loop to support await inside
     for (const [index, service] of invoice.services.entries()) {
-        const lineBase = Math.round((service.hours * service.rate) * 100) / 100;
-        const amount = lineBase + (lineBase * ((service.percentage || 0) / 100));
+        const amount = Math.round((service.hours * service.rate) * 100) / 100;
 
         const descWidth = colX[3] - colX[2] - 4;
         const descLines = doc.splitTextToSize(service.description || '-', descWidth);
@@ -938,8 +936,7 @@ const drawInvoiceContent = async (
 
     // Totals Section
     const subTotal = invoice.services.reduce((acc, s) => {
-        const lineBase = Math.round((s.hours * s.rate) * 100) / 100;
-        return acc + Math.round((lineBase + (lineBase * ((s.percentage || 0) / 100))) * 100) / 100;
+        return acc + Math.round((s.hours * s.rate) * 100) / 100;
     }, 0);
     const taxRate = invoice.taxRate || 0;
 

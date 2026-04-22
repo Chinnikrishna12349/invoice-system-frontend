@@ -67,7 +67,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         employeeEmail: '',
         employeeAddress: '',
         employeeMobile: '',
-        services: [{ id: `service-${Date.now()}`, overtime: 'Working Days', description: '', shift: 'Day Shift', hours: 0, rate: 0, percentage: 0 }],
+        services: [{ id: `service-${Date.now()}`, overtime: 'Working Days', description: '', shift: 'Day Shift', hours: 0, rate: 0, percentage: 100 }],
         taxRate: currentCountry === 'japan' ? 10 : 0,
         cgstRate: 0,
         sgstRate: 0,
@@ -577,13 +577,25 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
     };
 
     const addService = () => {
-        setFormData(prev => ({
-            ...prev,
-            services: [
-                ...(prev.services || []),
-                { id: `service-${Date.now()}`, overtime: 'Holidays', description: '', shift: 'Day Shift', hours: 0, rate: 0, percentage: 0 }
-            ]
-        }));
+        setFormData(prev => {
+            const baseRate = prev.services?.[0]?.rate || 0;
+            const defaultPercentage = 150; // Holidays + Day Shift
+            return {
+                ...prev,
+                services: [
+                    ...(prev.services || []),
+                    { 
+                        id: `service-${Date.now()}`, 
+                        overtime: 'Holidays', 
+                        description: '', 
+                        shift: 'Day Shift', 
+                        hours: 0, 
+                        rate: Math.round((baseRate * (defaultPercentage / 100)) * 100) / 100, 
+                        percentage: defaultPercentage 
+                    }
+                ]
+            };
+        });
     };
 
     const handleServiceChange = (index: number, field: keyof ServiceItem, value: any) => {
@@ -594,7 +606,46 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 ? Math.max(0, Math.round(value * 100) / 100) 
                 : Math.max(0, value);
         }
-        updatedServices[index] = { ...updatedServices[index], [field]: processedValue };
+        
+        let targetService = { ...updatedServices[index], [field]: processedValue };
+
+        // Auto-population logic for Percentage and Rate
+        if (field === 'overtime' || field === 'shift') {
+            if (index === 0) {
+                targetService.percentage = 100;
+            } else {
+                const isDay = targetService.shift === 'Day Shift';
+                if (targetService.overtime === 'Normal Days') {
+                    targetService.percentage = isDay ? 120 : 125;
+                } else if (targetService.overtime === 'Weekends') {
+                    targetService.percentage = isDay ? 135 : 140;
+                } else if (targetService.overtime === 'Holidays') {
+                    targetService.percentage = isDay ? 150 : 160;
+                }
+            }
+            
+            // Auto-calculate Rate based on Base Rate (index 0 rate)
+            const baseRate = updatedServices[0]?.rate || 0;
+            if (index > 0) {
+                targetService.rate = Math.round((baseRate * ((targetService.percentage || 100) / 100)) * 100) / 100;
+            }
+        }
+        
+        // If percentage is manually changed, update its rate
+        if (field === 'percentage' && index > 0) {
+            const baseRate = updatedServices[0]?.rate || 0;
+            targetService.rate = Math.round((baseRate * ((targetService.percentage || 100) / 100)) * 100) / 100;
+        }
+
+        updatedServices[index] = targetService;
+
+        // If Base Rate (index 0 rate) changes, update all other rows' rates
+        if (index === 0 && field === 'rate') {
+            for (let i = 1; i < updatedServices.length; i++) {
+                updatedServices[i].rate = Math.round((processedValue * ((updatedServices[i].percentage || 100) / 100)) * 100) / 100;
+            }
+        }
+
         setFormData(prev => ({ ...prev, services: updatedServices }));
     };
 
@@ -733,9 +784,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
         // Calculate Round Off and Final Amount
         const subTotal = (formData.services || []).reduce((sum, s) => {
-            const lineBase = Math.round((s.hours * s.rate) * 100) / 100;
-            const lineTotal = lineBase + (lineBase * ((s.percentage || 0) / 100));
-            return sum + Math.round(lineTotal * 100) / 100;
+            const lineTotal = Math.round((s.hours * s.rate) * 100) / 100;
+            return sum + lineTotal;
         }, 0);
 
         let taxAmount = 0;
