@@ -22,6 +22,7 @@ const addTextToPdf = async (
         language?: 'en' | 'ja';
         maxWidth?: number;
         baseline?: 'top' | 'bottom' | 'middle' | 'alphabetic' | 'hanging' | 'ideographic';
+        forceImage?: boolean;
     } = {}
 ): Promise<number> => {
     const { fontSize = 10, fontStyle = 'normal', align = 'left', language = 'en', maxWidth = 100, baseline = 'top' } = options;
@@ -417,8 +418,8 @@ const drawInvoiceContent = async (
     // Helper to draw the header on every page
     const drawPageHeader = async (targetDoc: typeof doc, startY: number) => {
         // Logo
-        if (companyInfoToUse?.companyLogoUrl || invoice.logoUrl) {
-            await addLogoToPdf(targetDoc, 14, startY, companyInfoToUse?.companyLogoUrl || invoice.logoUrl, 50, 25);
+        if (companyInfoToUse?.companyLogoUrl) {
+            await addLogoToPdf(targetDoc, 14, startY, companyInfoToUse.companyLogoUrl, 50, 25);
         }
 
         // Header Colon Alignment
@@ -469,14 +470,14 @@ const drawInvoiceContent = async (
             const b = companyInfoToUse?.bankDetails;
             const details = [
                 { label: t.bankNameLabel || 'Bank Name', value: b?.bankName },
-                { label: t.bankCodeLabel || 'Bank Code', value: (b as any)?.bankCode },
+                { label: t.bankCodeLabel || 'Bank Code', value: b?.bankCode },
                 { label: t.branchLabel || 'Branch Name', value: b?.branchName },
                 { label: t.branchCodeLabel || 'Branch Code', value: b?.branchCode },
                 { label: t.accountTypeLabel || 'Account Type', value: b?.accountType },
                 { label: t.accountNoLabel || 'Account No', value: b?.accountNumber },
                 { label: t.accountHolderLabel || 'Account Name', value: b?.accountHolderName },
-                { label: t.swiftCodeLabel || 'SWIFT Code', value: (b as any)?.swiftCode || (b as any)?.swift },
-                ...(language !== 'ja' ? [{ label: t.ifscCodeLabel || 'IFSC', value: b?.ifscCode || (b as any)?.ifsc }] : [])
+                { label: t.swiftCodeLabel || 'SWIFT Code', value: b?.swiftCode },
+                ...(language !== 'ja' ? [{ label: t.ifscCodeLabel || 'IFSC', value: b?.ifscCode }] : [])
             ];
 
             const validDetails = details.filter(item => item.value && item.value.toString().trim().length > 0);
@@ -486,16 +487,16 @@ const drawInvoiceContent = async (
             const bColonX = 14 + bLabelWidth;
             const bValueX = bColonX + 4;
 
-            for (const item of validDetails.slice(0, 7)) { // Show up to 7 items
+            for (const item of validDetails) { // Show all valid items
                 const label = item.label.replace(/[：:]/g, '');
                 const val = item.value || '';
                 // FORCE image renderer for ALL bank detail rows in English/Japanese to ensure 100% parity
                 // (font matching, boldness, and alignment)
                 const forceImg = true; 
                 
-                const labelH = await addTextToPdf(targetDoc, label, 14, fCurY, { fontSize: 9, language, maxWidth: bLabelWidth - 2, forceImage: forceImg } as any);
-                await addTextToPdf(targetDoc, ':', bColonX, fCurY, { fontSize: 9, language, forceImage: forceImg } as any);
-                const valueH = await addTextToPdf(targetDoc, val.toString(), bValueX, fCurY, { fontSize: 9, language, maxWidth: 100, forceImage: forceImg } as any);
+                const labelH = await addTextToPdf(targetDoc, label, 14, fCurY, { fontSize: 9, language, maxWidth: bLabelWidth - 2, forceImage: forceImg });
+                await addTextToPdf(targetDoc, ':', bColonX, fCurY, { fontSize: 9, language, forceImage: forceImg });
+                const valueH = await addTextToPdf(targetDoc, val.toString(), bValueX, fCurY, { fontSize: 9, language, maxWidth: 100, forceImage: forceImg });
                 
                 if (label.toLowerCase().includes('swift')) {
                     swiftY = fCurY;
@@ -519,7 +520,7 @@ const drawInvoiceContent = async (
         if (startY && (companyInfoToUse?.bankDetails && Object.values(companyInfoToUse.bankDetails).some(v => v && v.toString().trim().length > 0))) {
             // Reposition TO THE RIGHT of payment details for a "straight" professional look
             // Aligned exactly straight to the SWIFT code row if found
-            finalSigY = (swiftY as any) + 5; 
+            finalSigY = swiftY + 5; 
         }
 
         if (invoice.signatureUrl) {
@@ -535,7 +536,7 @@ const drawInvoiceContent = async (
             align: 'center', 
             language,
             forceImage: true 
-        } as any);
+        });
     };
 
     let footerLabelDrawn = false;
@@ -873,6 +874,11 @@ const drawInvoiceContent = async (
             
             doc.line(colX[0], yPosition, colX[8], yPosition);
             doc.line(colX[0], yPosition + 10, colX[8], yPosition + 10);
+            
+            for (const x of colX) {
+                doc.line(x, yPosition, x, yPosition + 10);
+            }
+            
             const textY = yPosition + 3.25;
             await addTextToPdf(doc, t.sNo, (colX[0] + colX[1]) / 2, textY, { fontSize: 10, align: 'center', language });
             await addTextToPdf(doc, t.overtime, (colX[1] + colX[2]) / 2, textY, { fontSize: 10, align: 'center', language });
@@ -955,10 +961,10 @@ const drawInvoiceContent = async (
         }
 
         doc.line(colX[0], yPosition, colX[0], yPosition + rowH);
-        doc.line(colX[4], yPosition, colX[4], yPosition + rowH);
-        doc.line(colX[5], yPosition, colX[5], yPosition + rowH);
+        doc.line(colX[7], yPosition, colX[7], yPosition + rowH);
+        doc.line(colX[8], yPosition, colX[8], yPosition + rowH);
 
-        doc.line(colX[0], yPosition + rowH, colX[5], yPosition + rowH);
+        doc.line(colX[0], yPosition + rowH, colX[8], yPosition + rowH);
 
         const fontSize = 10;
         // Center text vertically in the 10mm row (10 - 3.5) / 2 = 3.25
@@ -969,7 +975,7 @@ const drawInvoiceContent = async (
         });
 
         // Correctly right-align value at the end of the table
-        await addTextToPdf(doc, value, colX[5] - 4, textY, {
+        await addTextToPdf(doc, value, colX[8] - 4, textY, {
             fontSize,
             fontStyle: isBold ? 'bold' : 'normal',
             align: 'right',
