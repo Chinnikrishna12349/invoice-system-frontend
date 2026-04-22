@@ -584,15 +584,15 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 ...prev,
                 services: [
                     ...(prev.services || []),
-                    { 
-                        id: `service-${Date.now()}`, 
-                        overtime: 'Holidays', 
-                        description: '', 
-                        shift: 'Day Shift', 
-                        hours: 0, 
-                        rate: Math.round((baseRate * (defaultPercentage / 100)) * 100) / 100, 
-                        percentage: defaultPercentage 
-                    }
+                { 
+                    id: `service-${Date.now()}`, 
+                    overtime: 'Working Days (OT)', 
+                    description: '', 
+                    shift: 'Day Shift', 
+                    hours: 0, 
+                    rate: Math.round((baseRate * (120 / 100)) * 100) / 100, 
+                    percentage: 120 
+                }
                 ]
             };
         });
@@ -615,11 +615,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 targetService.percentage = 100;
             } else {
                 const isDay = targetService.shift === 'Day Shift';
-                if (targetService.overtime === 'Normal Days') {
+                if (targetService.overtime === 'Working Days (OT)') {
                     targetService.percentage = isDay ? 120 : 125;
-                } else if (targetService.overtime === 'Weekends') {
+                } else if (targetService.overtime === 'Weekends (OT)') {
                     targetService.percentage = isDay ? 135 : 140;
-                } else if (targetService.overtime === 'Holidays') {
+                } else if (targetService.overtime === 'Holiday (OT)') {
                     targetService.percentage = isDay ? 150 : 160;
                 }
             }
@@ -1361,13 +1361,25 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             <div className="bg-white rounded-3xl border border-gray-100 p-6 relative z-10">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-lg font-bold text-gray-900">Services <span className="text-red-500">*</span></h3>
-                    <button type="button" onClick={addService} className="text-blue-600 font-semibold text-sm hover:underline">+ Add Item</button>
+                    {(() => {
+                        const isInitialRowFilled = formData.services?.[0] && formData.services[0].hours > 0 && formData.services[0].rate > 0 && formData.services[0].description.trim() !== '';
+                        return (
+                            <button 
+                                type="button" 
+                                onClick={addService} 
+                                disabled={!isInitialRowFilled}
+                                className={`font-semibold text-sm transition-all ${!isInitialRowFilled ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:underline'}`}
+                            >
+                                + Add Item
+                            </button>
+                        );
+                    })()}
                 </div>
                 {
                     formData.services?.map((service, index) => (
                         <div key={service.id || index} className="grid grid-cols-12 gap-2 mb-4 items-end border-b border-gray-50 pb-4 last:border-0">
                             <div className="col-span-2">
-                                <label className={labelClasses}>{index === 0 ? 'Work Type' : 'Overtime'} <span className="text-red-500">*</span></label>
+                                {index === 0 && <label className={labelClasses}>Work Type <span className="text-red-500">*</span></label>}
                                 {index === 0 ? (
                                     <div className={`${inputClasses(false)} bg-gray-50 flex items-center`}>
                                         <span className="text-gray-500">{service.overtime}</span>
@@ -1378,18 +1390,18 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                         onChange={(e) => handleServiceChange(index, 'overtime', e.target.value)}
                                         className={inputClasses(false)}
                                     >
-                                        <option value="Normal Days">Normal Days</option>
-                                        <option value="Weekends">Weekends</option>
-                                        <option value="Holidays">Holidays</option>
+                                        <option value="Working Days (OT)">Working Days (OT)</option>
+                                        <option value="Weekends (OT)">Weekends (OT)</option>
+                                        <option value="Holiday (OT)">Holiday (OT)</option>
                                     </select>
                                 )}
                             </div>
                             <div className="col-span-2">
-                                <label className={labelClasses}>Description <span className="text-red-500">*</span></label>
+                                {index === 0 && <label className={labelClasses}>Description <span className="text-red-500">*</span></label>}
                                 <input type="text" value={service.description} onChange={(e) => handleServiceChange(index, 'description', e.target.value)} className={inputClasses(!!errors[`service-${index}-description`])} />
                             </div>
                             <div className="col-span-2">
-                                <label className={labelClasses}>Shift <span className="text-red-500">*</span></label>
+                                {index === 0 && <label className={labelClasses}>Shift <span className="text-red-500">*</span></label>}
                                 <select 
                                     value={service.shift} 
                                     onChange={(e) => handleServiceChange(index, 'shift', e.target.value)}
@@ -1400,31 +1412,31 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                 </select>
                             </div>
                             <div className="col-span-2">
-                                <label className={labelClasses}>Hours <span className="text-red-500">*</span></label>
+                                {index === 0 && <label className={labelClasses}>Hours <span className="text-red-500">*</span></label>}
                                 <input
                                     type="number"
                                     step="0.01"
                                     min="0"
-                                    value={service.hours}
+                                    value={service.hours || ''}
                                     onWheel={(e) => (e.target as HTMLElement).blur()}
                                     onChange={(e) => handleServiceChange(index, 'hours', parseFloat(e.target.value))}
                                     className={inputClasses(!!errors[`service-${index}-hours`])}
                                 />
                             </div>
                             <div className="col-span-2">
-                                <label className={labelClasses}>Rate ({getCurrencySymbol(country)}) <span className="text-red-500">*</span></label>
+                                {index === 0 && <label className={labelClasses}>Rate ({getCurrencySymbol(country)}) <span className="text-red-500">*</span></label>}
                                 <input
                                     type="number"
                                     step="0.01"
                                     min="0"
-                                    value={service.rate}
+                                    value={service.rate || ''}
                                     onWheel={(e) => (e.target as HTMLElement).blur()}
                                     onChange={(e) => handleServiceChange(index, 'rate', parseFloat(e.target.value))}
                                     className={inputClasses(!!errors[`service-${index}-rate`])}
                                 />
                             </div>
                             <div className="col-span-1">
-                                <label className={labelClasses}>Rate %</label>
+                                {index === 0 && <label className={labelClasses}>Rate %</label>}
                                 <input
                                     type="number"
                                     step="0.01"
