@@ -246,9 +246,22 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 }
             }
             
+            const mappedServices = (selectedInvoice.services || []).map((service, index) => {
+                const isFirstRow = index === 0;
+                return {
+                    ...service,
+                    overtime: service.overtime && service.overtime !== 'Normal Days' 
+                        ? service.overtime 
+                        : (isFirstRow ? 'Working Days' : 'Working Days (OT)'),
+                    shift: service.shift || 'Day Shift',
+                    percentage: service.percentage ? service.percentage : (isFirstRow ? 100 : 120)
+                };
+            });
+
             setFormData({ 
                 ...selectedInvoice, 
-                company: finalCompany 
+                company: finalCompany,
+                services: mappedServices
             });
             const employeeMatch = TO_EMPLOYEES.find(c => c.companyName === selectedInvoice.employeeName) ||
                 dynamicClientEmployees.find(c => c.companyName === selectedInvoice.employeeName);
