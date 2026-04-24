@@ -6,6 +6,9 @@ interface InvoiceItem {
   hours: number;
   unitPrice: number;
   amount: number;
+  overtime?: string;
+  shift?: string;
+  percentage?: number;
 }
 
 interface InvoiceLayoutProps {
@@ -158,35 +161,49 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
           <thead>
             <tr className="border-b border-gray-900">
               <th className="border-r border-gray-900 p-2 text-center w-[11mm] font-bold text-[10pt]">SNO</th>
+              <th className="border-r border-gray-900 p-2 text-center font-bold text-[10pt]">Work Type</th>
               <th className="border-r border-gray-900 p-2 text-center font-bold text-[10pt]">Description</th>
-              <th className="border-r border-gray-900 p-2 text-right w-[25mm] font-bold text-[10pt] pr-4">Hours</th>
-              <th className="border-r border-gray-900 p-2 text-right w-[38mm] font-bold text-[10pt] pr-4">Unit Price</th>
-              <th className="p-2 text-right w-[38mm] font-bold text-[10pt] pr-4">Amount</th>
+              <th className="border-r border-gray-900 p-2 text-center font-bold text-[10pt]">Shift</th>
+              <th className="border-r border-gray-900 p-2 text-right w-[15mm] font-bold text-[10pt] pr-4">Hours</th>
+              <th className="border-r border-gray-900 p-2 text-right w-[25mm] font-bold text-[10pt] pr-4">Unit Price</th>
+              <th className="border-r border-gray-900 p-2 text-center w-[15mm] font-bold text-[10pt]">Rate %</th>
+              <th className="p-2 text-right w-[28mm] font-bold text-[10pt] pr-4">Amount</th>
             </tr>
           </thead>
           <tbody>
-            {items.map((item, idx) => (
-              <tr key={idx} className="border-b border-gray-900 min-h-[12mm]">
-                <td className="border-r border-gray-900 p-2 text-center text-[10pt]">{idx + 1}</td>
-                <td className="border-r border-gray-900 p-2 text-center text-[10pt] whitespace-pre-wrap">{item.description}</td>
-                <td className="border-r border-gray-900 p-2 text-right text-[10pt] pr-4">{item.hours}</td>
-                <td className="border-r border-gray-900 p-2 text-right text-[10pt] pr-4">{formatCurrency(item.unitPrice, country, true, false)}</td>
-                <td className="p-2 text-right text-[10pt] pr-4">{formatCurrency(item.amount, country, true, false)}</td>
-              </tr>
-            ))}
+            {items.map((item, idx) => {
+                const isFirstRow = idx === 0;
+                const displayOvertime = item.overtime && item.overtime !== 'Normal Days' 
+                    ? item.overtime 
+                    : (isFirstRow ? 'Working Days' : 'Working Days (OT)');
+                const displayPercentage = item.percentage ? item.percentage : (isFirstRow ? 100 : 120);
+
+                return (
+                  <tr key={idx} className="border-b border-gray-900 min-h-[12mm]">
+                    <td className="border-r border-gray-900 p-2 text-center text-[10pt]">{idx + 1}</td>
+                    <td className="border-r border-gray-900 p-2 text-center text-[10pt] whitespace-nowrap">{displayOvertime}</td>
+                    <td className="border-r border-gray-900 p-2 text-left text-[10pt] whitespace-pre-wrap">{item.description}</td>
+                    <td className="border-r border-gray-900 p-2 text-center text-[10pt] whitespace-nowrap">{item.shift || 'Day Shift'}</td>
+                    <td className="border-r border-gray-900 p-2 text-right text-[10pt] pr-4">{item.hours}</td>
+                    <td className="border-r border-gray-900 p-2 text-right text-[10pt] pr-4">{formatCurrency(item.unitPrice, country, true, false)}</td>
+                    <td className="border-r border-gray-900 p-2 text-center text-[10pt]">{displayPercentage}</td>
+                    <td className="p-2 text-right text-[10pt] pr-4">{formatCurrency(item.amount, country, true, false)}</td>
+                  </tr>
+                );
+            })}
             {/* Totals Section */}
             <tr className="border-b border-gray-900">
-              <td colSpan={4} className="border-r border-gray-900 p-2 text-left font-bold text-[10pt]">SubTotal</td>
+              <td colSpan={7} className="border-r border-gray-900 p-2 text-left font-bold text-[10pt]">SubTotal</td>
               <td className="p-2 text-right text-[10pt] pr-4 font-bold">{formatCurrency(subtotal, country, true, false)}</td>
             </tr>
             {country === 'india' ? (
               <>
                 <tr className="border-b border-gray-900">
-                  <td colSpan={4} className="border-r border-gray-900 p-2 text-left font-bold text-[10pt]">CGST ({cgstRate ?? (taxRate / 2)}%)</td>
+                  <td colSpan={7} className="border-r border-gray-900 p-2 text-left font-bold text-[10pt]">CGST ({cgstRate ?? (taxRate / 2)}%)</td>
                   <td className="p-2 text-right text-[10pt] pr-4 font-bold">{formatCurrency(Math.round((subtotal * ((cgstRate ?? (taxRate / 2)) / 100)) * 100) / 100, country, true, false)}</td>
                 </tr>
                 <tr className="border-b border-gray-900">
-                  <td colSpan={4} className="border-r border-gray-900 p-2 text-left font-bold text-[10pt]">SGST ({sgstRate ?? (taxRate / 2)}%)</td>
+                  <td colSpan={7} className="border-r border-gray-900 p-2 text-left font-bold text-[10pt]">SGST ({sgstRate ?? (taxRate / 2)}%)</td>
                   <td className="p-2 text-right text-[10pt] pr-4 font-bold">{formatCurrency(Math.round((subtotal * ((sgstRate ?? (taxRate / 2)) / 100)) * 100) / 100, country, true, false)}</td>
                 </tr>
 
@@ -194,19 +211,19 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
             ) : (
               taxAmount > 0 && (
                 <tr className="border-b border-gray-900">
-                  <td colSpan={4} className="border-r border-gray-900 p-2 text-left font-bold text-[10pt]">Consumption Tax ({taxRate}%)</td>
+                  <td colSpan={7} className="border-r border-gray-900 p-2 text-left font-bold text-[10pt]">Consumption Tax ({taxRate}%)</td>
                   <td className="p-2 text-right text-[10pt] pr-4 font-bold">{formatCurrency(taxAmount, country, true, false)}</td>
                 </tr>
               )
             )}
             {roundOff !== undefined && roundOff !== 0 && (
               <tr className="border-b border-gray-900">
-                <td colSpan={4} className="border-r border-gray-900 p-2 text-left font-bold text-[10pt]">Round Off</td>
+                <td colSpan={7} className="border-r border-gray-900 p-2 text-left font-bold text-[10pt]">Round Off</td>
                 <td className="p-2 text-right text-[10pt] pr-4 font-bold">{formatCurrency(roundOff, country, true, false)}</td>
               </tr>
             )}
             <tr className="border-b border-gray-900">
-              <td colSpan={4} className="border-r border-gray-900 p-2 text-left font-bold text-[10pt]">Grand Total ({currencyCode})</td>
+              <td colSpan={7} className="border-r border-gray-900 p-2 text-left font-bold text-[10pt]">Grand Total ({currencyCode})</td>
               <td className="p-2 text-right text-[10pt] pr-4 font-bold">{formatCurrency(grandTotal, country, true, false)}</td>
             </tr>
           </tbody>

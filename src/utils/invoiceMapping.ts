@@ -36,7 +36,10 @@ export const mapInvoiceToLayoutProps = (invoice: Invoice) => {
             description: s.description,
             hours: s.hours,
             unitPrice: s.rate,
-            amount: s.hours * s.rate
+            amount: s.hours * s.rate,
+            overtime: s.overtime,
+            shift: s.shift,
+            percentage: s.percentage
         })),
         subtotal: subTotal,
         taxRate: invoice.taxRate || (invoice.cgstRate || 0) + (invoice.sgstRate || 0),
