@@ -800,7 +800,7 @@ const drawInvoiceContent = async (
 
     // Services Table
     // Expanding to 8 columns: S.No, Overtime, Description, Shift, Hours, Rate, %, Amount
-    const colX = [14, 22, 40, 88, 113, 129, 153, 163, 190];
+    const colX = [14, 22, 50, 94, 114, 129, 151, 163, 190];
     const tableStartY = yPosition + 5;
 
     doc.setDrawColor(0);
@@ -899,7 +899,7 @@ const drawInvoiceContent = async (
         await addTextToPdf(doc, String(index + 1), (colX[0] + colX[1]) / 2, rowTextY, { fontSize: 10, align: 'center', language });
 
         // Overtime
-        const defaultOvertime = index === 0 ? 'Working Days' : '-';
+        const defaultOvertime = index === 0 ? 'Working Days' : 'Working Days (OT)';
         await addTextToPdf(doc, service.overtime && service.overtime !== 'Normal Days' ? service.overtime : defaultOvertime, (colX[1] + colX[2]) / 2, rowTextY, { fontSize: 9, align: 'center', language });
 
         // Description
@@ -926,7 +926,7 @@ const drawInvoiceContent = async (
         await addTextToPdf(doc, formatAmount(service.rate, false), colX[6] - 4, rowTextY, { align: 'right', language, fontSize: 9 });
 
         // %
-        const displayPercentage = service.percentage ? service.percentage : (index === 0 ? 100 : 0);
+        const displayPercentage = service.percentage ? service.percentage : (index === 0 ? 100 : 120);
         await addTextToPdf(doc, String(displayPercentage), (colX[6] + colX[7]) / 2, rowTextY, { align: 'center', language, fontSize: 9 });
 
         // Amount
