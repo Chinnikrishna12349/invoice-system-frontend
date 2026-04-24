@@ -157,9 +157,9 @@ const getTranslations = async (language: 'en' | 'ja') => {
         swiftCodeLabel: i18n.t('payment.swiftCode') || 'SWIFT Code',
         bankCodeLabel: i18n.t('payment.bankCode') || (language === 'ja' ? '銀行コード：' : 'Bank Code:'),
         ifscCodeLabel: i18n.t('payment.ifsc'),
-        overtime: language === 'ja' ? '時間外' : 'Overtime',
+        overtime: language === 'ja' ? '勤務形態' : 'Work Type',
         shift: language === 'ja' ? '交代制' : 'Shift',
-        percentage: '%'
+        percentage: 'Rate %'
     };
 
     // Restore original language
@@ -838,7 +838,7 @@ const drawInvoiceContent = async (
         fontSize: 10, fontStyle: 'bold', align: 'center', language
     });
     // %
-    await addTextToPdf(doc, '%', (colX[6] + colX[7]) / 2, textY, {
+    await addTextToPdf(doc, t.percentage, (colX[6] + colX[7]) / 2, textY, {
         fontSize: 10, fontStyle: 'bold', align: 'center', language
     });
     // Amount
@@ -884,7 +884,7 @@ const drawInvoiceContent = async (
             await addTextToPdf(doc, t.shift, (colX[3] + colX[4]) / 2, textY, { fontSize: 10, align: 'center', language });
             await addTextToPdf(doc, t.hours, (colX[4] + colX[5]) / 2, textY, { fontSize: 10, align: 'center', language });
             await addTextToPdf(doc, t.unitPrice, (colX[5] + colX[6]) / 2, textY, { fontSize: 10, align: 'center', language });
-            await addTextToPdf(doc, '%', (colX[6] + colX[7]) / 2, textY, { fontSize: 10, align: 'center', language });
+            await addTextToPdf(doc, t.percentage, (colX[6] + colX[7]) / 2, textY, { fontSize: 10, align: 'center', language });
             await addTextToPdf(doc, t.amount, (colX[7] + colX[8]) / 2, textY, { fontSize: 10, align: 'center', language });
             yPosition += 10;
         }
@@ -899,7 +899,8 @@ const drawInvoiceContent = async (
         await addTextToPdf(doc, String(index + 1), (colX[0] + colX[1]) / 2, rowTextY, { fontSize: 10, align: 'center', language });
 
         // Overtime
-        await addTextToPdf(doc, service.overtime || '-', (colX[1] + colX[2]) / 2, rowTextY, { fontSize: 9, align: 'center', language });
+        const defaultOvertime = index === 0 ? 'Working Days' : '-';
+        await addTextToPdf(doc, service.overtime && service.overtime !== 'Normal Days' ? service.overtime : defaultOvertime, (colX[1] + colX[2]) / 2, rowTextY, { fontSize: 9, align: 'center', language });
 
         // Description
         let lineY = rowTextY - (descLines.length > 1 ? 2 : 0);
@@ -915,7 +916,7 @@ const drawInvoiceContent = async (
         }
 
         // Shift
-        await addTextToPdf(doc, service.shift || '-', (colX[3] + colX[4]) / 2, rowTextY, { fontSize: 8, align: 'center', language, maxWidth: colX[4] - colX[3] - 2 });
+        await addTextToPdf(doc, service.shift || 'Day Shift', (colX[3] + colX[4]) / 2, rowTextY, { fontSize: 8, align: 'center', language, maxWidth: colX[4] - colX[3] - 2 });
 
         // Hours
         const formattedHours = Number(service.hours).toLocaleString(undefined, { maximumFractionDigits: 2 });
@@ -925,7 +926,8 @@ const drawInvoiceContent = async (
         await addTextToPdf(doc, formatAmount(service.rate, false), colX[6] - 4, rowTextY, { align: 'right', language, fontSize: 9 });
 
         // %
-        await addTextToPdf(doc, String(service.percentage || 0), (colX[6] + colX[7]) / 2, rowTextY, { align: 'center', language, fontSize: 9 });
+        const displayPercentage = service.percentage ? service.percentage : (index === 0 ? 100 : 0);
+        await addTextToPdf(doc, String(displayPercentage), (colX[6] + colX[7]) / 2, rowTextY, { align: 'center', language, fontSize: 9 });
 
         // Amount
         await addTextToPdf(doc, formatAmount(amount, false), colX[8] - 4, rowTextY, { align: 'right', language, fontSize: 9 });
