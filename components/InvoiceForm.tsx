@@ -675,7 +675,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
         if (!selectedFromId && !selectedInvoice) newErrors.fromCompany = "Please select a sender company";
         if (!formData.date) newErrors.date = 'Invoice Date is required';
-        if (!formData.fromEmail) newErrors.fromEmail = 'From Email is required';
+        if (!formData.fromEmail) {
+            newErrors.fromEmail = 'From Email is required';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.fromEmail)) {
+            newErrors.fromEmail = "Invalid email format";
+        }
 
         // Validate manual company name entry if "Other" or dynamic sender is selected
         const isOtherOrDynamicFrom = isOtherFrom || (selectedFromId && selectedFromId.startsWith('dynamic-from-'));
@@ -746,6 +750,21 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         }
 
         setErrors(newErrors);
+        
+        // Auto-focus the first error field
+        if (Object.keys(newErrors).length > 0) {
+            const firstErrorField = Object.keys(newErrors)[0];
+            // Small delay to ensure state update has triggered any conditional rendering
+            setTimeout(() => {
+                const element = document.getElementsByName(firstErrorField)[0] as HTMLElement || 
+                               document.querySelector(`[name="${firstErrorField}"]`) as HTMLElement;
+                if (element) {
+                    element.focus();
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 100);
+        }
+
         return Object.keys(newErrors).length === 0;
     };
 
@@ -768,7 +787,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         }
 
         if (!validate()) {
-            alert("Please fill all the mandatory (*) fields.");
+            // No alert here, focus logic in validate() handles it better
             return;
         }
 
@@ -899,7 +918,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
     );
     const grandTotal = taxCalculation.grandTotal;
 
-    const inputClasses = (hasError: boolean) => `block w-full rounded-xl border-0 py-3 px-4 text-gray-900 shadow-sm ring-1 ring-inset ${hasError ? 'ring-red-300 bg-red-50' : 'ring-gray-200 bg-gray-50 focus:bg-white'} focus:ring-2 focus:ring-indigo-500 transition-all`;
+    const inputClasses = (hasError: boolean) => `block w-full rounded-xl border-0 py-3 px-4 text-gray-900 shadow-sm ring-1 ring-inset ${hasError ? 'ring-red-500 bg-red-50 focus:ring-red-600' : 'ring-gray-200 bg-gray-50 focus:bg-white focus:ring-indigo-500'} focus:ring-2 transition-all`;
     const labelClasses = "block text-sm font-medium leading-6 text-gray-900 mb-1";
 
     return (
@@ -942,6 +961,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                     <div>
                         <label className={labelClasses}>From (Sender Company) <span className="text-red-500">*</span></label>
                         <CustomDropdown
+                            name="fromCompany"
                             value={selectedFromId}
                             onChange={handleFromCompanyChange}
                             onDelete={handleDeleteSender}
@@ -1193,6 +1213,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                     {/* Dropdown - Show only if options exist */}
                                     {hasOptions && (
                                         <CustomDropdown
+                                            name="toClient"
                                             value={selectedToId}
                                             onChange={handleToClientChange}
                                             onDelete={handleDeleteClient}
@@ -1411,7 +1432,13 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             </div>
                             <div>
                                 {index === 0 && <label className={labelClasses}>Description <span className="text-red-500">*</span></label>}
-                                <input type="text" value={service.description} onChange={(e) => handleServiceChange(index, 'description', e.target.value)} className={inputClasses(!!errors[`service-${index}-description`])} />
+                                <input 
+                                    type="text" 
+                                    name={`service-${index}-description`}
+                                    value={service.description} 
+                                    onChange={(e) => handleServiceChange(index, 'description', e.target.value)} 
+                                    className={inputClasses(!!errors[`service-${index}-description`])} 
+                                />
                             </div>
                             <div>
                                 {index === 0 && <label className={labelClasses}>Shift <span className="text-red-500">*</span></label>}
@@ -1430,6 +1457,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                     type="number"
                                     step="0.01"
                                     min="0"
+                                    name={`service-${index}-hours`}
                                     value={service.hours || ''}
                                     onWheel={(e) => (e.target as HTMLElement).blur()}
                                     onChange={(e) => handleServiceChange(index, 'hours', parseFloat(e.target.value))}
@@ -1442,6 +1470,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                     type="number"
                                     step="0.01"
                                     min="0"
+                                    name={`service-${index}-rate`}
                                     value={service.rate || ''}
                                     onWheel={(e) => (e.target as HTMLElement).blur()}
                                     onChange={(e) => handleServiceChange(index, 'rate', parseFloat(e.target.value))}

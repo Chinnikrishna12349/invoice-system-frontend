@@ -14,6 +14,7 @@ interface CustomDropdownProps {
     placeholder?: string;
     className?: string;
     canDeleteIds?: string[]; // IDs that can be deleted
+    name?: string; // For focus management
 }
 
 export const CustomDropdown: React.FC<CustomDropdownProps> = ({
@@ -23,7 +24,8 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
     onDelete,
     placeholder = 'Select...',
     className = '',
-    canDeleteIds = []
+    canDeleteIds = [],
+    name
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -77,6 +79,7 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
         <div ref={dropdownRef} className="relative">
             <button
                 type="button"
+                name={name}
                 onClick={() => setIsOpen(!isOpen)}
                 className={`w-full text-left px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm ${className}`}
             >
