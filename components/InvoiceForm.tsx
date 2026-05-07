@@ -580,12 +580,36 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             }
         }
 
+        // Real-time validation update
         if (errors[name]) {
-            setErrors(prev => {
-                const newErrors = { ...prev };
-                delete newErrors[name];
-                return newErrors;
-            });
+            let stillHasError = false;
+            let errorMsg = errors[name];
+
+            if (name === 'employeeEmail' || name === 'fromEmail') {
+                stillHasError = !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(processedValue);
+                errorMsg = "Invalid email format";
+            } else if (name === 'employeeName') {
+                if (clientType === 'company') {
+                    stillHasError = !validateCompanyName(processedValue);
+                    errorMsg = COMPANY_NAME_VALIDATION_ERROR;
+                } else {
+                    stillHasError = !validateEmployeeName(processedValue);
+                    errorMsg = EMPLOYEE_NAME_VALIDATION_ERROR;
+                }
+            } else if (!processedValue.trim()) {
+                stillHasError = true;
+                errorMsg = "Field is required";
+            }
+
+            if (stillHasError) {
+                setErrors(prev => ({ ...prev, [name]: errorMsg }));
+            } else {
+                setErrors(prev => {
+                    const newErrors = { ...prev };
+                    delete newErrors[name];
+                    return newErrors;
+                });
+            }
         }
     };
 
@@ -918,11 +942,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
     );
     const grandTotal = taxCalculation.grandTotal;
 
-    const inputClasses = (hasError: boolean) => `block w-full rounded-xl border-0 py-3 px-4 text-gray-900 shadow-sm ring-1 ring-inset ${hasError ? 'ring-red-500 bg-red-50 focus:ring-red-600' : 'ring-gray-200 bg-gray-50 focus:bg-white focus:ring-indigo-500'} focus:ring-2 transition-all`;
+    const inputClasses = (hasError: boolean) => `block w-full rounded-xl border-0 py-3 px-4 text-gray-900 shadow-sm ring-1 ring-inset ${hasError ? 'ring-2 ring-red-500 bg-red-50 focus:ring-red-600' : 'ring-gray-200 bg-gray-50 focus:bg-white focus:ring-blue-600'} focus:ring-2 transition-all`;
     const labelClasses = "block text-sm font-medium leading-6 text-gray-900 mb-1";
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} noValidate className="space-y-8">
 
             {/* 0. Invoice Meta (Date, Number) - Moved to Top */}
             <div className="bg-white rounded-3xl border border-gray-100 p-6 grid grid-cols-1 md:grid-cols-4 gap-6 relative z-40">
@@ -1113,7 +1137,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                 placeholder="Enter From Email address"
                                 className={inputClasses(!!errors.fromEmail)}
                             />
-                            {errors.fromEmail && <p className="mt-1 text-xs text-red-500">{errors.fromEmail}</p>}
+                            {errors.fromEmail && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.fromEmail}</p>}
                         </div>
                     </div>
 
@@ -1258,7 +1282,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                                     value={formData.employeeName}
                                                     onChange={handleChange}
                                                 />
-                                                {errors.employeeName && <p className="mt-1 text-xs text-red-500">{errors.employeeName}</p>}
+                                                {errors.employeeName && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.employeeName}</p>}
                                             </div>
                                             <div>
                                                 <label className="block text-xs font-semibold text-gray-500 mb-1">{clientType === 'company' ? 'Company Email' : 'Employee Email'}</label>
@@ -1270,7 +1294,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                                     value={formData.employeeEmail}
                                                     onChange={handleChange}
                                                 />
-                                                {errors.employeeEmail && <p className="mt-1 text-xs text-red-500">{errors.employeeEmail}</p>}
+                                                {errors.employeeEmail && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.employeeEmail}</p>}
                                             </div>
                                             <div>
                                                 <label className="block text-xs font-semibold text-gray-500 mb-1">{clientType === 'company' ? 'Company Address' : 'Employee Address'} <span className="text-red-500">*</span></label>
@@ -1282,7 +1306,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                                     value={formData.employeeAddress}
                                                     onChange={handleChange}
                                                 />
-                                                {errors.employeeAddress && <p className="mt-1 text-xs text-red-500">{errors.employeeAddress}</p>}
+                                                {errors.employeeAddress && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.employeeAddress}</p>}
                                             </div>
                                             <div>
                                                 <label className="block text-xs font-semibold text-gray-500 mb-1">{clientType === 'company' ? 'Company Phone' : 'Employee Phone'} <span className="text-red-500">*</span></label>
@@ -1294,7 +1318,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                                     value={formData.employeeMobile}
                                                     onChange={handleChange}
                                                 />
-                                                {errors.employeeMobile && <p className="mt-1 text-xs text-red-500">{errors.employeeMobile}</p>}
+                                                {errors.employeeMobile && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.employeeMobile}</p>}
                                             </div>
                                         </div>
                                     )}
@@ -1316,7 +1340,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                         placeholder="Enter recipient email"
                                         className={inputClasses(!!errors.employeeEmail)}
                                     />
-                                    {errors.employeeEmail && <p className="mt-1 text-xs text-red-500">{errors.employeeEmail}</p>}
+                                    {errors.employeeEmail && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.employeeEmail}</p>}
                                 </div>
                             </div>
                         )}
