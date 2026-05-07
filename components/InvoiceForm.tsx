@@ -15,7 +15,7 @@ import { bankAccountService, BankAccount } from '../services/bankAccountService'
 import visionAiStamp from '../src/assets/visionai-stamp.png';
 import { VISION_AI_LOGO_BASE64 } from '../src/assets/visionAiLogoBase64';
 import { mapInvoiceToLayoutProps } from '../src/utils/invoiceMapping';
-import { validateCompanyName, COMPANY_NAME_VALIDATION_ERROR, validateEmployeeName, EMPLOYEE_NAME_VALIDATION_ERROR } from '../src/utils/validation';
+import { validateCompanyName, COMPANY_NAME_VALIDATION_ERROR, validateEmployeeName, EMPLOYEE_NAME_VALIDATION_ERROR, validateEmail } from '../src/utils/validation';
 
 interface InvoiceFormProps {
     onSave: (invoice: Invoice) => Promise<void>;
@@ -703,10 +703,9 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
         if (!selectedFromId && !selectedInvoice) newErrors.fromCompany = "Please select a sender company";
         if (!formData.date) newErrors.date = 'Invoice Date is required';
-        if (!formData.fromEmail) {
-            newErrors.fromEmail = 'From Email is required';
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.fromEmail)) {
-            newErrors.fromEmail = "Invalid email format";
+        const fromEmailError = validateEmail(formData.fromEmail);
+        if (fromEmailError) {
+            newErrors.fromEmail = fromEmailError;
         }
 
         // Validate manual company name entry if "Other" or dynamic sender is selected
@@ -733,8 +732,10 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             }
         }
 
-        if (!formData.employeeEmail?.trim()) newErrors.employeeEmail = "Email is required";
-        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.employeeEmail)) newErrors.employeeEmail = "Invalid email format";
+        const employeeEmailError = validateEmail(formData.employeeEmail);
+        if (employeeEmailError) {
+            newErrors.employeeEmail = employeeEmailError;
+        }
 
         if (!formData.employeeAddress?.trim()) newErrors.employeeAddress = "Address is required"; // Mandatory Address
         if (!formData.employeeMobile?.trim()) newErrors.employeeMobile = "Phone is required"; // Mandatory Phone
