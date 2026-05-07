@@ -718,6 +718,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         } else if (!selectedFromId) {
             newErrors.fromCompany = 'Sender Company is required';
         }
+
+        if (!selectedToId && !isOtherTo) {
+            newErrors.toClient = "Please select a client";
+        }
+
         if (!formData.employeeName?.trim()) {
             newErrors.employeeName = clientType === 'company' ? "Company Name is required" : "Employee Name is required";
         } else {
@@ -1270,7 +1275,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                             onChange={handleToClientChange}
                                             onDelete={handleDeleteClient}
                                             placeholder={`Select ${clientType === 'company' ? 'Company' : 'Employee'}...`}
-                                            className={inputClasses(false)}
+                                            className={inputClasses(!!errors.toClient)}
                                             options={[
                                                 ...(clientType === 'company' ? visibleToCompanies : TO_EMPLOYEES).map(c => ({
                                                     id: c.id,
@@ -1296,6 +1301,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                             ]}
                                         />
                                     )}
+                                    {errors.toClient && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.toClient}</p>}
 
                                     {/* Manual entry - Show if NO options exist OR "Other" is selected */}
                                     {(!hasOptions || isOtherTo) && (
