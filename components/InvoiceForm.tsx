@@ -697,7 +697,9 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
     const validate = (): boolean => {
         const newErrors: Record<string, string> = {};
 
-        if (!formData.poNumber) newErrors.poNumber = 'PO Number is required';
+        if (!formData.poNumber || !formData.poNumber.trim()) {
+            newErrors.poNumber = 'PO Number is required';
+        }
 
         if (!selectedFromId && !selectedInvoice) newErrors.fromCompany = "Please select a sender company";
         if (!formData.date) newErrors.date = 'Invoice Date is required';
@@ -777,6 +779,10 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
         setErrors(newErrors);
         
+        if (Object.keys(newErrors).length > 0) {
+            console.log('Validation failed with errors:', newErrors);
+        }
+
         // Auto-focus the first error field
         try {
             if (Object.keys(newErrors).length > 0) {
@@ -953,7 +959,13 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
     );
     const grandTotal = taxCalculation.grandTotal;
 
-    const inputClasses = (hasError: boolean) => `block w-full rounded-xl border-0 py-3 px-4 text-gray-900 shadow-sm ring-1 ring-inset ${hasError ? 'ring-2 ring-red-500 bg-red-50 focus:ring-red-600' : 'ring-gray-200 bg-gray-50 focus:bg-white focus:ring-blue-600'} focus:ring-2 transition-all`;
+    const inputClasses = (hasError: boolean) => {
+        const base = "block w-full rounded-xl py-3 px-4 shadow-sm transition-all outline-none";
+        if (hasError) {
+            return `${base} border-2 border-red-500 bg-red-50 text-red-900 placeholder-red-300`;
+        }
+        return `${base} border border-gray-200 bg-gray-50 focus:bg-white focus:border-blue-500 text-gray-900`;
+    };
     const labelClasses = "block text-sm font-medium leading-6 text-gray-900 mb-1";
 
     return (
