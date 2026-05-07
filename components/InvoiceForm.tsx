@@ -957,11 +957,12 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 <div>
                     <label className={labelClasses}>PO Number <span className="text-red-500">*</span></label>
                     <input type="text" name="poNumber" value={formData.poNumber || ''} onChange={handleChange} className={inputClasses(!!errors.poNumber)} placeholder="Enter PO Number" />
-                    {errors.poNumber && <p className="mt-1 text-xs text-red-500">{errors.poNumber}</p>}
+                    {errors.poNumber && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.poNumber}</p>}
                 </div>
                 <div>
                     <label className={labelClasses}>Date</label>
                     <input type="date" name="date" value={formData.date || ''} onChange={handleChange} className={inputClasses(!!errors.date)} />
+                    {errors.date && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.date}</p>}
                 </div>
                 <div>
                     <label className={labelClasses}>Due Date</label>
@@ -1044,7 +1045,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                                     }));
                                                 }}
                                             />
-                                            {errors.fromCompany && <p className="mt-1 text-xs text-red-500">{errors.fromCompany}</p>}
+                                            {errors.fromCompany && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.fromCompany}</p>}
                                         </div>
                                         <div>
                                             <label className="block text-xs font-semibold text-gray-500 mb-1">Company Address</label>
@@ -1124,7 +1125,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                 </div>
                             );
                         })()}
-                        {errors.fromCompany && <p className="mt-1 text-xs text-red-500">{errors.fromCompany}</p>}
+                        {errors.fromCompany && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.fromCompany}</p>}
 
                         {/* From Email Field - Added below From Company */}
                         <div className="mt-4">
@@ -1463,6 +1464,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                     onChange={(e) => handleServiceChange(index, 'description', e.target.value)} 
                                     className={inputClasses(!!errors[`service-${index}-description`])} 
                                 />
+                                {errors[`service-${index}-description`] && <p className="mt-1 text-[10px] text-red-600 font-bold animate-pulse">{errors[`service-${index}-description`]}</p>}
                             </div>
                             <div>
                                 {index === 0 && <label className={labelClasses}>Shift <span className="text-red-500">*</span></label>}
@@ -1487,6 +1489,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                     onChange={(e) => handleServiceChange(index, 'hours', parseFloat(e.target.value))}
                                     className={inputClasses(!!errors[`service-${index}-hours`])}
                                 />
+                                {errors[`service-${index}-hours`] && <p className="mt-1 text-[10px] text-red-600 font-bold animate-pulse">{errors[`service-${index}-hours`]}</p>}
                             </div>
                             <div>
                                 {index === 0 && <label className={labelClasses}>Rate ({getCurrencySymbol(country)}) <span className="text-red-500">*</span></label>}
@@ -1500,6 +1503,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                     onChange={(e) => handleServiceChange(index, 'rate', parseFloat(e.target.value))}
                                     className={inputClasses(!!errors[`service-${index}-rate`])}
                                 />
+                                {errors[`service-${index}-rate`] && <p className="mt-1 text-[10px] text-red-600 font-bold animate-pulse">{errors[`service-${index}-rate`]}</p>}
                             </div>
                             <div>
                                 {index === 0 && <label className={labelClasses}>Rate %</label>}
