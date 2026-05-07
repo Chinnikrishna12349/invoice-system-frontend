@@ -43,11 +43,27 @@ export const renderJapaneseText = async (
     let currentLine = '';
 
     for (const word of words) {
-        const testLine = currentLine + word;
-        const metrics = ctx.measureText(testLine);
-        if (metrics.width > maxWidthPx && currentLine !== '') {
-            lines.push(currentLine.trim());
-            currentLine = word;
+        let testLine = currentLine + word;
+        let metrics = ctx.measureText(testLine);
+        
+        if (metrics.width > maxWidthPx) {
+            // If the word itself is wider than maxWidth, we need to break it character by character
+            if (currentLine !== '') {
+                lines.push(currentLine.trim());
+                currentLine = '';
+            }
+            
+            let subWord = '';
+            for (const char of word) {
+                const testSubLine = currentLine + char;
+                const subMetrics = ctx.measureText(testSubLine);
+                if (subMetrics.width > maxWidthPx) {
+                    lines.push(currentLine.trim());
+                    currentLine = char;
+                } else {
+                    currentLine = testSubLine;
+                }
+            }
         } else {
             currentLine = testLine;
         }
