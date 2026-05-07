@@ -44,6 +44,7 @@ const InvoicePage: React.FC = () => {
     taxAmount: 0,
     grandTotal: 0,
     bankDetails: {
+      bankName: '---',
       accountName: 'Your Account Name',
       accountNumber: '---',
       ifsc: '---',

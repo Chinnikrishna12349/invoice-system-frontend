@@ -1477,17 +1477,19 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                         <span className="text-gray-500">{service.overtime}</span>
                                     </div>
                                 ) : (
-                                    <select 
-                                        value={service.overtime} 
-                                        onChange={(e) => handleServiceChange(index, 'overtime', e.target.value)}
-                                        className={inputClasses(!!errors[`service-${index}-overtime`])}
-                                    >
-                                        <option value="">Select Work Type</option>
-                                        <option value="Working Days (OT)">Working Days (OT)</option>
-                                        <option value="Weekends (OT)">Weekends (OT)</option>
-                                        <option value="Holiday (OT)">Holiday (OT)</option>
-                                    </select>
-                                    {errors[`service-${index}-overtime`] && <p className="mt-1 text-[10px] text-red-600 font-bold animate-pulse">{errors[`service-${index}-overtime`]}</p>}
+                                    <>
+                                        <select 
+                                            value={service.overtime} 
+                                            onChange={(e) => handleServiceChange(index, 'overtime', e.target.value)}
+                                            className={inputClasses(!!errors[`service-${index}-overtime`])}
+                                        >
+                                            <option value="">Select Work Type</option>
+                                            <option value="Working Days (OT)">Working Days (OT)</option>
+                                            <option value="Weekends (OT)">Weekends (OT)</option>
+                                            <option value="Holiday (OT)">Holiday (OT)</option>
+                                        </select>
+                                        {errors[`service-${index}-overtime`] && <p className="mt-1 text-[10px] text-red-600 font-bold animate-pulse">{errors[`service-${index}-overtime`]}</p>}
+                                    </>
                                 )}
                             </div>
                             <div>

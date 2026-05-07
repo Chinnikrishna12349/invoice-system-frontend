@@ -285,7 +285,7 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
           )}
 
           {(() => {
-            const isJapan = country === 'japan' || country === 'jp';
+            const isJapan = country === 'japan';
             const swift = bankDetails.swiftCode?.trim();
             const ifsc = bankDetails.ifsc?.trim();
 

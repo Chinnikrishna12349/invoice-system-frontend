@@ -178,6 +178,8 @@ export const parseExcelToInvoices = async (file: File): Promise<Invoice[]> => {
 
                         return {
                             id: `service-${invoiceNumber}-${index}`,
+                            overtime: 'Working Days (OT)',
+                            shift: 'Day Shift',
                             description: String(row[descriptionIdx] || '').trim() || 'Service',
                             hours: hours,
                             rate: rate,
@@ -189,6 +191,8 @@ export const parseExcelToInvoices = async (file: File): Promise<Invoice[]> => {
                     const firstRow = validRows[0];
                     services.push({
                         id: `service-${invoiceNumber}-0`,
+                        overtime: 'Working Days (OT)',
+                        shift: 'Day Shift',
                         description: String(firstRow[descriptionIdx] || '').trim() || 'Service',
                         hours: hoursIdx !== -1 ? parseNumericValue(firstRow[hoursIdx], 0) : 0,
                         rate: rateIdx !== -1 ? parseNumericValue(firstRow[rateIdx], 0) : 0,
@@ -232,7 +236,6 @@ export const parseExcelToInvoices = async (file: File): Promise<Invoice[]> => {
                     dueDate: dueDateIdx !== -1 ? parseDate(firstRow[dueDateIdx]) : '',
                     company: 'Your Company Name',
                     employeeName: employeeName || 'N/A',
-                    employeeId: employeeId,
                     employeeEmail: employeeEmail,
                     employeeAddress: employeeAddress,
                     employeeMobile: employeeMobile,
