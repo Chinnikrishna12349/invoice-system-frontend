@@ -1469,7 +1469,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 </div>
                 {
                     formData.services?.map((service, index) => (
-                        <div key={service.id || index} className="grid grid-cols-[210px_1fr_130px_90px_120px_80px_40px] gap-3 mb-4 items-end border-b border-gray-50 pb-4 last:border-0">
+                        <div key={service.id || index} className="grid grid-cols-[210px_1fr_130px_90px_120px_80px_40px] gap-3 mb-4 items-start border-b border-gray-50 pb-4 last:border-0">
                             <div>
                                 {index === 0 && <label className={labelClasses}>Work Type <span className="text-red-500">*</span></label>}
                                 {index === 0 ? (
