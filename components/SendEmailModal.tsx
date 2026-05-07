@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import i18n from '../src/i18n/i18n';
 import { Invoice } from '../types';
 
 interface SendEmailModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSend: (emails: string[]) => Promise<void>;
+    onSend: (emails: string[], language: 'en' | 'ja') => Promise<void>;
     invoice: Invoice;
 }
 
@@ -13,6 +14,7 @@ export const SendEmailModal: React.FC<SendEmailModalProps> = ({ isOpen, onClose,
     const { t } = useTranslation();
     const [additionalEmails, setAdditionalEmails] = useState<string>('');
     const [isSending, setIsSending] = useState(false);
+    const [language, setLanguage] = useState<'en' | 'ja'>(i18n.language === 'ja' ? 'ja' : 'en');
     const [error, setError] = useState<string | null>(null);
 
     if (!isOpen) return null;
@@ -37,7 +39,7 @@ export const SendEmailModal: React.FC<SendEmailModalProps> = ({ isOpen, onClose,
                 return;
             }
 
-            await onSend(emailList);
+            await onSend(emailList, language);
             onClose();
             setAdditionalEmails('');
         } catch (err: any) {
@@ -76,6 +78,37 @@ export const SendEmailModal: React.FC<SendEmailModalProps> = ({ isOpen, onClose,
                             <span className="text-slate-500">&lt;{invoice.employeeEmail}&gt;</span>
                         </div>
                         <p className="text-xs text-slate-500 mt-2">This is the email address defined in the invoice.</p>
+                    </div>
+
+                    {/* Language Selection */}
+                    <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                            Select Invoice Language
+                        </label>
+                        <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
+                            <button
+                                type="button"
+                                onClick={() => setLanguage('en')}
+                                className={`flex-1 py-2 px-4 rounded-lg text-sm font-bold transition-all ${
+                                    language === 'en'
+                                        ? 'bg-white text-blue-600 shadow-sm'
+                                        : 'text-slate-500 hover:text-slate-700'
+                                }`}
+                            >
+                                English
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setLanguage('ja')}
+                                className={`flex-1 py-2 px-4 rounded-lg text-sm font-bold transition-all ${
+                                    language === 'ja'
+                                        ? 'bg-white text-blue-600 shadow-sm'
+                                        : 'text-slate-500 hover:text-slate-700'
+                                }`}
+                            >
+                                日本語 (Japanese)
+                            </button>
+                        </div>
                     </div>
 
                     {/* Additional Emails Input */}

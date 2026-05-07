@@ -29,13 +29,13 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({ invoices, onEdit, onDe
         setIsEmailModalOpen(true);
     };
 
-    const handleConfirmSend = async (additionalEmails: string[]) => {
+    const handleConfirmSend = async (additionalEmails: string[], lang: 'en' | 'ja') => {
         if (!emailInvoice) return;
-
         try {
-            await sendInvoiceByEmail(emailInvoice.id, emailInvoice, 'en', additionalEmails);
+            await sendInvoiceByEmail(emailInvoice.id, emailInvoice, lang, additionalEmails);
             const recipientText = emailInvoice.employeeEmail + (additionalEmails.length > 0 ? ` and ${additionalEmails.length} others` : '');
-            alert(`Invoice sent successfully to ${recipientText}!`);
+            const langText = lang === 'ja' ? ' (Japanese version)' : ' (English version)';
+            alert(`Invoice${langText} sent successfully to ${recipientText}!`);
         } catch (error: any) {
             console.error('Error sending email:', error);
             throw error; // Re-throw so modal can show error
