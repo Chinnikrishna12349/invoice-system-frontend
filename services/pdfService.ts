@@ -34,7 +34,7 @@ const addTextToPdf = async (
     const isPureAscii = /^[\x00-\x7f]*$/.test(text);
     const forceImage = (options as any).forceImage === true;
 
-    if ((language === 'ja' && !isPureAscii) || hasJapanese || forceImage) {
+    if (language === 'ja' || hasJapanese || forceImage) {
         // Use high-speed native canvas for Japanese/Special characters
         try {
             const canvas = await renderJapaneseText(text, fontSize, fontStyle, maxWidth, align);
@@ -423,7 +423,8 @@ const drawInvoiceContent = async (
         }
 
         // Header Colon Alignment
-        const headerLabelWidth = 25;
+        // Header Colon Alignment - Standardized with language awareness
+        const headerLabelWidth = language === 'ja' ? 35 : 25;
         const headerColonX = rightColX + headerLabelWidth;
         const headerValueX = headerColonX + 4;
 
@@ -483,7 +484,7 @@ const drawInvoiceContent = async (
             const validDetails = details.filter(item => item.value && item.value.toString().trim().length > 0);
             let fCurY = footerStartY + 8;
             swiftY = fCurY + 30; // More specific fallback if bank details block exists
-            const bLabelWidth = 40; // Increased to ensure perfect "straight-aligned" output
+            const bLabelWidth = language === 'ja' ? 35 : 30; // Consistent with other blocks
             const bColonX = 14 + bLabelWidth;
             const bValueX = bColonX + 4;
 
@@ -616,7 +617,7 @@ const drawInvoiceContent = async (
     if (senderEmail && senderEmail.trim()) {
         console.log('PDF Generator: Drawing From Email:', senderEmail);
         const fromLabelX = 14;
-        const fromLabelWidth = language === 'ja' ? 32 : 25; // Standardized 
+        const fromLabelWidth = language === 'ja' ? 35 : 25;
         const fromColonX = fromLabelX + fromLabelWidth;
         const fromValueX = fromColonX + 4;
 
@@ -668,7 +669,7 @@ const drawInvoiceContent = async (
 
 
         // Bill To: email, phone and address field labels rendered with uniform width for alignment
-        const billToLabelWidth = language === 'ja' ? 32 : 25; // Increased for Japanese labels
+        const billToLabelWidth = language === 'ja' ? 35 : 25;
         const billToColonX = billToX + billToLabelWidth;
         const billToValueX = billToColonX + 4;
 
@@ -745,7 +746,7 @@ const drawInvoiceContent = async (
 
     // PO Number (Left Side)
     if (invoice.poNumber && invoice.poNumber.trim()) {
-        const poLabelWidth = language === 'ja' ? 32 : 25;
+        const poLabelWidth = language === 'ja' ? 35 : 25;
         const poColonX = 14 + poLabelWidth;
         const poValueX = poColonX + 4;
 
@@ -767,7 +768,7 @@ const drawInvoiceContent = async (
 
     // Due Date (Right Side)
     if (invoice.dueDate) {
-        const dueDateLabelWidth = language === 'ja' ? 32 : 25;
+        const dueDateLabelWidth = language === 'ja' ? 35 : 25;
         const dueDateLabelX = rightColX;
         const dueDateColonX = dueDateLabelX + dueDateLabelWidth;
         const dueDateValueX = dueDateColonX + 4;
