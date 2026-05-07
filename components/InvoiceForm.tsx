@@ -697,6 +697,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
     const validate = (): boolean => {
         const newErrors: Record<string, string> = {};
 
+        if (!formData.poNumber) newErrors.poNumber = 'PO Number is required';
+
         if (!selectedFromId && !selectedInvoice) newErrors.fromCompany = "Please select a sender company";
         if (!formData.date) newErrors.date = 'Invoice Date is required';
         if (!formData.fromEmail) {
