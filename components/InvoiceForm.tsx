@@ -741,6 +741,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         } else {
             formData.services.forEach((service, index) => {
                 if (!service.description?.trim()) newErrors[`service-${index}-description`] = 'Description required';
+                if (!service.shift) newErrors[`service-${index}-shift`] = 'Shift required';
+                if (!service.overtime) newErrors[`service-${index}-overtime`] = 'Work type required';
                 if (service.hours <= 0) newErrors[`service-${index}-hours`] = 'Hours > 0';
                 if (service.rate <= 0) newErrors[`service-${index}-rate`] = 'Rate > 0';
             });
@@ -1010,6 +1012,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                         <label className={labelClasses}>From (Sender Company) <span className="text-red-500">*</span></label>
                         <CustomDropdown
                             name="fromCompany"
+                            hasError={!!errors.fromCompany}
                             value={selectedFromId}
                             onChange={handleFromCompanyChange}
                             onDelete={handleDeleteSender}
@@ -1262,6 +1265,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                     {hasOptions && (
                                         <CustomDropdown
                                             name="toClient"
+                                            hasError={!!errors.toClient}
                                             value={selectedToId}
                                             onChange={handleToClientChange}
                                             onDelete={handleDeleteClient}
@@ -1470,12 +1474,14 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                     <select 
                                         value={service.overtime} 
                                         onChange={(e) => handleServiceChange(index, 'overtime', e.target.value)}
-                                        className={inputClasses(false)}
+                                        className={inputClasses(!!errors[`service-${index}-overtime`])}
                                     >
+                                        <option value="">Select Work Type</option>
                                         <option value="Working Days (OT)">Working Days (OT)</option>
                                         <option value="Weekends (OT)">Weekends (OT)</option>
                                         <option value="Holiday (OT)">Holiday (OT)</option>
                                     </select>
+                                    {errors[`service-${index}-overtime`] && <p className="mt-1 text-[10px] text-red-600 font-bold animate-pulse">{errors[`service-${index}-overtime`]}</p>}
                                 )}
                             </div>
                             <div>
@@ -1494,11 +1500,13 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                 <select 
                                     value={service.shift} 
                                     onChange={(e) => handleServiceChange(index, 'shift', e.target.value)}
-                                    className={inputClasses(false)}
+                                    className={inputClasses(!!errors[`service-${index}-shift`])}
                                 >
+                                    <option value="">Select Shift</option>
                                     <option value="Day Shift">Day Shift</option>
                                     <option value="Night Shift">Night Shift</option>
                                 </select>
+                                {errors[`service-${index}-shift`] && <p className="mt-1 text-[10px] text-red-600 font-bold animate-pulse">{errors[`service-${index}-shift`]}</p>}
                             </div>
                             <div>
                                 {index === 0 && <label className={labelClasses}>Hours <span className="text-red-500">*</span></label>}

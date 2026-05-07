@@ -66,11 +66,13 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
         onChange({ ...data, [field]: processedValue });
     };
 
-    const inputClasses = (hasError: boolean) => `
-        block w-full rounded-lg border-0 py-2.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset 
-        ${hasError ? 'ring-red-300 placeholder:text-red-300 focus:ring-red-500' : 'ring-gray-300 placeholder:text-gray-400 focus:ring-blue-600'} 
-        focus:ring-2 focus:ring-inset sm:text-sm sm:leading-6 transition-shadow duration-200
-    `;
+    const inputClasses = (hasError: boolean) => {
+        const base = "block w-full rounded-lg py-2.5 px-3 shadow-sm transition-all outline-none sm:text-sm";
+        if (hasError) {
+            return `${base} border-2 border-red-500 bg-red-50 text-red-900 placeholder-red-300`;
+        }
+        return `${base} border border-gray-300 bg-white focus:border-blue-500 text-gray-900`;
+    };
 
     const labelClasses = "block text-sm font-medium leading-6 text-gray-900 mb-1.5";
 
@@ -86,6 +88,7 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                     <input
                         id="bankName"
                         type="text"
+                        name="bankName"
                         value={data.bankName}
                         onChange={(e) => updateField('bankName', e.target.value)}
                         required
@@ -93,7 +96,7 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                         placeholder="Enter bank name"
                     />
                     {errors.bankName && (
-                        <p className="mt-1 text-xs text-red-500">{errors.bankName}</p>
+                        <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.bankName}</p>
                     )}
                 </div>
 
@@ -104,6 +107,7 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                     <input
                         id="accountNumber"
                         type="text"
+                        name="accountNumber"
                         value={data.accountNumber}
                         onChange={(e) => updateField('accountNumber', e.target.value)}
                         required
@@ -111,7 +115,7 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                         placeholder="Enter account number"
                     />
                     {errors.accountNumber && (
-                        <p className="mt-1 text-xs text-red-500">{errors.accountNumber}</p>
+                        <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.accountNumber}</p>
                     )}
                 </div>
 
@@ -122,6 +126,7 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                     <input
                         id="accountHolderName"
                         type="text"
+                        name="accountHolderName"
                         value={data.accountHolderName}
                         onChange={(e) => updateField('accountHolderName', e.target.value)}
                         required
@@ -129,7 +134,7 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                         placeholder="Enter account holder name"
                     />
                     {errors.accountHolderName && (
-                        <p className="mt-1 text-xs text-red-500">{errors.accountHolderName}</p>
+                        <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.accountHolderName}</p>
                     )}
                 </div>
 
@@ -140,6 +145,7 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                     <input
                         id="codeField"
                         type="text"
+                        name={codeType === 'swift' ? 'swiftCode' : 'ifscCode'}
                         value={codeType === 'swift' ? (data.swiftCode || '') : (data.ifscCode || '')}
                         onChange={(e) => {
                             const val = e.target.value.toUpperCase();
@@ -153,7 +159,7 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                         placeholder={`Enter ${codeType === 'swift' ? 'Swift' : 'IFSC'} code`}
                     />
                     {(errors.ifscCode || errors.swiftCode) && (
-                        <p className="mt-1 text-xs text-red-500">{errors.ifscCode || errors.swiftCode}</p>
+                        <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.ifscCode || errors.swiftCode}</p>
                     )}
                 </div>
 
@@ -164,6 +170,7 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                     <input
                         id="branchName"
                         type="text"
+                        name="branchName"
                         value={data.branchName}
                         onChange={(e) => updateField('branchName', e.target.value)}
                         required
@@ -171,7 +178,7 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                         placeholder="Enter branch name"
                     />
                     {errors.branchName && (
-                        <p className="mt-1 text-xs text-red-500">{errors.branchName}</p>
+                        <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.branchName}</p>
                     )}
                 </div>
 
@@ -184,6 +191,7 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                             <input
                                 id="bankCode"
                                 type="text"
+                                name="bankCode"
                                 value={data.bankCode || ''}
                                 onChange={(e) => updateField('bankCode', e.target.value)}
                                 required
@@ -192,7 +200,7 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                                 placeholder="Enter 4-digit bank code"
                             />
                             {errors.bankCode && (
-                                <p className="mt-1 text-xs text-red-500">{errors.bankCode}</p>
+                                <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.bankCode}</p>
                             )}
                         </div>
 
@@ -203,6 +211,7 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                             <input
                                 id="branchCode"
                                 type="text"
+                                name="branchCode"
                                 value={data.branchCode}
                                 onChange={(e) => updateField('branchCode', e.target.value)}
                                 required
@@ -211,7 +220,7 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                                 placeholder="Enter branch code"
                             />
                             {errors.branchCode && (
-                                <p className="mt-1 text-xs text-red-500">{errors.branchCode}</p>
+                                <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.branchCode}</p>
                             )}
                         </div>
                     </>
@@ -223,6 +232,7 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                     </label>
                     <select
                         id="accountType"
+                        name="accountType"
                         value={data.accountType || ''}
                         onChange={(e) => updateField('accountType', e.target.value)}
                         className={inputClasses(!!errors.accountType)}
@@ -233,7 +243,7 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                         <option value="Current">Current</option>
                     </select>
                     {errors.accountType && (
-                        <p className="mt-1 text-xs text-red-500">{errors.accountType}</p>
+                        <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.accountType}</p>
                     )}
                 </div>
             </div>
