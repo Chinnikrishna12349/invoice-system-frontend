@@ -776,17 +776,26 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         setErrors(newErrors);
         
         // Auto-focus the first error field
-        if (Object.keys(newErrors).length > 0) {
-            const firstErrorField = Object.keys(newErrors)[0];
-            // Small delay to ensure state update has triggered any conditional rendering
-            setTimeout(() => {
-                const element = document.getElementsByName(firstErrorField)[0] as HTMLElement || 
-                               document.querySelector(`[name="${firstErrorField}"]`) as HTMLElement;
-                if (element) {
-                    element.focus();
-                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            }, 100);
+        try {
+            if (Object.keys(newErrors).length > 0) {
+                const firstErrorField = Object.keys(newErrors)[0];
+                // Small delay to ensure state update has triggered any conditional rendering
+                setTimeout(() => {
+                    const element = document.getElementsByName(firstErrorField)[0] as HTMLElement || 
+                                   document.querySelector(`[name="${firstErrorField}"]`) as HTMLElement ||
+                                   document.querySelector(`input[name="${firstErrorField}"]`) as HTMLElement ||
+                                   document.querySelector(`textarea[name="${firstErrorField}"]`) as HTMLElement;
+                    if (element) {
+                        element.focus();
+                        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        // Visual ping
+                        element.classList.add('ring-4', 'ring-red-500/50');
+                        setTimeout(() => element.classList.remove('ring-4', 'ring-red-500/50'), 1000);
+                    }
+                }, 100);
+            }
+        } catch (focusError) {
+            console.error("Error focusing field:", focusError);
         }
 
         return Object.keys(newErrors).length === 0;
@@ -955,7 +964,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                     <input type="text" value={formData.invoiceNumber || ''} readOnly className={`${inputClasses(false)} bg-gray-100 text-gray-500`} />
                 </div>
                 <div>
-                    <label className={labelClasses}>PO Number <span className="text-red-500">*</span></label>
+                    <label className={labelClasses}>PO Number (Mandatory) <span className="text-red-600">*</span></label>
                     <input type="text" name="poNumber" value={formData.poNumber || ''} onChange={handleChange} className={inputClasses(!!errors.poNumber)} placeholder="Enter PO Number" />
                     {errors.poNumber && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.poNumber}</p>}
                 </div>
@@ -1652,7 +1661,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             <span>Saving...</span>
                         </>
                     ) : (
-                        <span>{selectedInvoice ? 'Save Changes' : 'Create Invoice'}</span>
+                        <span>{selectedInvoice ? 'Save Changes' : 'Create New Invoice'}</span>
                     )}
                 </button>
             </div>
