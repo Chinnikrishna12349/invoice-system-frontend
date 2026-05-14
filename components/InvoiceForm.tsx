@@ -1304,8 +1304,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                     )}
                                     {errors.toClient && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.toClient}</p>}
 
-                                    {/* Manual entry - Show if NO options exist OR "Other" is selected */}
-                                    {(!hasOptions || isOtherTo) && (
+                                    {/* Manual entry - Show if NO options exist OR "Other" is selected OR it is an employee/dynamic client */}
+                                    {(!hasOptions || isOtherTo || (selectedToId && selectedToId.startsWith('dynamic-client-')) || clientType === 'employee') && (
                                         <div className="mt-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
                                             <div>
                                                 <label className="block text-xs font-semibold text-gray-500 mb-1">{clientType === 'company' ? 'Company Name' : 'Employee Name'}</label>
@@ -1360,7 +1360,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                 </>
                             );
                         })()}
-                        {formData.employeeName && !isOtherTo && (
+                        {formData.employeeName && !isOtherTo && !selectedToId?.startsWith('dynamic-client-') && clientType !== 'employee' && (
                             <div className="mt-3 space-y-3">
                                 <p className="text-xs text-gray-500 px-1">
                                     {formData.employeeAddress}
