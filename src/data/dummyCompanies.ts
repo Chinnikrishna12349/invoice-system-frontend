@@ -76,7 +76,7 @@ export const FROM_COMPANIES: DummyCompany[] = [
             bankCode: '0001', // Mizuho Bank
             branchName: 'Kawasaki Branch',
             branchCode: '456',
-            accountType: 'Current'
+            accountType: 'Savings'
         }
     }
 
