@@ -25,10 +25,6 @@ export const validateEmployeeName = (name: string): boolean => {
 
 export const EMPLOYEE_NAME_VALIDATION_ERROR = "Employee name should not contain special characters and digits. Only alphabets and spaces are allowed.";
 
-/**
- * Robust email validation system that checks for multiple edge cases
- * and returns specific user-friendly error messages.
- */
 export const validateEmail = (email: string | undefined): string | null => {
     if (!email || email.trim() === '') {
         return "Email is required";
@@ -66,9 +62,9 @@ export const validateEmail = (email: string | undefined): string | null => {
     }
 
     // 1. Prohibited special characters
-    // Only letters, numbers, '.', '_', and '@' are allowed
-    if (/[^a-zA-Z0-9._@]/.test(email)) {
-        return "Email contains invalid characters. Only letters, numbers, '.', '_', and '@' are allowed.";
+    // Letters, numbers, '.', '_', '-', '+', and '@' are allowed
+    if (/[^a-zA-Z0-9._@+-]/.test(email)) {
+        return "Email contains invalid characters. Only letters, numbers, '.', '_', '-', '+', and '@' are allowed.";
     }
 
     // 2. Missing domain extension
@@ -79,7 +75,7 @@ export const validateEmail = (email: string | undefined): string | null => {
     }
 
     // 5. Final standard format check
-    const emailRegex = /^[a-zA-Z0-9._]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    const emailRegex = /^[a-zA-Z0-9._+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(email)) {
         return "Email contains unsupported characters. Please use valid email format.";
     }
