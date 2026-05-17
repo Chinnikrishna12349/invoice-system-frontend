@@ -90,10 +90,13 @@ export const InvoicesPage: React.FC = () => {
 
             if (language === 'both') {
                 Promise.all([
-                    generateInvoicePDF(selectedLangInvoice, 'en', invoiceCompanyInfo),
-                    generateInvoicePDF(selectedLangInvoice, 'ja', invoiceCompanyInfo)
+                    generateInvoicePDF(selectedLangInvoice, 'en', invoiceCompanyInfo, true),
+                    generateInvoicePDF(selectedLangInvoice, 'ja', invoiceCompanyInfo, true)
                 ]).then(() => {
                     setDownloadedIds(prev => new Set([...prev, selectedLangInvoice.id]));
+                    setTimeout(() => {
+                        alert('Both English and Japanese invoices downloaded successfully!');
+                    }, 150);
                 }).catch((error) => {
                     console.error('Error generating PDF:', error);
                     alert('Failed to generate PDF. Please try again.');

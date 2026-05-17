@@ -1038,7 +1038,7 @@ export const generateInvoicePDFBytes = async (invoice: Invoice, language: 'en' |
     }
 };
 
-export const generateInvoicePDF = async (invoice: Invoice, language: 'en' | 'ja' = 'en', companyInfoParam?: CompanyInfo | null) => {
+export const generateInvoicePDF = async (invoice: Invoice, language: 'en' | 'ja' = 'en', companyInfoParam?: CompanyInfo | null, silent: boolean = false) => {
     // Get translations from i18n
     const t = await getTranslations(language);
 
@@ -1088,7 +1088,9 @@ export const generateInvoicePDF = async (invoice: Invoice, language: 'en' | 'ja'
         setTimeout(() => {
             document.body.removeChild(link);
             URL.revokeObjectURL(pdfUrl);
-            alert('Invoice downloaded successfully!');
+            if (!silent) {
+                alert('Invoice downloaded successfully!');
+            }
         }, 100);
 
     } catch (error) {
