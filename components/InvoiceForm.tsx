@@ -68,9 +68,9 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         employeeAddress: '',
         employeeMobile: '',
         services: [{ id: `service-${Date.now()}`, overtime: 'Working Days', description: '', shift: 'Day Shift', hours: 0, rate: 0, percentage: 100 }],
-        taxRate: currentCountry === 'japan' ? 10 : 0,
-        cgstRate: 0,
-        sgstRate: 0,
+        taxRate: currentCountry === 'japan' ? 10 : 18,
+        cgstRate: currentCountry === 'india' ? 9 : 0,
+        sgstRate: currentCountry === 'india' ? 9 : 0,
         country: currentCountry,
         showConsumptionTax: currentCountry === 'japan',
         clientType: 'company' as const
@@ -295,18 +295,30 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
 
     useEffect(() => {
-        setFormData(prev => ({ 
-            ...prev, 
-            country: country,
-            showConsumptionTax: country === 'japan' ? true : prev.showConsumptionTax,
-            taxRate: (country === 'japan' && !prev.taxRate) ? 10 : prev.taxRate
-        }));
+        if (!selectedInvoice) {
+            setFormData(prev => {
+                const isJapan = country === 'japan';
+                return {
+                    ...prev,
+                    country: country,
+                    showConsumptionTax: isJapan ? true : prev.showConsumptionTax,
+                    taxRate: isJapan ? 10 : 18,
+                    cgstRate: isJapan ? 0 : 9,
+                    sgstRate: isJapan ? 0 : 9
+                };
+            });
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                country: country
+            }));
+        }
         if (country === 'japan') {
             setShowTaxToggle(true);
         } else {
             setShowTaxToggle(false);
         }
-    }, [country]);
+    }, [country, selectedInvoice]);
 
     const generateDynamicPrefix = (name: string): string => {
         if (!name.trim()) return 'INV-';
@@ -395,11 +407,16 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             setSelectedFromId(companyId);
             const dynamicPrefix = generateDynamicPrefix(dynamicCompany.companyName);
             setBankDetails({ ...dynamicCompany.bankDetails });
+            const isIndia = !!dynamicCompany.bankDetails.ifscCode;
+            setCountry(isIndia ? 'india' : 'japan');
             setFormData(prev => ({
                 ...prev,
                 company: dynamicCompany.companyName,
                 fromEmail: dynamicCompany.fromEmail || '',
-                country: dynamicCompany.bankDetails.ifscCode ? 'india' : 'japan',
+                country: isIndia ? 'india' : 'japan',
+                taxRate: isIndia ? 18 : 10,
+                cgstRate: isIndia ? 9 : 0,
+                sgstRate: isIndia ? 9 : 0,
                 signatureUrl: dynamicCompany.signatureUrl, // Autofill signature
                 companyInfo: {
                     ...dynamicCompany,
@@ -415,10 +432,10 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         setCustomSignatureFile(null);
         const company = FROM_COMPANIES.find(c => c.id === companyId);
         if (company) {
-            if (company.currency === 'JPY') {
+            const isJapan = company.currency === 'JPY';
+            if (isJapan) {
                 setCountry('japan');
                 setShowTaxToggle(true); // Default to true for Japan as per testing feedback
-                setFormData(prev => ({ ...prev, taxRate: 10 })); // Default to 10% for Japan
             } else {
                 setCountry('india');
             }
@@ -428,7 +445,10 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                     ...prev,
                     company: company.companyName,
                     fromEmail: (company as DummyCompany).fromEmail || '',
-                    country: company.currency === 'JPY' ? 'japan' : 'india',
+                    country: isJapan ? 'japan' : 'india',
+                    taxRate: isJapan ? 10 : 18,
+                    cgstRate: isJapan ? 0 : 9,
+                    sgstRate: isJapan ? 0 : 9,
                     signatureUrl: company.signatureUrl, // Autofill signature
                     companyInfo: {
                         id: company.id,
@@ -1013,7 +1033,9 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
                     {/* FROM Dropdown */}
                     <div>
-                        <label className={labelClasses}>From (Sender Company) <span className="text-red-500">*</span></label>
+                        <div className="flex justify-between items-center mb-2">
+                            <label className={labelClasses}>From (Sender Company) <span className="text-red-500">*</span></label>
+                        </div>
                         <CustomDropdown
                             name="fromCompany"
                             hasError={!!errors.fromCompany}
