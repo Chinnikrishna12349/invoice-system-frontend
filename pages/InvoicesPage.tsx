@@ -24,7 +24,7 @@ export const InvoicesPage: React.FC = () => {
     const [invoiceToDelete, setInvoiceToDelete] = useState<string | null>(null);
     const [showLanguageModal, setShowLanguageModal] = useState(false);
     const [selectedLangInvoice, setSelectedLangInvoice] = useState<Invoice | null>(null);
-    const [selectedLanguage, setSelectedLanguage] = useState<'en' | 'ja'>('en');
+    const [selectedLanguage, setSelectedLanguage] = useState<'en' | 'ja' | 'both'>('en');
     const [searchTerm, setSearchTerm] = useState('');
     const [fromDate, setFromDate] = useState<string>('');
     const [toDate, setToDate] = useState<string>('');
@@ -83,17 +83,29 @@ export const InvoicesPage: React.FC = () => {
         setShowLanguageModal(true);
     }, [downloadedIds]);
 
-    const handleDownload = useCallback((language: 'en' | 'ja') => {
+    const handleDownload = useCallback((language: 'en' | 'ja' | 'both') => {
         if (selectedLangInvoice) {
             // Use the snapshot company info from the invoice if available, otherwise fall back to user's current company info
             const invoiceCompanyInfo = selectedLangInvoice.companyInfo || companyInfo;
 
-            generateInvoicePDF(selectedLangInvoice, language, invoiceCompanyInfo).then(() => {
-                setDownloadedIds(prev => new Set([...prev, selectedLangInvoice.id]));
-            }).catch((error) => {
-                console.error('Error generating PDF:', error);
-                alert('Failed to generate PDF. Please try again.');
-            });
+            if (language === 'both') {
+                Promise.all([
+                    generateInvoicePDF(selectedLangInvoice, 'en', invoiceCompanyInfo),
+                    generateInvoicePDF(selectedLangInvoice, 'ja', invoiceCompanyInfo)
+                ]).then(() => {
+                    setDownloadedIds(prev => new Set([...prev, selectedLangInvoice.id]));
+                }).catch((error) => {
+                    console.error('Error generating PDF:', error);
+                    alert('Failed to generate PDF. Please try again.');
+                });
+            } else {
+                generateInvoicePDF(selectedLangInvoice, language, invoiceCompanyInfo).then(() => {
+                    setDownloadedIds(prev => new Set([...prev, selectedLangInvoice.id]));
+                }).catch((error) => {
+                    console.error('Error generating PDF:', error);
+                    alert('Failed to generate PDF. Please try again.');
+                });
+            }
             setShowLanguageModal(false);
             setSelectedLangInvoice(null);
         }
@@ -341,6 +353,13 @@ export const InvoicesPage: React.FC = () => {
                             >
                                 <span className="font-medium">{t('download.japanese')}</span>
                                 <span className="text-sm text-gray-500 block mt-1">{t('download.japaneseDesc')}</span>
+                            </button>
+                            <button
+                                onClick={() => setSelectedLanguage('both')}
+                                className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-colors ${selectedLanguage === 'both' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}`}
+                            >
+                                <span className="font-medium">Both (English & Japanese)</span>
+                                <span className="text-sm text-gray-500 block mt-1">Download both English and Japanese invoices simultaneously</span>
                             </button>
                         </div>
                         <div className="flex justify-end space-x-3">
