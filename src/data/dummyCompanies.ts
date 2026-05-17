@@ -36,7 +36,7 @@ export const FROM_COMPANIES: DummyCompany[] = [
             bankCode: '0033', // GMO Aozora Net Bank
             branchName: '法人第二営業部',
             branchCode: '002',
-            accountType: '普通口座'
+            accountType: 'Savings'
         }
     },
     {
