@@ -29,12 +29,16 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({ invoices, onEdit, onDe
         setIsEmailModalOpen(true);
     };
 
-    const handleConfirmSend = async (additionalEmails: string[], lang: 'en' | 'ja') => {
+    const handleConfirmSend = async (additionalEmails: string[], lang: 'en' | 'ja' | 'both') => {
         if (!emailInvoice) return;
         try {
             await sendInvoiceByEmail(emailInvoice.id, emailInvoice, lang, additionalEmails);
             const recipientText = emailInvoice.employeeEmail + (additionalEmails.length > 0 ? ` and ${additionalEmails.length} others` : '');
-            const langText = lang === 'ja' ? ' (Japanese version)' : ' (English version)';
+            const langText = lang === 'both'
+                ? ' (both English and Japanese versions)'
+                : lang === 'ja'
+                    ? ' (Japanese version)'
+                    : ' (English version)';
             alert(`Invoice${langText} sent successfully to ${recipientText}!`);
         } catch (error: any) {
             console.error('Error sending email:', error);

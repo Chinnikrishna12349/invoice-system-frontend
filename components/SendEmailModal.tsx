@@ -6,7 +6,7 @@ import { Invoice } from '../types';
 interface SendEmailModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSend: (emails: string[], language: 'en' | 'ja') => Promise<void>;
+    onSend: (emails: string[], language: 'en' | 'ja' | 'both') => Promise<void>;
     invoice: Invoice;
 }
 
@@ -14,7 +14,7 @@ export const SendEmailModal: React.FC<SendEmailModalProps> = ({ isOpen, onClose,
     const { t } = useTranslation();
     const [additionalEmails, setAdditionalEmails] = useState<string>('');
     const [isSending, setIsSending] = useState(false);
-    const [language, setLanguage] = useState<'en' | 'ja'>(i18n.language === 'ja' ? 'ja' : 'en');
+    const [language, setLanguage] = useState<'en' | 'ja' | 'both'>(i18n.language === 'ja' ? 'ja' : 'en');
     const [error, setError] = useState<string | null>(null);
 
     if (!isOpen) return null;
@@ -89,7 +89,7 @@ export const SendEmailModal: React.FC<SendEmailModalProps> = ({ isOpen, onClose,
                             <button
                                 type="button"
                                 onClick={() => setLanguage('en')}
-                                className={`flex-1 py-2 px-4 rounded-lg text-sm font-bold transition-all ${
+                                className={`flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-bold transition-all ${
                                     language === 'en'
                                         ? 'bg-white text-blue-600 shadow-sm'
                                         : 'text-slate-500 hover:text-slate-700'
@@ -100,13 +100,24 @@ export const SendEmailModal: React.FC<SendEmailModalProps> = ({ isOpen, onClose,
                             <button
                                 type="button"
                                 onClick={() => setLanguage('ja')}
-                                className={`flex-1 py-2 px-4 rounded-lg text-sm font-bold transition-all ${
+                                className={`flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-bold transition-all ${
                                     language === 'ja'
                                         ? 'bg-white text-blue-600 shadow-sm'
                                         : 'text-slate-500 hover:text-slate-700'
                                 }`}
                             >
                                 日本語 (Japanese)
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setLanguage('both')}
+                                className={`flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-bold transition-all ${
+                                    language === 'both'
+                                        ? 'bg-white text-blue-600 shadow-sm'
+                                        : 'text-slate-500 hover:text-slate-700'
+                                }`}
+                            >
+                                Both (EN & JA)
                             </button>
                         </div>
                     </div>

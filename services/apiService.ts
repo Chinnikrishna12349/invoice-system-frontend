@@ -234,7 +234,7 @@ export const downloadInvoicePdf = async (id: string, invoiceNumber: string): Pro
 export const sendInvoiceByEmail = async (
   id: string,
   invoice: any,
-  language: 'en' | 'ja' = 'en',
+  language: 'en' | 'ja' | 'both' = 'en',
   additionalEmails: string[] = []
 ): Promise<void> => {
   try {
@@ -250,29 +250,70 @@ export const sendInvoiceByEmail = async (
     // PRIORITIZE the invoice's own snapshot info (from the "From" dropdown)
     const companyInfoToUse = invoice.companyInfo || userCompanyInfo;
 
-    // Generate PDF using the SAME function as download with selected language
     const { generateInvoicePDFBytes } = await import('./pdfService');
-    const pdfBytes = await generateInvoicePDFBytes(invoice, language, companyInfoToUse);
 
-    if (import.meta.env?.DEV) {
-      console.log('Generated PDF for email:', pdfBytes.length, 'bytes');
-    }
+    let bodyData: any;
+    let requestContentType: string;
 
-    // If Uint8Array has a byteOffset, we need to create a new ArrayBuffer
-    // Otherwise, use the buffer directly
-    let arrayBuffer: ArrayBuffer;
-    if (pdfBytes.byteOffset === 0 && pdfBytes.byteLength === pdfBytes.buffer.byteLength) {
-      // Can use buffer directly
-      arrayBuffer = pdfBytes.buffer as ArrayBuffer;
+    if (language === 'both') {
+      const pdfBytesEn = await generateInvoicePDFBytes(invoice, 'en', companyInfoToUse);
+      const pdfBytesJa = await generateInvoicePDFBytes(invoice, 'ja', companyInfoToUse);
+
+      const toBase64 = (bytes: Uint8Array): string => {
+        let binary = '';
+        const len = bytes.byteLength;
+        for (let i = 0; i < len; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        return window.btoa(binary);
+      };
+
+      // Get resource name for dynamic filename
+      let resourceName = '';
+      if (invoice.services && invoice.services[0]) {
+        resourceName = invoice.services[0].description || '';
+        resourceName = resourceName.replace(/[\\/:*?"<>|]/g, '_');
+        if (resourceName.length > 50) {
+          resourceName = resourceName.substring(0, 50);
+        }
+      }
+      const filenameEn = `${invoice.invoiceNumber} ${resourceName} (English).pdf`.trim();
+      const filenameJa = `${invoice.invoiceNumber} ${resourceName} (Japanese).pdf`.trim();
+
+      const payload = [
+        { name: filenameEn, content: toBase64(pdfBytesEn) },
+        { name: filenameJa, content: toBase64(pdfBytesJa) }
+      ];
+
+      bodyData = JSON.stringify(payload);
+      requestContentType = 'application/json';
     } else {
-      // Need to create a new ArrayBuffer with only the relevant bytes
-      arrayBuffer = pdfBytes.buffer.slice(pdfBytes.byteOffset, pdfBytes.byteOffset + pdfBytes.byteLength) as ArrayBuffer;
+      // Generate PDF using the SAME function as download with selected language
+      const pdfBytes = await generateInvoicePDFBytes(invoice, language, companyInfoToUse);
+
+      if (import.meta.env?.DEV) {
+        console.log('Generated PDF for email:', pdfBytes.length, 'bytes');
+      }
+
+      // If Uint8Array has a byteOffset, we need to create a new ArrayBuffer
+      // Otherwise, use the buffer directly
+      let arrayBuffer: ArrayBuffer;
+      if (pdfBytes.byteOffset === 0 && pdfBytes.byteLength === pdfBytes.buffer.byteLength) {
+        // Can use buffer directly
+        arrayBuffer = pdfBytes.buffer as ArrayBuffer;
+      } else {
+        // Need to create a new ArrayBuffer with only the relevant bytes
+        arrayBuffer = pdfBytes.buffer.slice(pdfBytes.byteOffset, pdfBytes.byteOffset + pdfBytes.byteLength) as ArrayBuffer;
+      }
+
+      bodyData = arrayBuffer;
+      requestContentType = 'application/octet-stream';
     }
 
-    // Send PDF bytes as ArrayBuffer with proper content type
+    // Send PDF bytes or JSON payload
     const headers: HeadersInit = {
       ...createAuthHeaders(),
-      'Content-Type': 'application/octet-stream',
+      'Content-Type': requestContentType,
     };
 
     // Add additional emails header if provided
@@ -288,13 +329,13 @@ export const sendInvoiceByEmail = async (
     if (import.meta.env?.DEV) {
       console.log('Sending email request to:', `${API_BASE_URL}/${id}/send-email`);
       console.log('Additional recipients:', additionalEmails);
-      console.log('PDF size:', arrayBuffer.byteLength, 'bytes');
+      console.log('Content Type:', requestContentType);
     }
 
     const response = await fetch(`${API_BASE_URL}/${id}/send-email`, {
       method: 'POST',
       headers,
-      body: arrayBuffer,
+      body: bodyData,
     });
 
     checkAuthError(response);
