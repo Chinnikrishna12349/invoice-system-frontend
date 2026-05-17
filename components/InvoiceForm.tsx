@@ -1471,9 +1471,12 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                         <div key={service.id || index} className="grid grid-cols-[50px_1fr_120px_140px_140px_50px] gap-3 mb-4 items-start border-b border-gray-50 pb-4 last:border-0">
                             <div>
                                 {index === 0 && <label className={labelClasses}>S.No</label>}
-                                <div className="flex h-10 items-center justify-center font-bold text-gray-500 bg-gray-50/50 rounded-lg border border-gray-100">
-                                    {index + 1}
-                                </div>
+                                <input
+                                    type="text"
+                                    readOnly
+                                    value={index + 1}
+                                    className={`${inputClasses(false)} text-center font-bold text-gray-500 bg-gray-50/50 cursor-default select-none`}
+                                />
                             </div>
                             <div>
                                 {index === 0 && <label className={labelClasses}>Description <span className="text-red-500">*</span></label>}
@@ -1519,13 +1522,16 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             </div>
                             <div>
                                 {index === 0 && <label className={labelClasses}>Amount ({getCurrencySymbol(country)})</label>}
-                                <div className="flex h-10 items-center justify-end font-semibold text-gray-700 bg-gray-50/50 px-3 rounded-lg border border-gray-100">
-                                    {formatCurrency(Math.round((service.hours * service.rate) * 100) / 100, country, true, false)}
-                                </div>
+                                <input
+                                    type="text"
+                                    readOnly
+                                    value={formatCurrency(Math.round((service.hours * service.rate) * 100) / 100, country, true, false)}
+                                    className={`${inputClasses(false)} text-right font-semibold text-gray-700 bg-gray-50/50 cursor-default select-none`}
+                                />
                             </div>
                             <div className="flex justify-center items-center pb-1">
                                 {index === 0 && <label className={`${labelClasses} invisible`}>Delete</label>}
-                                <div className="flex justify-center items-center h-10">
+                                <div className="flex justify-center items-center h-[50px]">
                                     {index > 0 && (
                                         <button type="button" onClick={() => removeService(index)} className="text-red-500 hover:bg-red-50 p-2 rounded-full transition-colors">🗑️</button>
                                     )}
