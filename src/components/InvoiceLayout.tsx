@@ -278,7 +278,6 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
             const ifsc = bankDetails.ifsc?.trim();
 
             if (isJapan) {
-              // In Japan, ONLY show Swift Code if provided. Do NOT show or fallback to IFSC.
               if (swift && swift.length > 0) {
                 return (
                   <p className="flex gap-1 leading-tight">
@@ -287,17 +286,9 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
                   </p>
                 );
               }
-              return null;
             } else {
-              // For other countries, prefer Swift then IFSC
-              if (swift && swift.length > 0) {
-                return (
-                  <p className="flex gap-1 leading-tight">
-                    <span className="min-w-[166px]">Swift Code:</span>
-                    <span>{swift}</span>
-                  </p>
-                );
-              } else if (ifsc && ifsc.length > 0) {
+              // For India: ONLY show IFSC Code. Do NOT show SWIFT Code.
+              if (ifsc && ifsc.length > 0) {
                 return (
                   <p className="flex gap-1 leading-tight">
                     <span className="min-w-[166px]">IFSC Code:</span>

@@ -469,6 +469,7 @@ const drawInvoiceContent = async (
             }
             
             const b = companyInfoToUse?.bankDetails;
+            const isIndia = (invoice.country || 'india') === 'india';
             const details = [
                 { label: t.bankNameLabel || 'Bank Name', value: b?.bankName },
                 { label: t.bankCodeLabel || 'Bank Code', value: b?.bankCode },
@@ -477,8 +478,8 @@ const drawInvoiceContent = async (
                 { label: t.accountTypeLabel || 'Account Type', value: b?.accountType },
                 { label: t.accountNoLabel || 'Account No', value: b?.accountNumber },
                 { label: t.accountHolderLabel || 'Account Name', value: b?.accountHolderName },
-                { label: t.swiftCodeLabel || 'SWIFT Code', value: b?.swiftCode },
-                ...(language !== 'ja' ? [{ label: t.ifscCodeLabel || 'IFSC', value: b?.ifscCode }] : [])
+                ...(!isIndia ? [{ label: t.swiftCodeLabel || 'SWIFT Code', value: b?.swiftCode }] : []),
+                ...(isIndia && language !== 'ja' ? [{ label: t.ifscCodeLabel || 'IFSC', value: b?.ifscCode }] : [])
             ];
 
             const validDetails = details.filter(item => item.value && item.value.toString().trim().length > 0);
