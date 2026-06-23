@@ -1,0 +1,1827 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { getNextInvoiceNumber } from '../services/apiService';
+import { Invoice, ServiceItem, BankDetails, CompanyInfo } from '../types';
+import { useCountry } from '../contexts/CountryContext';
+import { calculateTax, getCurrencySymbol, formatCurrency } from '../services/countryPreferenceService';
+import { useAuth } from '../contexts/AuthContext';
+import { FROM_COMPANIES, TO_COMPANIES, TO_EMPLOYEES, DummyCompany, DummyClient } from '../src/data/dummyCompanies';
+import { BankDetailsForm } from './BankDetailsForm';
+import { CustomDropdown } from './CustomDropdown';
+import { getHiddenSenders, getHiddenClients, hideSender, hideClient } from '../src/utils/companyStorage';
+import InvoiceLayout from '../src/components/InvoiceLayout';
+import { ImageUpload } from './ImageUpload';
+import { bankAccountService, BankAccount } from '../services/bankAccountService';
+import visionAiStamp from '../src/assets/visionai-stamp.png';
+import { VISION_AI_LOGO_BASE64 } from '../src/assets/visionAiLogoBase64';
+import { mapInvoiceToLayoutProps } from '../src/utils/invoiceMapping';
+import { validateCompanyName, COMPANY_NAME_VALIDATION_ERROR, validateEmployeeName, EMPLOYEE_NAME_VALIDATION_ERROR, validateEmail } from '../src/utils/validation';
+
+interface InvoiceFormProps {
+    onSave: (invoice: Invoice) => Promise<void>;
+    selectedInvoice?: Invoice | null;
+    clearSelection: () => void;
+    invoices: Invoice[];
+}
+export const InvoiceForm: React.FC<InvoiceFormProps> = ({
+    onSave,
+    selectedInvoice,
+    clearSelection,
+    invoices
+}) => {
+    const { t } = useTranslation();
+    const { country, setCountry } = useCountry();
+    const { user, companyInfo } = useAuth();
+
+    // Dropdown States
+    const [selectedFromId, setSelectedFromId] = useState<string>('');
+    const [selectedToId, setSelectedToId] = useState<string>('');
+    const [isOtherFrom, setIsOtherFrom] = useState(false);
+    const [isOtherTo, setIsOtherTo] = useState(false);
+    const [clientType, setClientType] = useState<'company' | 'employee'>('company'); // Added clientType
+
+    // Bank Details State (Editable, defaults to From Company's bank)
+    const [bankDetails, setBankDetails] = useState<BankDetails>({
+        bankName: '',
+        accountNumber: '',
+        accountHolderName: '',
+        ifscCode: '',
+        swiftCode: '',
+        bankCode: '',
+        branchName: '',
+        branchCode: '',
+        accountType: 'Savings'
+    });
+
+    const [availableBankAccounts, setAvailableBankAccounts] = useState<BankAccount[]>([]);
+    const [selectedBankAccountId, setSelectedBankAccountId] = useState<string>('');
+
+    const getInitialFormData = (currentCountry: 'india' | 'japan') => {
+        const defaultDate = new Date();
+        const defaultDueDate = new Date(defaultDate);
+        defaultDueDate.setDate(defaultDueDate.getDate() + 45);
+        
+        return {
+        invoiceNumber: '',
+        date: defaultDate.toISOString().split('T')[0],
+        dueDate: defaultDueDate.toISOString().split('T')[0],
+        poNumber: '',
+        fromEmail: '',
+        company: '',
+        employeeName: '',
+        employeeEmail: '',
+        employeeAddress: '',
+        employeeMobile: '',
+        services: [{ id: `service-${Date.now()}`, overtime: 'Working Days', description: '', shift: 'Day Shift', hours: 0, rate: 0, percentage: 100 }],
+        taxRate: currentCountry === 'japan' ? 10 : 18,
+        cgstRate: currentCountry === 'india' ? 9 : 0,
+        sgstRate: currentCountry === 'india' ? 9 : 0,
+        country: currentCountry,
+        showConsumptionTax: currentCountry === 'japan',
+        clientType: 'company' as const
+        };
+    };
+
+    const [formData, setFormData] = useState<Partial<Invoice>>(getInitialFormData(country));
+
+    // Track hidden companies
+    const [hiddenSenderIds, setHiddenSenderIds] = useState<string[]>([]);
+    const [hiddenClientIds, setHiddenClientIds] = useState<string[]>([]);
+
+    // Load hidden companies on mount
+    useEffect(() => {
+        setHiddenSenderIds(getHiddenSenders());
+        setHiddenClientIds(getHiddenClients());
+    }, []);
+
+    // Derive Dynamic Lists from existing invoices
+    const dynamicSenders = useMemo(() => {
+        const senders: (CompanyInfo & { fromEmail?: string })[] = [];
+        const seenNames = new Set(FROM_COMPANIES.map(c => c.companyName.toLowerCase()));
+
+        invoices.forEach(inv => {
+            if (inv.companyInfo && inv.companyInfo.companyName) {
+                const nameLower = inv.companyInfo.companyName.toLowerCase();
+                if (!seenNames.has(nameLower)) {
+                    senders.push({ 
+                        ...inv.companyInfo, 
+                        signatureUrl: inv.companyInfo.signatureUrl || inv.signatureUrl,
+                        fromEmail: inv.fromEmail 
+                    });
+                    seenNames.add(nameLower);
+                }
+            }
+        });
+        return senders;
+    }, [invoices]);
+
+    const { dynamicClientCompanies, dynamicClientEmployees } = useMemo(() => {
+        const companies: DummyClient[] = [];
+        const employees: DummyClient[] = [];
+
+        // Sets to track duplicates
+        const seenCompanies = new Set(TO_COMPANIES.map(c => c.companyName.toLowerCase()));
+        const seenEmployees = new Set(TO_EMPLOYEES.map(c => c.companyName.toLowerCase()));
+
+        invoices.forEach(inv => {
+            if (inv.employeeName) {
+                const nameLower = inv.employeeName.toLowerCase();
+                const type = inv.clientType || 'company'; // Default to company for old invoices
+
+                const clientObj: DummyClient = {
+                    id: `dynamic-client-${nameLower}`,
+                    companyName: inv.employeeName,
+                    address: inv.employeeAddress || '',
+                    email: inv.employeeEmail || '',
+                    phone: inv.employeeMobile || '',
+                    contactPerson: '',
+                    country: (inv.country || 'india') as 'india' | 'japan',
+                    // Extract bank details from the invoice's saved company info (which contains the bank details used)
+                    bankDetails: inv.companyInfo?.bankDetails
+                };
+
+                if (type === 'company' && !seenCompanies.has(nameLower)) {
+                    // Filter out unwanted companies as per request
+                    if (nameLower !== 'pavan' && nameLower !== 'kamal') {
+                        companies.push(clientObj);
+                        seenCompanies.add(nameLower);
+                    }
+                } else if (type === 'employee' && !seenEmployees.has(nameLower)) {
+                    employees.push(clientObj);
+                    seenEmployees.add(nameLower);
+                }
+            }
+        });
+        return { dynamicClientCompanies: companies, dynamicClientEmployees: employees };
+    }, [invoices]);
+
+    // Filter out hidden companies
+    const visibleFromCompanies = useMemo(() => {
+        return FROM_COMPANIES.filter(c => !hiddenSenderIds.includes(c.id));
+    }, [hiddenSenderIds]);
+
+    const visibleDynamicSenders = useMemo(() => {
+        return dynamicSenders.filter(c => !hiddenSenderIds.includes(`dynamic-from-${c.companyName}`));
+    }, [dynamicSenders, hiddenSenderIds]);
+
+    const visibleToCompanies = useMemo(() => {
+        return TO_COMPANIES.filter(c => !hiddenClientIds.includes(c.id));
+    }, [hiddenClientIds]);
+
+    const visibleDynamicCompanies = useMemo(() => {
+        return dynamicClientCompanies.filter(c => !hiddenClientIds.includes(c.id));
+    }, [dynamicClientCompanies, hiddenClientIds]);
+
+    const visibleDynamicEmployees = useMemo(() => {
+        return dynamicClientEmployees.filter(c => !hiddenClientIds.includes(c.id));
+    }, [dynamicClientEmployees, hiddenClientIds]);
+
+    const [showTaxToggle, setShowTaxToggle] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [showPreview, setShowPreview] = useState(false);
+    const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
+
+    const [errors, setErrors] = useState<Record<string, string>>({});
+
+    // State for custom logo and signature files
+    const [customLogoFile, setCustomLogoFile] = useState<File | null>(null);
+    const [customSignatureFile, setCustomSignatureFile] = useState<File | null>(null);
+
+
+    // Fetch bank accounts from separate system
+    useEffect(() => {
+        const fetchBankAccounts = async () => {
+            if (user?.id) {
+                try {
+                    const accounts = await bankAccountService.getAll(user.id);
+                    setAvailableBankAccounts(accounts);
+                } catch (err) {
+                    console.error("Failed to fetch bank accounts", err);
+                }
+            }
+        };
+        fetchBankAccounts();
+    }, [user?.id]);
+
+
+    // Initialize/Reset Logic
+    useEffect(() => {
+        if (!selectedInvoice) {
+            setFormData(getInitialFormData(country));
+            setBankDetails({
+                bankName: '',
+                accountNumber: '',
+                accountHolderName: '',
+                ifscCode: '',
+                branchName: '',
+                accountType: ''
+            });
+            setSelectedBankAccountId('');
+            setSelectedFromId('');
+            setSelectedToId('');
+            setIsOtherFrom(false);
+            setIsOtherTo(false);
+            setClientType('company');
+            setShowTaxToggle(country === 'japan');
+        } else {
+            // Fix Sender (From) restoration
+            const invoiceFrom = selectedInvoice.companyInfo;
+            let finalCompany = selectedInvoice.company || (invoiceFrom?.companyName || '');
+
+            if (invoiceFrom) {
+                const senderNameLower = invoiceFrom.companyName.toLowerCase();
+                const fromMatch = FROM_COMPANIES.find(c => c.companyName.toLowerCase() === senderNameLower);
+                // Ensure dynamicSenders are checked correctly
+                const dynamicFromMatch = dynamicSenders.find(c => c.companyName.toLowerCase() === senderNameLower);
+
+                if (fromMatch) {
+                    setSelectedFromId(fromMatch.id);
+                    setIsOtherFrom(false);
+                    if (invoiceFrom.bankDetails) setBankDetails(invoiceFrom.bankDetails);
+                    finalCompany = fromMatch.companyName;
+                } else if (dynamicFromMatch) {
+                    const dynamicId = `dynamic-from-${dynamicFromMatch.companyName}`;
+                    setSelectedFromId(dynamicId);
+                    setIsOtherFrom(false);
+                    if (invoiceFrom.bankDetails) setBankDetails(invoiceFrom.bankDetails);
+                    finalCompany = dynamicFromMatch.companyName;
+                } else {
+                    setSelectedFromId('other');
+                    setIsOtherFrom(true);
+                    if (invoiceFrom.bankDetails) setBankDetails(invoiceFrom.bankDetails);
+                    finalCompany = invoiceFrom.companyName;
+                }
+            }
+            
+            const mappedServices = (selectedInvoice.services || []).map((service, index) => {
+                const isFirstRow = index === 0;
+                return {
+                    ...service,
+                    overtime: service.overtime && service.overtime !== 'Normal Days' 
+                        ? service.overtime 
+                        : (isFirstRow ? 'Working Days' : 'Working Days (OT)'),
+                    shift: service.shift || 'Day Shift',
+                    percentage: service.percentage ? service.percentage : (isFirstRow ? 100 : 120)
+                };
+            });
+
+            setFormData({ 
+                ...selectedInvoice, 
+                company: finalCompany,
+                services: mappedServices
+            });
+            const employeeMatch = TO_EMPLOYEES.find(c => c.companyName === selectedInvoice.employeeName) ||
+                dynamicClientEmployees.find(c => c.companyName === selectedInvoice.employeeName);
+            const companyMatch = TO_COMPANIES.find(c => c.companyName === selectedInvoice.employeeName) ||
+                dynamicClientCompanies.find(c => c.companyName === selectedInvoice.employeeName);
+
+            if (employeeMatch) {
+                setClientType('employee');
+                setSelectedToId(employeeMatch.id);
+                setIsOtherTo(false);
+            } else if (companyMatch) {
+                setClientType('company');
+                setSelectedToId(companyMatch.id);
+                setIsOtherTo(false);
+            } else {
+                setClientType(selectedInvoice.clientType || 'company');
+                setIsOtherTo(true);
+                setSelectedToId('other');
+            }
+
+            const isJapan = selectedInvoice.country === 'japan';
+            if (isJapan) {
+                setShowTaxToggle(!!selectedInvoice.showConsumptionTax || (selectedInvoice.taxRate || 0) > 0);
+            }
+
+            if (selectedInvoice.country) {
+                setCountry(selectedInvoice.country);
+            }
+        }
+    }, [selectedInvoice, dynamicClientCompanies, dynamicClientEmployees, dynamicSenders]);
+
+
+    useEffect(() => {
+        if (!selectedInvoice) {
+            setFormData(prev => {
+                const isJapan = country === 'japan';
+                return {
+                    ...prev,
+                    country: country,
+                    showConsumptionTax: isJapan ? true : prev.showConsumptionTax,
+                    taxRate: isJapan ? 10 : 18,
+                    cgstRate: isJapan ? 0 : 9,
+                    sgstRate: isJapan ? 0 : 9
+                };
+            });
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                country: country
+            }));
+        }
+        if (country === 'japan') {
+            setShowTaxToggle(true);
+        } else {
+            setShowTaxToggle(false);
+        }
+    }, [country, selectedInvoice]);
+
+    const generateDynamicPrefix = (name: string): string => {
+        if (!name.trim()) return 'INV-';
+        const words = name.trim().split(/\s+/);
+        let prefix = '';
+        if (words.length >= 2) {
+            prefix = (words[0][0] + words[1][0]).toUpperCase();
+        } else {
+            prefix = name.trim().substring(0, 3).toUpperCase();
+        }
+        return `INV-${prefix}-`;
+    };
+
+    useEffect(() => {
+        const fetchNextNumber = () => {
+            const currentPrefix = formData.companyInfo?.invoiceFormat || 'INV-';
+            const currentCompanyName = formData.companyInfo?.companyName;
+
+            // Logic for Edit Mode: If we are back to the original sender, restore original number
+            if (selectedInvoice && currentCompanyName === selectedInvoice.companyInfo?.companyName) {
+                if (formData.invoiceNumber !== selectedInvoice.invoiceNumber) {
+                    setFormData(prev => ({ ...prev, invoiceNumber: selectedInvoice.invoiceNumber }));
+                }
+                return;
+            }
+
+            // Otherwise (Create mode or changed sender in Edit mode), calculate next sequence
+            const regex = new RegExp(`^${currentPrefix}\\d+$`);
+            const relevantInvoices = invoices.filter(inv =>
+                inv.invoiceNumber && regex.test(inv.invoiceNumber)
+            );
+
+            let nextNum = 1;
+            if (relevantInvoices.length > 0) {
+                const numbers = relevantInvoices.map(inv => {
+                    const match = inv.invoiceNumber.match(/\d+$/);
+                    return match ? parseInt(match[0], 10) : 0;
+                });
+                nextNum = Math.max(...numbers) + 1;
+            }
+            const finalNum = `${currentPrefix}${nextNum}`;
+            
+            // Only update if it's different to avoid loops
+            if (formData.invoiceNumber !== finalNum) {
+                setFormData(prev => ({ ...prev, invoiceNumber: finalNum }));
+            }
+        };
+        fetchNextNumber();
+    }, [selectedInvoice, invoices, formData.companyInfo?.invoiceFormat, formData.companyInfo?.companyName]);
+
+    const handleFromCompanyChange = (companyId: string) => {
+        setSelectedBankAccountId('');
+        if (companyId === 'other') {
+            setIsOtherFrom(true);
+            setSelectedFromId('other');
+            setFormData(prev => ({
+                ...prev,
+                company: '',
+                fromEmail: '',
+                companyInfo: {
+                    ...prev.companyInfo,
+                    companyName: '',
+                    companyAddress: '',
+                    companyLogoUrl: '',
+                    invoiceFormat: 'INV-',
+                    bankDetails: {
+                        bankName: '',
+                        accountNumber: '',
+                        accountHolderName: '',
+                        ifscCode: '',
+                        swiftCode: '',
+                        bankCode: '',
+                        branchName: '',
+                        branchCode: '',
+                        accountType: ''
+                    }
+                }
+            }));
+            return;
+        }
+
+        const dynamicCompany = dynamicSenders.find(c => `dynamic-from-${c.companyName}` === companyId);
+        if (dynamicCompany) {
+            setCustomLogoFile(null);
+            setCustomSignatureFile(null);
+            setIsOtherFrom(false);
+            setSelectedFromId(companyId);
+            const dynamicPrefix = generateDynamicPrefix(dynamicCompany.companyName);
+            setBankDetails({ ...dynamicCompany.bankDetails });
+            const isIndia = !!dynamicCompany.bankDetails.ifscCode;
+            setCountry(isIndia ? 'india' : 'japan');
+            setFormData(prev => ({
+                ...prev,
+                company: dynamicCompany.companyName,
+                fromEmail: dynamicCompany.fromEmail || '',
+                country: isIndia ? 'india' : 'japan',
+                taxRate: isIndia ? 18 : 10,
+                cgstRate: isIndia ? 9 : 0,
+                sgstRate: isIndia ? 9 : 0,
+                signatureUrl: dynamicCompany.signatureUrl, // Autofill signature
+                companyInfo: {
+                    ...dynamicCompany,
+                    invoiceFormat: dynamicPrefix
+                }
+            }));
+            return;
+        }
+
+        setIsOtherFrom(false);
+        setSelectedFromId(companyId);
+        setCustomLogoFile(null);
+        setCustomSignatureFile(null);
+        const company = FROM_COMPANIES.find(c => c.id === companyId);
+        if (company) {
+            const isJapan = company.currency === 'JPY';
+            if (isJapan) {
+                setCountry('japan');
+                setShowTaxToggle(true); // Default to true for Japan as per testing feedback
+            } else {
+                setCountry('india');
+            }
+            setBankDetails({ ...company.bankDetails });
+            setFormData(prev => {
+                return {
+                    ...prev,
+                    company: company.companyName,
+                    fromEmail: (company as DummyCompany).fromEmail || '',
+                    country: isJapan ? 'japan' : 'india',
+                    taxRate: isJapan ? 10 : 18,
+                    cgstRate: isJapan ? 0 : 9,
+                    sgstRate: isJapan ? 0 : 9,
+                    signatureUrl: company.signatureUrl, // Autofill signature
+                    companyInfo: {
+                        id: company.id,
+                        companyName: company.companyName,
+                        companyAddress: company.companyAddress,
+                        companyLogoUrl: company.companyLogoUrl,
+                        signatureUrl: company.signatureUrl, // Include in snapshot
+                        invoiceFormat: company.invoiceFormat,
+                        bankDetails: company.bankDetails
+                    }
+                };
+            });
+        }
+    };
+
+    const handleDeleteSender = (id: string) => {
+        hideSender(id);
+        setHiddenSenderIds(prev => [...prev, id]);
+        if (selectedFromId === id) {
+            setSelectedFromId('');
+            setIsOtherFrom(false);
+            setFormData(prev => ({ ...prev, company: '', companyInfo: undefined }));
+        }
+    };
+
+    const handleDeleteClient = (id: string) => {
+        hideClient(id);
+        setHiddenClientIds(prev => [...prev, id]);
+        if (selectedToId === id) {
+            setSelectedToId('');
+            setIsOtherTo(false);
+            setFormData(prev => ({
+                ...prev,
+                employeeName: '',
+                employeeEmail: '',
+                employeeAddress: '',
+                employeeMobile: ''
+            }));
+        }
+    };
+
+    const handleToClientChange = (clientId: string) => {
+        setSelectedBankAccountId('');
+        if (clientId === 'other') {
+            setIsOtherTo(true);
+            setSelectedToId('other');
+            setFormData(prev => ({
+                ...prev,
+                employeeName: '',
+                employeeEmail: '',
+                employeeAddress: '',
+                employeeMobile: '',
+            }));
+            if (clientType === 'employee') {
+                setBankDetails({
+                    bankName: '',
+                    accountNumber: '',
+                    accountHolderName: '',
+                    ifscCode: '',
+                    swiftCode: '',
+                    branchName: '',
+                    branchCode: '',
+                    accountType: ''
+                });
+            }
+            if (clientType === 'employee') {
+                setCountry('japan');
+                setShowTaxToggle(true);
+                setFormData(prev => ({ ...prev, taxRate: 10 }));
+            }
+            return;
+        }
+
+        const dynamicClient = dynamicClientCompanies.find(c => c.id === clientId) ||
+            dynamicClientEmployees.find(c => c.id === clientId);
+
+        if (dynamicClient) {
+            setIsOtherTo(false);
+            setSelectedToId(clientId);
+            setFormData(prev => ({
+                ...prev,
+                employeeName: dynamicClient.companyName,
+                employeeEmail: dynamicClient.email,
+                employeeAddress: dynamicClient.address,
+                employeeMobile: dynamicClient.phone,
+                country: dynamicClient.country || prev.country
+            }));
+            if (dynamicClient.bankDetails) {
+                setBankDetails({ ...dynamicClient.bankDetails });
+            }
+            return;
+        }
+
+        setIsOtherTo(false);
+        setSelectedToId(clientId);
+        let client = TO_COMPANIES.find(c => c.id === clientId);
+        if (!client) client = TO_EMPLOYEES.find(c => c.id === clientId);
+
+        if (client) {
+            setFormData(prev => ({
+                ...prev,
+                employeeName: client!.companyName,
+                employeeEmail: client!.email,
+                employeeAddress: client!.address,
+                employeeMobile: client!.phone,
+                country: client!.country === 'japan' ? 'japan' : prev.country
+            }));
+            if (client.bankDetails) setBankDetails({ ...client.bankDetails });
+        }
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        let processedValue = value;
+        if (name === 'employeeMobile') {
+            processedValue = value.replace(/\D/g, '');
+            if (country === 'japan') {
+                processedValue = processedValue.slice(0, 11);
+            } else {
+                processedValue = processedValue.slice(0, 15);
+            }
+        }
+        setFormData(prev => {
+            const newData: Partial<Invoice> = { ...prev, [name]: processedValue as any };
+            if (name === 'date') {
+                const newDate = new Date(processedValue);
+                if (!isNaN(newDate.getTime())) {
+                    newDate.setDate(newDate.getDate() + 45);
+                    newData.dueDate = newDate.toISOString().split('T')[0];
+                }
+            }
+            return newData;
+        });
+
+        // Auto-calculate tax if country is Japan and toggle is on
+        if (name === 'taxRate' && country === 'japan' && showTaxToggle) {
+            const taxVal = parseFloat(value);
+            if (!isNaN(taxVal)) {
+                processedValue = Math.min(10, Math.max(0, taxVal)).toString();
+            }
+        } else if ((name === 'cgstRate' || name === 'sgstRate') && country === 'india') {
+            const taxVal = parseFloat(value);
+            if (!isNaN(taxVal)) {
+                processedValue = Math.min(9, Math.max(0, taxVal)).toString();
+            }
+        }
+
+        // Real-time validation for employeeName (Client Company or Employee)
+        if (name === 'employeeName') {
+            if (clientType === 'company') {
+                if (processedValue && !validateCompanyName(processedValue)) {
+                    setErrors(prev => ({ ...prev, employeeName: COMPANY_NAME_VALIDATION_ERROR }));
+                    return;
+                }
+            } else if (clientType === 'employee') {
+                if (processedValue && !validateEmployeeName(processedValue)) {
+                    setErrors(prev => ({ ...prev, employeeName: EMPLOYEE_NAME_VALIDATION_ERROR }));
+                    return;
+                }
+            }
+        }
+
+        // Real-time validation update
+        if (errors[name]) {
+            let stillHasError = false;
+            let errorMsg = errors[name];
+
+            if (name === 'employeeEmail' || name === 'fromEmail') {
+                stillHasError = !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(processedValue);
+                errorMsg = "Invalid email format";
+            } else if (name === 'employeeName') {
+                if (clientType === 'company') {
+                    stillHasError = !validateCompanyName(processedValue);
+                    errorMsg = COMPANY_NAME_VALIDATION_ERROR;
+                } else {
+                    stillHasError = !validateEmployeeName(processedValue);
+                    errorMsg = EMPLOYEE_NAME_VALIDATION_ERROR;
+                }
+            } else if (!processedValue.trim()) {
+                stillHasError = true;
+                errorMsg = "Field is required";
+            }
+
+            if (stillHasError) {
+                setErrors(prev => ({ ...prev, [name]: errorMsg }));
+            } else {
+                setErrors(prev => {
+                    const newErrors = { ...prev };
+                    delete newErrors[name];
+                    return newErrors;
+                });
+            }
+        }
+    };
+
+    const addService = () => {
+        setFormData(prev => {
+            const baseRate = prev.services?.[0]?.rate || 0;
+            const defaultPercentage = 150; // Holidays + Day Shift
+            return {
+                ...prev,
+                services: [
+                    ...(prev.services || []),
+                { 
+                    id: `service-${Date.now()}`, 
+                    overtime: 'Working Days (OT)', 
+                    description: '', 
+                    shift: 'Day Shift', 
+                    hours: 0, 
+                    rate: Math.round((baseRate * (120 / 100)) * 100) / 100, 
+                    percentage: 120 
+                }
+                ]
+            };
+        });
+    };
+
+    const handleServiceChange = (index: number, field: keyof ServiceItem, value: any) => {
+        const updatedServices = [...(formData.services || [])];
+        let processedValue = value;
+        if ((field === 'hours' || field === 'rate') && typeof value === 'number') {
+            processedValue = field === 'hours' 
+                ? Math.max(0, Math.round(value * 100) / 100) 
+                : Math.max(0, value);
+        }
+        
+        let targetService = { ...updatedServices[index], [field]: processedValue };
+
+        // Auto-population logic for Percentage and Rate
+        if (field === 'overtime' || field === 'shift') {
+            if (index === 0) {
+                targetService.percentage = 100;
+            } else {
+                const isDay = targetService.shift === 'Day Shift';
+                if (targetService.overtime === 'Working Days (OT)') {
+                    targetService.percentage = isDay ? 120 : 125;
+                } else if (targetService.overtime === 'Weekends (OT)') {
+                    targetService.percentage = isDay ? 135 : 140;
+                } else if (targetService.overtime === 'Holiday (OT)') {
+                    targetService.percentage = isDay ? 150 : 160;
+                }
+            }
+            
+            // Auto-calculate Rate based on Base Rate (index 0 rate)
+            const baseRate = updatedServices[0]?.rate || 0;
+            if (index > 0) {
+                targetService.rate = Math.round((baseRate * ((targetService.percentage || 100) / 100)) * 100) / 100;
+            }
+        }
+        
+        // If percentage is manually changed, update its rate
+        if (field === 'percentage' && index > 0) {
+            const baseRate = updatedServices[0]?.rate || 0;
+            targetService.rate = Math.round((baseRate * ((targetService.percentage || 100) / 100)) * 100) / 100;
+        }
+
+        updatedServices[index] = targetService;
+
+        // If Base Rate (index 0 rate) changes, update all other rows' rates
+        if (index === 0 && field === 'rate') {
+            for (let i = 1; i < updatedServices.length; i++) {
+                updatedServices[i].rate = Math.round((processedValue * ((updatedServices[i].percentage || 100) / 100)) * 100) / 100;
+            }
+        }
+
+        setFormData(prev => ({ ...prev, services: updatedServices }));
+    };
+
+    const removeService = (index: number) => {
+        setFormData(prev => {
+            const services = [...(prev.services || [])];
+            services.splice(index, 1);
+            return { ...prev, services };
+        });
+    };
+
+    const validate = (): boolean => {
+        const newErrors: Record<string, string> = {};
+
+        if (!formData.poNumber || !formData.poNumber.trim()) {
+            newErrors.poNumber = 'PO Number is required';
+        }
+
+        if (!selectedFromId && !selectedInvoice) newErrors.fromCompany = "Please select a sender company";
+        if (!formData.date) newErrors.date = 'Invoice Date is required';
+        if (!formData.dueDate) newErrors.dueDate = 'Due Date is required';
+        const fromEmailError = validateEmail(formData.fromEmail);
+        if (fromEmailError) {
+            newErrors.fromEmail = fromEmailError;
+        }
+
+        // Validate manual company name entry if "Other" or dynamic sender is selected
+        const isOtherOrDynamicFrom = isOtherFrom || (selectedFromId && selectedFromId.startsWith('dynamic-from-'));
+        if (isOtherOrDynamicFrom && formData.company) {
+            if (!validateCompanyName(formData.company)) {
+                newErrors.fromCompany = COMPANY_NAME_VALIDATION_ERROR;
+            }
+        } else if (!selectedFromId) {
+            newErrors.fromCompany = 'Sender Company is required';
+        }
+
+        if (!selectedToId && !isOtherTo) {
+            newErrors.toClient = "Please select a client";
+        }
+
+        if (!formData.employeeName?.trim()) {
+            newErrors.employeeName = clientType === 'company' ? "Company Name is required" : "Employee Name is required";
+        } else {
+            if (clientType === 'company' && !validateCompanyName(formData.employeeName)) {
+                newErrors.employeeName = COMPANY_NAME_VALIDATION_ERROR;
+            } else if (clientType === 'employee' && !validateEmployeeName(formData.employeeName)) {
+                newErrors.employeeName = EMPLOYEE_NAME_VALIDATION_ERROR;
+            }
+        }
+
+        const employeeEmailError = validateEmail(formData.employeeEmail);
+        if (employeeEmailError) {
+            newErrors.employeeEmail = employeeEmailError;
+        }
+
+        if (!formData.employeeAddress?.trim()) newErrors.employeeAddress = "Address is required"; // Mandatory Address
+        if (!formData.employeeMobile?.trim()) newErrors.employeeMobile = "Phone is required"; // Mandatory Phone
+
+        // Date is already checked above, so we can remove the duplicate check if it exists
+
+        if (!formData.services || formData.services.length === 0) {
+            newErrors.services = 'At least one service is required';
+        } else {
+            formData.services.forEach((service, index) => {
+                if (!service.description?.trim()) newErrors[`service-${index}-description`] = 'Description required';
+                if (service.hours <= 0) newErrors[`service-${index}-hours`] = 'Hours > 0';
+                if (service.rate <= 0) newErrors[`service-${index}-rate`] = 'Rate > 0';
+            });
+        }
+
+        if (!bankDetails.bankName?.trim()) newErrors.bankName = 'Bank name is required';
+        if (!bankDetails.accountNumber?.trim()) newErrors.accountNumber = 'Account number is required';
+        if (!bankDetails.accountHolderName?.trim()) newErrors.accountHolderName = 'Account holder name is required';
+        if (!bankDetails.branchName?.trim()) newErrors.branchName = 'Branch name is required';
+        
+        // Branch/Bank code validation for Japan
+        if (country === 'japan') {
+            if (!bankDetails.branchCode?.trim()) {
+                newErrors.branchCode = 'Branch code is required';
+            } else if (bankDetails.branchCode.length !== 3) {
+                newErrors.branchCode = 'Branch code must be 3 digits for Japan';
+            }
+
+            if (!bankDetails.bankCode?.trim()) {
+                newErrors.bankCode = 'Bank code is required';
+            } else if (bankDetails.bankCode.length !== 4) {
+                newErrors.bankCode = 'Bank code must be 4 digits for Japan';
+            }
+        }
+        
+        // Country-specific bank code validation
+        if (country === 'japan') {
+            if (!bankDetails.swiftCode?.trim()) newErrors.swiftCode = 'Swift code is required';
+        } else {
+            if (!bankDetails.ifscCode?.trim()) newErrors.ifscCode = 'IFSC code is required';
+        }
+
+        if (!bankDetails.accountType) {
+            newErrors.accountType = 'Account type is required';
+        }
+
+        setErrors(newErrors);
+        
+        if (Object.keys(newErrors).length > 0) {
+            console.log('Validation failed with errors:', newErrors);
+        }
+
+        // Auto-focus the first error field
+        try {
+            if (Object.keys(newErrors).length > 0) {
+                const firstErrorField = Object.keys(newErrors)[0];
+                // Small delay to ensure state update has triggered any conditional rendering
+                setTimeout(() => {
+                    const element = document.getElementsByName(firstErrorField)[0] as HTMLElement || 
+                                   document.querySelector(`[name="${firstErrorField}"]`) as HTMLElement ||
+                                   document.querySelector(`input[name="${firstErrorField}"]`) as HTMLElement ||
+                                   document.querySelector(`textarea[name="${firstErrorField}"]`) as HTMLElement;
+                    if (element) {
+                        element.focus();
+                        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        // Visual ping
+                        element.classList.add('ring-4', 'ring-red-500/50');
+                        setTimeout(() => element.classList.remove('ring-4', 'ring-red-500/50'), 1000);
+                    }
+                }, 100);
+            }
+        } catch (focusError) {
+            console.error("Error focusing field:", focusError);
+        }
+
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const fileToBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = (error) => reject(error);
+        });
+    };
+
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (isSaving) {
+            alert("invoice is getting created,please wait.");
+            return;
+        }
+
+        if (!validate()) {
+            // No alert here, focus logic in validate() handles it better
+            return;
+        }
+
+        setIsSaving(true);
+
+        let finalLogoUrl = formData.companyInfo?.companyLogoUrl || '';
+        let finalSignatureUrl = formData.signatureUrl || '';
+
+        try {
+            if (customLogoFile) {
+                finalLogoUrl = await fileToBase64(customLogoFile);
+            }
+            if (customSignatureFile) {
+                finalSignatureUrl = await fileToBase64(customSignatureFile);
+            }
+        } catch (err) {
+            console.error("Failed to convert image files", err);
+            alert("Failed to process image files. Please try again.");
+            setIsSaving(false);
+            return;
+        }
+
+        const invoiceDate = new Date(formData.date || new Date().toISOString().split('T')[0]);
+        const dueDateStr = formData.dueDate || (() => {
+            const d = new Date(invoiceDate);
+            d.setDate(d.getDate() + 45);
+            return d.toISOString().split('T')[0];
+        })();
+
+        // Calculate Round Off and Final Amount
+        const subTotal = (formData.services || []).reduce((sum, s) => {
+            const lineTotal = Math.round((s.hours * s.rate) * 100) / 100;
+            return sum + lineTotal;
+        }, 0);
+
+        let taxAmount = 0;
+        if (country === 'india') {
+            const cgst = Math.round((subTotal * (formData.cgstRate || 0) / 100) * 100) / 100;
+            const sgst = Math.round((subTotal * (formData.sgstRate || 0) / 100) * 100) / 100;
+            taxAmount = cgst + sgst;
+        } else if (country === 'japan' && (formData.showConsumptionTax || showTaxToggle)) { // Check both state and toggle
+            taxAmount = Math.round((subTotal * ((formData.taxRate || 0) / 100)) * 100) / 100;
+        }
+
+        const totalBeforeRound = subTotal + taxAmount;
+        const finalAmount = Math.round(totalBeforeRound);
+        const roundOff = parseFloat((finalAmount - totalBeforeRound).toFixed(2));
+
+        const invoice: Invoice = {
+            ...formData as Invoice,
+            id: selectedInvoice?.id || `invoice-${Date.now()}`,
+            invoiceNumber: formData.invoiceNumber || 'INV-DRAFT',
+            dueDate: dueDateStr,
+            userId: user?.id, // CRITICAL: Pass userId for backend isolation
+            country: country, // Force sync with global context to ensure Preview matches Toggle
+            showConsumptionTax: country === 'japan' ? showTaxToggle : false,
+            roundOff: roundOff,
+            finalAmount: finalAmount,
+            signatureUrl: finalSignatureUrl,
+            companyInfo: formData.companyInfo ? {
+                ...formData.companyInfo,
+                companyLogoUrl: finalLogoUrl,
+                signatureUrl: finalSignatureUrl,
+                bankDetails: bankDetails // Ensure the latest (possibly edited) bank details are used
+            } : undefined
+        };
+
+        setPreviewInvoice(invoice);
+        setShowPreview(true);
+        setIsSaving(false); // RE-ENABLE button for the preview modal confirm step
+    };
+
+    const handleConfirmSave = async () => {
+        if (!previewInvoice) return;
+
+        setIsSaving(true);
+        // Do NOT call setShowPreview(false) here, let the user see the "Saving..." state on the confirm button
+
+        try {
+            await onSave(previewInvoice);
+
+            // Successfully saved!
+            setShowPreview(false); // NOW close it
+
+            // Reset Form Data after successful save (as requested)
+            if (!selectedInvoice) {
+                localStorage.removeItem('dashboard_autosave');
+                setFormData(getInitialFormData(country));
+                // Reset specialized states
+                setSelectedToId('');
+                setIsOtherTo(false);
+                setSelectedFromId('');
+                setIsOtherFrom(false);
+                setClientType('company');
+                setBankDetails({
+                    bankName: '',
+                    accountNumber: '',
+                    accountHolderName: '',
+                    ifscCode: '',
+                    branchName: '',
+                    accountType: ''
+                });
+                setShowTaxToggle(false);
+
+                // Re-default From Company
+                if (FROM_COMPANIES.length > 0) {
+                    handleFromCompanyChange(FROM_COMPANIES[0].id);
+                }
+            } else {
+                // If editing, clear selection to go back to "New" mode
+                clearSelection();
+            }
+            setPreviewInvoice(null);
+            setIsSaving(false);
+        } catch (error) {
+            setIsSaving(false);
+            // Keep preview open so user can try again or go back to edit
+            console.error("Save error:", error);
+            // alert is handled by Dashboard/onSave usually, but we keep isSaving false to re-enable button
+        }
+    };
+
+    // Calculation Logic
+    const subTotal = (formData.services || []).reduce((sum, s) => sum + Math.round((s.hours * s.rate) * 100) / 100, 0);
+    const taxCalculation = calculateTax(
+        subTotal,
+        formData.taxRate || 0,
+        country,
+        formData.cgstRate,
+        formData.sgstRate
+    );
+    const grandTotal = taxCalculation.grandTotal;
+
+    const inputClasses = (hasError: boolean) => {
+        const base = "block w-full rounded-xl py-3 px-4 shadow-sm transition-all outline-none";
+        if (hasError) {
+            return `${base} border-2 border-red-500 bg-red-50 text-red-900 placeholder-red-300`;
+        }
+        return `${base} border border-gray-200 bg-gray-50 focus:bg-white focus:border-blue-500 text-gray-900`;
+    };
+    const labelClasses = "block text-sm font-medium leading-6 text-gray-900 mb-1";
+
+    return (
+        <form onSubmit={handleSubmit} noValidate className="space-y-8">
+
+            {/* 0. Invoice Meta (Date, Number) - Moved to Top */}
+            <div className="bg-white rounded-3xl border border-gray-100 p-6 grid grid-cols-1 md:grid-cols-4 gap-6 relative z-40">
+                <div>
+                    <label className={labelClasses}>Invoice Number</label>
+                    <input type="text" value={formData.invoiceNumber || ''} readOnly className={`${inputClasses(false)} bg-gray-100 text-gray-500`} />
+                </div>
+                <div>
+                    <label className={labelClasses}>PO Number (Mandatory) <span className="text-red-600">*</span></label>
+                    <input type="text" name="poNumber" value={formData.poNumber || ''} onChange={handleChange} className={inputClasses(!!errors.poNumber)} placeholder="Enter PO Number" />
+                    {errors.poNumber && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.poNumber}</p>}
+                </div>
+                <div>
+                    <label className={labelClasses}>Date</label>
+                    <input type="date" name="date" value={formData.date || ''} onChange={handleChange} className={inputClasses(!!errors.date)} />
+                    {errors.date && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.date}</p>}
+                </div>
+                <div>
+                    <label className={labelClasses}>Due Date</label>
+                    <input
+                        type="date"
+                        name="dueDate"
+                        value={formData.dueDate || ''}
+                        onChange={handleChange}
+                        className={inputClasses(!!errors.dueDate)}
+                    />
+                    {errors.dueDate && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.dueDate}</p>}
+                </div>
+            </div>
+
+            {/* 1. Header & Configuration */}
+            <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-gray-100 relative z-30">
+                <div className="px-8 py-5 border-b border-gray-100 flex items-center gap-3">
+                    <div className="h-8 w-1 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full"></div>
+                    <h3 className="text-lg font-bold text-gray-900">Invoice Configuration</h3>
+                </div>
+                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
+                    {/* FROM Dropdown */}
+                    <div>
+                        <div className="flex justify-between items-center mb-2">
+                            <label className={labelClasses}>From (Sender Company) <span className="text-red-500">*</span></label>
+                        </div>
+                        <CustomDropdown
+                            name="fromCompany"
+                            hasError={!!errors.fromCompany}
+                            value={selectedFromId}
+                            onChange={handleFromCompanyChange}
+                            onDelete={handleDeleteSender}
+                            placeholder="Select Company..."
+                            className={inputClasses(!!errors.fromCompany)}
+                            options={[
+                                ...visibleFromCompanies.map(c => ({
+                                    id: c.id,
+                                    label: `${c.companyName} (${c.currency})`,
+                                    group: ''
+                                })),
+                                ...visibleDynamicSenders.map(c => ({
+                                    id: `dynamic-from-${c.companyName}`,
+                                    label: c.companyName,
+                                    group: ''
+                                })),
+                                { id: 'other', label: 'Others...', group: '' }
+                            ]}
+                            canDeleteIds={[
+                                ...visibleFromCompanies.map(c => c.id),
+                                ...visibleDynamicSenders.map(c => `dynamic-from-${c.companyName}`)
+                            ]}
+                        />
+
+                        {/* Manual entry / Logo & Signature for FROM */}
+                        {selectedFromId && (
+                            <div className="mt-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                {(isOtherFrom || (selectedFromId && selectedFromId.startsWith('dynamic-from-'))) && (
+                                    <>
+                                        <div>
+                                            <label className="block text-xs font-semibold text-gray-500 mb-1">Company Name</label>
+                                            <input
+                                                type="text"
+                                                placeholder="Enter company name"
+                                                className={inputClasses(!!errors.fromCompany)}
+                                                value={formData.company}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    const dynamicPrefix = generateDynamicPrefix(val);
+                                                    if (val && !validateCompanyName(val)) {
+                                                        setErrors(prev => ({ ...prev, fromCompany: COMPANY_NAME_VALIDATION_ERROR }));
+                                                    } else {
+                                                        setErrors(prev => {
+                                                            const { fromCompany, ...rest } = prev;
+                                                            return rest;
+                                                        });
+                                                    }
+                                                    setFormData(prev => ({
+                                                        ...prev,
+                                                        company: val,
+                                                        companyInfo: {
+                                                            ...prev.companyInfo!,
+                                                            companyName: val,
+                                                            invoiceFormat: dynamicPrefix
+                                                        }
+                                                    }));
+                                                }}
+                                            />
+                                            {errors.fromCompany && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.fromCompany}</p>}
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold text-gray-500 mb-1">Company Address</label>
+                                            <textarea
+                                                placeholder="Enter company address"
+                                                className={inputClasses(false)}
+                                                rows={2}
+                                                value={formData.companyInfo?.companyAddress}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    setFormData(prev => ({
+                                                        ...prev,
+                                                        companyInfo: {
+                                                            ...prev.companyInfo!,
+                                                            companyAddress: val
+                                                        }
+                                                    }));
+                                                }}
+                                            />
+                                        </div>
+                                    </>
+                                )}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <ImageUpload
+                                        value={customLogoFile}
+                                        onChange={(file) => {
+                                            setCustomLogoFile(file);
+                                        }}
+                                        onRemoveExisting={() => {
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                companyInfo: prev.companyInfo ? {
+                                                    ...prev.companyInfo,
+                                                    companyLogoUrl: ''
+                                                } : prev.companyInfo
+                                            }));
+                                        }}
+                                        label="Company Logo"
+                                        existingImageUrl={formData.companyInfo?.companyLogoUrl}
+                                    />
+                                    <ImageUpload
+                                        value={customSignatureFile}
+                                        onChange={setCustomSignatureFile}
+                                        onRemoveExisting={() => {
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                signatureUrl: ''
+                                            }));
+                                        }}
+                                        label="Authorized Signature"
+                                        existingImageUrl={formData.signatureUrl}
+                                    />
+                                </div>
+                            </div>
+                        )}
+                        {/* Company Info & Logo Preview */}
+                        {selectedFromId && (() => {
+                            const selectedCompany = FROM_COMPANIES.find(c => c.id === selectedFromId);
+                            return (
+                                <div className="mt-3 bg-slate-50 p-3 rounded-lg border border-slate-100 flex items-start gap-3">
+                                    {selectedCompany?.companyLogoUrl && (
+                                        <div className="w-16 h-16 flex-shrink-0 bg-white rounded border border-gray-200 p-1 flex items-center justify-center overflow-hidden">
+                                            <img
+                                                src={selectedCompany.companyLogoUrl}
+                                                alt="Company Logo"
+                                                className="max-w-full max-h-full object-contain"
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).style.display = 'none';
+                                                }}
+                                            />
+                                        </div>
+                                    )}
+                                    <div>
+                                        <p className="text-sm font-semibold text-gray-800">{selectedCompany?.companyName}</p>
+                                        <p className="text-xs text-gray-500 mt-1 whitespace-pre-wrap">{selectedCompany?.companyAddress}</p>
+                                    </div>
+                                </div>
+                            );
+                        })()}
+                        {errors.fromCompany && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.fromCompany}</p>}
+
+                        {/* From Email Field - Added below From Company */}
+                        <div className="mt-4">
+                            <label className={labelClasses}>From Email <span className="text-red-500">*</span></label>
+                            <input
+                                type="email"
+                                name="fromEmail"
+                                value={formData.fromEmail || ''}
+                                onChange={handleChange}
+                                placeholder="Enter From Email address"
+                                className={inputClasses(!!errors.fromEmail)}
+                            />
+                            {errors.fromEmail && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.fromEmail}</p>}
+                        </div>
+                    </div>
+
+                    {/* TO Dropdown */}
+                    <div>
+                        <div className="flex justify-between items-center mb-2">
+                            <label className={labelClasses}>To (Client) <span className="text-red-500">*</span></label>
+                            {/* Client Type Radio Buttons */}
+                            <div className="flex gap-4">
+                                <label className="inline-flex items-center cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        className="form-radio text-blue-600 h-4 w-4"
+                                        name="clientType"
+                                        value="company"
+                                        checked={clientType === 'company'}
+                                        onChange={() => {
+                                            setClientType('company');
+
+                                            // Check availability
+                                            const available = [...visibleToCompanies, ...visibleDynamicCompanies];
+                                            if (available.length === 0) {
+                                                setSelectedToId('');
+                                                setIsOtherTo(true); // Auto-show inputs
+                                            } else {
+                                                setSelectedToId('');
+                                                setIsOtherTo(false); // Default to dropdown
+                                            }
+
+                                            // Reset to Sender defaults (including Bank Details)
+                                            if (selectedFromId) {
+                                                handleFromCompanyChange(selectedFromId);
+                                                setFormData(prev => ({ ...prev, clientType: 'company' }));
+                                            } else {
+                                                setFormData(prev => ({ ...prev, country: 'india', clientType: 'company' }));
+                                            }
+                                        }}
+                                    />
+                                    <span className="ml-2 text-sm text-gray-700">Company</span>
+                                </label>
+                                <label className="inline-flex items-center cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        className="form-radio text-blue-600 h-4 w-4"
+                                        name="clientType"
+                                        value="employee"
+                                        checked={clientType === 'employee'}
+                                        onChange={() => {
+                                            setClientType('employee');
+
+                                            // Check availability (including dummy data)
+                                            const available = [...TO_EMPLOYEES, ...visibleDynamicEmployees];
+                                            if (available.length === 0) {
+                                                setSelectedToId('');
+                                                setIsOtherTo(true); // Auto-show inputs
+                                            } else {
+                                                setSelectedToId('');
+                                                setIsOtherTo(false); // Default to dropdown
+                                            }
+
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                employeeName: '',
+                                                employeeEmail: '',
+                                                employeeAddress: '',
+                                                employeeMobile: '',
+                                                country: 'japan',
+                                                clientType: 'employee'
+                                            }));
+                                            setBankDetails({
+                                                bankName: '',
+                                                accountNumber: '',
+                                                accountHolderName: '',
+                                                ifscCode: '',
+                                                swiftCode: '',
+                                                bankCode: '',
+                                                branchName: '',
+                                                branchCode: '',
+                                                accountType: ''
+                                            });
+                                        }}
+                                    />
+                                    <span className="ml-2 text-sm text-gray-700">Employee</span>
+                                </label>
+                            </div>
+                        </div>
+
+
+
+                        {(() => {
+                            const availableCompanies = [...visibleToCompanies, ...visibleDynamicCompanies.filter(c => clientType === 'company')];
+                            const availableEmployees = [...TO_EMPLOYEES, ...visibleDynamicEmployees.filter(c => clientType === 'employee')];
+                            const hasOptions = clientType === 'company' ? availableCompanies.length > 0 : availableEmployees.length > 0;
+
+                            return (
+                                <>
+                                    {/* Dropdown - Show only if options exist */}
+                                    {hasOptions && (
+                                        <CustomDropdown
+                                            name="toClient"
+                                            hasError={!!errors.toClient}
+                                            value={selectedToId}
+                                            onChange={handleToClientChange}
+                                            onDelete={handleDeleteClient}
+                                            placeholder={`Select ${clientType === 'company' ? 'Company' : 'Employee'}...`}
+                                            className={inputClasses(!!errors.toClient)}
+                                            options={[
+                                                ...(clientType === 'company' ? visibleToCompanies : TO_EMPLOYEES).map(c => ({
+                                                    id: c.id,
+                                                    label: c.companyName + (clientType === 'company' && (c as any).country ? ` (${(c as any).country})` : ''),
+                                                    group: ''
+                                                })),
+                                                ...visibleDynamicCompanies.filter(c => clientType === 'company').map(c => ({
+                                                    id: c.id,
+                                                    label: c.companyName,
+                                                    group: ''
+                                                })),
+                                                ...(clientType === 'employee' ? visibleDynamicEmployees : []).map(c => ({
+                                                    id: c.id,
+                                                    label: c.companyName,
+                                                    group: ''
+                                                })),
+                                                { id: 'other', label: 'Others...', group: '' }
+                                            ]}
+                                            canDeleteIds={[
+                                                ...visibleToCompanies.map(c => c.id),
+                                                ...visibleDynamicCompanies.map(c => c.id),
+                                                ...visibleDynamicEmployees.map(c => c.id)
+                                            ]}
+                                        />
+                                    )}
+                                    {errors.toClient && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.toClient}</p>}
+
+                                    {/* Manual entry - Show if NO options exist OR "Other" is selected OR it is an employee/dynamic client */}
+                                    {(!hasOptions || isOtherTo || (selectedToId && selectedToId.startsWith('dynamic-client-')) || clientType === 'employee') && (
+                                        <div className="mt-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                            <div>
+                                                <label className="block text-xs font-semibold text-gray-500 mb-1">{clientType === 'company' ? 'Company Name' : 'Employee Name'}</label>
+                                                <input
+                                                    type="text"
+                                                    name="employeeName"
+                                                    placeholder={`Enter ${clientType === 'company' ? 'company' : 'employee'} name`}
+                                                    className={inputClasses(!!errors.employeeName)}
+                                                    value={formData.employeeName}
+                                                    onChange={handleChange}
+                                                />
+                                                {errors.employeeName && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.employeeName}</p>}
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-semibold text-gray-500 mb-1">{clientType === 'company' ? 'Company Email' : 'Employee Email'}</label>
+                                                <input
+                                                    type="email"
+                                                    name="employeeEmail"
+                                                    placeholder={`Enter ${clientType === 'company' ? 'company' : 'employee'} email`}
+                                                    className={inputClasses(!!errors.employeeEmail)}
+                                                    value={formData.employeeEmail}
+                                                    onChange={handleChange}
+                                                />
+                                                {errors.employeeEmail && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.employeeEmail}</p>}
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-semibold text-gray-500 mb-1">{clientType === 'company' ? 'Company Address' : 'Employee Address'} <span className="text-red-500">*</span></label>
+                                                <textarea
+                                                    name="employeeAddress"
+                                                    placeholder={`Enter ${clientType === 'company' ? 'company' : 'employee'} address`}
+                                                    className={inputClasses(!!errors.employeeAddress)}
+                                                    rows={2}
+                                                    value={formData.employeeAddress}
+                                                    onChange={handleChange}
+                                                />
+                                                {errors.employeeAddress && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.employeeAddress}</p>}
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-semibold text-gray-500 mb-1">{clientType === 'company' ? 'Company Phone' : 'Employee Phone'} <span className="text-red-500">*</span></label>
+                                                <input
+                                                    type="text"
+                                                    name="employeeMobile"
+                                                    placeholder={`Enter ${clientType === 'company' ? 'company' : 'employee'} phone`}
+                                                    className={inputClasses(!!errors.employeeMobile)}
+                                                    value={formData.employeeMobile}
+                                                    onChange={handleChange}
+                                                />
+                                                {errors.employeeMobile && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.employeeMobile}</p>}
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            );
+                        })()}
+                        {formData.employeeName && !isOtherTo && !selectedToId?.startsWith('dynamic-client-') && clientType !== 'employee' && (
+                            <div className="mt-3 space-y-3">
+                                <p className="text-xs text-gray-500 px-1">
+                                    {formData.employeeAddress}
+                                </p>
+                                <div>
+                                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 px-1">Recipient Email (Mandatory)</label>
+                                    <input
+                                        type="email"
+                                        name="employeeEmail"
+                                        value={formData.employeeEmail || ''}
+                                        onChange={handleChange}
+                                        placeholder="Enter recipient email"
+                                        className={inputClasses(!!errors.employeeEmail)}
+                                    />
+                                    {errors.employeeEmail && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.employeeEmail}</p>}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* 2. Bank Details (Managed via Separate Screen) */}
+            <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-gray-100 relative z-20 overflow-hidden">
+                <div className="px-8 py-5 border-b border-gray-100 flex items-center justify-between gap-3 bg-gray-50/50">
+                    <div className="flex items-center gap-3">
+                        <div className="h-8 w-1 bg-gradient-to-b from-green-500 to-emerald-600 rounded-full"></div>
+                        <h3 className="text-lg font-bold text-gray-900">Bank Details</h3>
+                    </div>
+                    {availableBankAccounts.length > 0 && (
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm font-medium text-gray-600">Quick Select:</label>
+                            <select
+                                value={selectedBankAccountId}
+                                onChange={(e) => {
+                                    const accountId = e.target.value;
+                                    setSelectedBankAccountId(accountId);
+                                    const account = availableBankAccounts.find(a => a.id === accountId);
+                                    console.log("Selected account from Quick Select:", account);
+                                    if (account) {
+                                        setBankDetails({
+                                            bankName: account.bankName,
+                                            accountNumber: account.accountNumber,
+                                            accountHolderName: account.accountHolderName,
+                                            ifscCode: account.ifscCode,
+                                            swiftCode: account.swiftCode,
+                                            bankCode: account.bankCode,
+                                            branchName: account.branchName,
+                                            branchCode: account.branchCode,
+                                            accountType: account.accountType
+                                        } as BankDetails);
+                                    } else {
+                                        // Reset/Clear Details option selected
+                                        let defaultBank: BankDetails | null = null;
+                                        
+                                        if (selectedFromId && selectedFromId !== 'other') {
+                                            const company = FROM_COMPANIES.find(c => c.id === selectedFromId);
+                                            const dynamicCompany = dynamicSenders.find(c => `dynamic-from-${c.companyName}` === selectedFromId);
+                                            if (company) {
+                                                defaultBank = company.bankDetails;
+                                            } else if (dynamicCompany) {
+                                                defaultBank = dynamicCompany.bankDetails;
+                                            }
+                                        } else if (clientType === 'employee' && selectedToId && selectedToId !== 'other') {
+                                            const employee = TO_EMPLOYEES.find(e => e.id === selectedToId);
+                                            const dynamicEmployee = dynamicClientEmployees.find(e => `dynamic-to-${e.companyName}` === selectedToId);
+                                            if (employee && employee.bankDetails) {
+                                                defaultBank = employee.bankDetails;
+                                            } else if (dynamicEmployee && dynamicEmployee.bankDetails) {
+                                                defaultBank = dynamicEmployee.bankDetails;
+                                            }
+                                        }
+
+                                        if (defaultBank) {
+                                            setBankDetails({ ...defaultBank });
+                                        } else {
+                                            setBankDetails({
+                                                bankName: '',
+                                                accountNumber: '',
+                                                accountHolderName: '',
+                                                ifscCode: '',
+                                                swiftCode: '',
+                                                bankCode: '',
+                                                branchName: '',
+                                                branchCode: '',
+                                                accountType: ''
+                                            });
+                                        }
+                                    }
+                                }}
+                                className="text-sm border-gray-200 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 p-2 border bg-white shadow-sm"
+                            >
+                                <option value="">Clear / Reset to Default</option>
+                                {availableBankAccounts.map(acc => (
+                                    <option key={acc.id} value={acc.id}>{acc.bankName} - {acc.accountNumber}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+                </div>
+                <div className="p-6">
+                    <BankDetailsForm
+                        data={{ ...bankDetails, branchName: bankDetails.branchName || '', branchCode: bankDetails.branchCode || '', accountType: bankDetails.accountType || '' }}
+                        onChange={(newData) => {
+                            setBankDetails({
+                                ...newData,
+                                branchName: newData.branchName || '',
+                                accountType: newData.accountType || ''
+                            });
+                            if (newData.accountType && errors.accountType) {
+                                setErrors(prev => {
+                                    const newErrors = { ...prev };
+                                    delete newErrors.accountType;
+                                    return newErrors;
+                                });
+                            }
+                        }}
+                        errors={errors as any}
+                        country={country}
+                    />
+                    <p className="text-xs text-gray-400 mt-4 px-2 italic">
+                        * Use the Bank Accounts screen to manage and save these details for reuse across invoices.
+                    </p>
+                </div>
+            </div>
+
+            {/* 4. Services */}
+            <div className="bg-white rounded-3xl border border-gray-100 p-6 relative z-10">
+                <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-lg font-bold text-gray-900">Services <span className="text-red-500">*</span></h3>
+                    {(() => {
+                        const isInitialRowFilled = formData.services?.[0] && formData.services[0].hours > 0 && formData.services[0].rate > 0 && formData.services[0].description.trim() !== '';
+                        return (
+                            <button 
+                                type="button" 
+                                onClick={addService} 
+                                disabled={!isInitialRowFilled}
+                                className={`font-semibold text-sm transition-all ${!isInitialRowFilled ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:underline'}`}
+                            >
+                                + Add Item
+                            </button>
+                        );
+                    })()}
+                </div>
+                {
+                    formData.services?.map((service, index) => (
+                        <div key={service.id || index} className="grid grid-cols-[50px_1fr_120px_140px_140px_50px] gap-3 mb-4 items-start border-b border-gray-50 pb-4 last:border-0">
+                            <div>
+                                {index === 0 && <label className={labelClasses}>S.No</label>}
+                                <input
+                                    type="text"
+                                    readOnly
+                                    value={index + 1}
+                                    className={`${inputClasses(false)} text-center font-bold text-gray-500 bg-gray-50/50 cursor-default select-none`}
+                                />
+                            </div>
+                            <div>
+                                {index === 0 && <label className={labelClasses}>Description <span className="text-red-500">*</span></label>}
+                                <input 
+                                    type="text" 
+                                    name={`service-${index}-description`}
+                                    value={service.description} 
+                                    placeholder="Enter description"
+                                    onChange={(e) => handleServiceChange(index, 'description', e.target.value)} 
+                                    className={inputClasses(!!errors[`service-${index}-description`])} 
+                                />
+                                {errors[`service-${index}-description`] && <p className="mt-1 text-[10px] text-red-600 font-bold animate-pulse">{errors[`service-${index}-description`]}</p>}
+                            </div>
+                            <div>
+                                {index === 0 && <label className={labelClasses}>Hours <span className="text-red-500">*</span></label>}
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    name={`service-${index}-hours`}
+                                    value={service.hours || ''}
+                                    placeholder="0"
+                                    onWheel={(e) => (e.target as HTMLElement).blur()}
+                                    onChange={(e) => handleServiceChange(index, 'hours', parseFloat(e.target.value))}
+                                    className={inputClasses(!!errors[`service-${index}-hours`])}
+                                />
+                                {errors[`service-${index}-hours`] && <p className="mt-1 text-[10px] text-red-600 font-bold animate-pulse">{errors[`service-${index}-hours`]}</p>}
+                            </div>
+                            <div>
+                                {index === 0 && <label className={labelClasses}>Unit Price ({getCurrencySymbol(country)}) <span className="text-red-500">*</span></label>}
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    name={`service-${index}-rate`}
+                                    value={service.rate || ''}
+                                    placeholder="0.00"
+                                    onWheel={(e) => (e.target as HTMLElement).blur()}
+                                    onChange={(e) => handleServiceChange(index, 'rate', parseFloat(e.target.value))}
+                                    className={inputClasses(!!errors[`service-${index}-rate`])}
+                                />
+                                {errors[`service-${index}-rate`] && <p className="mt-1 text-[10px] text-red-600 font-bold animate-pulse">{errors[`service-${index}-rate`]}</p>}
+                            </div>
+                            <div>
+                                {index === 0 && <label className={labelClasses}>Amount ({getCurrencySymbol(country)})</label>}
+                                <input
+                                    type="text"
+                                    readOnly
+                                    value={formatCurrency(Math.round((service.hours * service.rate) * 100) / 100, country, true, false)}
+                                    className={`${inputClasses(false)} text-right font-semibold text-gray-700 bg-gray-50/50 cursor-default select-none`}
+                                />
+                            </div>
+                            <div className="flex justify-center items-center pb-1">
+                                {index === 0 && <label className={`${labelClasses} invisible`}>Delete</label>}
+                                <div className="flex justify-center items-center h-[50px]">
+                                    {index > 0 && (
+                                        <button type="button" onClick={() => removeService(index)} className="text-red-500 hover:bg-red-50 p-2 rounded-full transition-colors">🗑️</button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    ))
+                }
+                {(formData.services?.length === 0) && <p className="text-center text-gray-400 py-4">No items added.</p>}
+            </div>
+
+            {/* 5. Totals */}
+            <div className="bg-slate-50 rounded-3xl p-8 border border-slate-100">
+                <div className="flex justify-between items-center mb-4">
+                    <div className="w-2/3 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {country === 'india' ? (
+                            <>
+                                <div>
+                                    <label className={labelClasses}>CGST (%)</label>
+                                    <input
+                                        type="number"
+                                        name="cgstRate"
+                                        value={formData.cgstRate}
+                                        onWheel={(e) => (e.target as HTMLElement).blur()}
+                                        onChange={handleChange}
+                                        className={inputClasses(false)}
+                                        min="0"
+                                        max="9"
+                                        step="0.01"
+                                    />
+                                </div>
+                                <div>
+                                    <label className={labelClasses}>SGST (%)</label>
+                                    <input
+                                        type="number"
+                                        name="sgstRate"
+                                        value={formData.sgstRate}
+                                        onWheel={(e) => (e.target as HTMLElement).blur()}
+                                        onChange={handleChange}
+                                        className={inputClasses(false)}
+                                        min="0"
+                                        max="9"
+                                        step="0.01"
+                                    />
+                                </div>
+                            </>
+                        ) : (
+                            <div className="flex flex-col gap-4">
+                                <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-gray-100 shadow-sm w-fit">
+                                    <span className={`text-sm font-medium ${!showTaxToggle ? 'text-blue-600' : 'text-gray-400'}`}>No Tax</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const newState = !showTaxToggle;
+                                            setShowTaxToggle(newState);
+                                            setFormData(prev => ({ ...prev, taxRate: newState ? 10 : 0 }));
+                                        }}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${showTaxToggle ? 'bg-gradient-to-r from-blue-500 to-indigo-600' : 'bg-gray-200'}`}
+                                        role="switch"
+                                        aria-checked={showTaxToggle}
+                                    >
+                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showTaxToggle ? 'translate-x-6' : 'translate-x-1'}`} />
+                                    </button>
+                                    <span className={`text-sm font-medium ${showTaxToggle ? 'text-blue-600' : 'text-gray-400'}`}>Add Consumption Tax</span>
+                                </div>
+
+                                {showTaxToggle && (
+                                    <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                                        <label className={labelClasses}>Consumption Tax (%)</label>
+                                        <input
+                                            type="number"
+                                            name="taxRate"
+                                            value={formData.taxRate}
+                                            onWheel={(e) => (e.target as HTMLElement).blur()}
+                                            onChange={handleChange}
+                                            className={inputClasses(false)}
+                                            placeholder="Enter tax rate manually"
+                                            min="0"
+                                            max="10"
+                                            step="0.01"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                    <div className="text-right">
+                        <p className="text-sm text-gray-600">Subtotal: {formatCurrency(subTotal, country)}</p>
+                        {country === 'india' ? (
+                            <>
+                                <p className="text-sm text-gray-500">CGST ({formData.cgstRate}%): {formatCurrency(subTotal * ((formData.cgstRate || 0) / 100), country)}</p>
+                                <p className="text-sm text-gray-500">SGST ({formData.sgstRate}%): {formatCurrency(subTotal * ((formData.sgstRate || 0) / 100), country)}</p>
+                            </>
+                        ) : (
+                            showTaxToggle ? (
+                                <p className="text-sm text-gray-500">Tax ({formData.taxRate}%): {formatCurrency(subTotal * ((formData.taxRate || 0) / 100), country)}</p>
+                            ) : null
+                        )}
+                        <div className="border-t pt-2 mt-2">
+                            {(() => {
+                                const cgst = country === 'india' ? Math.round((subTotal * (formData.cgstRate || 0) / 100) * 100) / 100 : 0;
+                                const sgst = country === 'india' ? Math.round((subTotal * (formData.sgstRate || 0) / 100) * 100) / 100 : 0;
+                                const taxAmount = country === 'india'
+                                    ? (cgst + sgst)
+                                    : (showTaxToggle ? Math.round((subTotal * ((formData.taxRate || 0) / 100)) * 100) / 100 : 0);
+                                const totalBeforeRound = subTotal + taxAmount;
+                                const roundedTotal = Math.round(totalBeforeRound);
+                                const roundOff = roundedTotal - totalBeforeRound;
+
+                                return (
+                                    <>
+                                        <p className="text-sm text-gray-500">Round Off: {formatCurrency(roundOff, country)}</p>
+                                        <p className="text-xl font-bold text-gray-800">Grand Total: {formatCurrency(roundedTotal, country)}</p>
+                                    </>
+                                );
+                            })()}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex justify-end gap-4">
+                {selectedInvoice && <button type="button" onClick={clearSelection} className="px-6 py-2 border rounded-xl">Cancel</button>}
+                <button
+                    type="submit"
+                    disabled={isSaving}
+                    className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition-all disabled:opacity-50 flex items-center gap-2"
+                >
+                    {isSaving ? (
+                        <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                            <span>Saving...</span>
+                        </>
+                    ) : (
+                        <span>{selectedInvoice ? 'Save Changes' : 'Create New Invoice'}</span>
+                    )}
+                </button>
+            </div>
+
+            {/* Preview Overlay */}
+            {
+                showPreview && previewInvoice && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] overflow-y-auto p-4 md:p-8 flex items-start justify-center">
+                        <div className="bg-gray-100 rounded-3xl w-full max-w-5xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 my-8">
+                            {/* Preview Header */}
+                            <div className="bg-white px-8 py-4 border-b border-gray-200 flex justify-between items-center sticky top-0 z-10">
+                                <div>
+                                    <h2 className="text-xl font-bold text-gray-900">Invoice Preview</h2>
+                                    <p className="text-xs text-gray-500">Please review the details before finalizing</p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPreview(false)}
+                                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                                >
+                                    <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+
+                            {/* Preview Content */}
+                            <div className="p-8">
+                                <div className="bg-white shadow-lg rounded-xl overflow-hidden scale-[0.98] origin-top transform transition-transform">
+                                    <InvoiceLayout {...mapInvoiceToLayoutProps(previewInvoice)} />
+                                </div>
+                            </div>
+
+                            {/* Preview Footer */}
+                            <div className="bg-white px-8 py-6 border-t border-gray-200 flex flex-col sm:flex-row justify-center gap-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPreview(false)}
+                                    className="px-10 py-3.5 border-2 border-gray-200 text-gray-700 rounded-2xl font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                    </svg>
+                                    Back to Edit
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleConfirmSave}
+                                    disabled={isSaving}
+                                    className="px-12 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-2xl font-bold hover:from-blue-700 hover:to-indigo-800 shadow-xl shadow-blue-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                                >
+                                    {isSaving ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                                            Saving...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span>Confirm & Create</span>
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+        </form>
+    );
+};
+

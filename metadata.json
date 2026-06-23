@@ -1,0 +1,5 @@
+{
+  "name": "React Invoice Generator",
+  "description": "A comprehensive invoice system for billing employees in an IT organization. It allows creating, editing, deleting, and saving invoices with auto-generated invoice numbers, service tracking, and tax calculations. Users can also download invoices as PDFs or simulate sending them via email.",
+  "requestFramePermissions": []
+}
