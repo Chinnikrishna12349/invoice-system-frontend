@@ -35,9 +35,13 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
             }
         }
 
-        // Bug 2 & 10: Account Name Validation (Alphabets and spaces only)
+        // Fix: Account Name Validation — allow English letters, spaces, AND Japanese characters
+        // Supports: Hiragana, Katakana (full/half-width), Kanji, full-width alphanumerics, middle dot
         if (field === 'accountHolderName') {
-            processedValue = value.replace(/[^a-zA-Z\s]/g, '');
+            processedValue = value.replace(
+                /[^a-zA-Z\s\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\uFF01-\uFF9F\u3000-\u303F\uFF65\u30FB]/g,
+                ''
+            );
             // Limit to reasonable length
             processedValue = processedValue.slice(0, 50);
         }
