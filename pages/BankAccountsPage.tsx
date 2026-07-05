@@ -29,7 +29,7 @@ const BankAccountsPage: React.FC = () => {
         }
     };
 
-    const [modalCountry, setModalCountry] = useState<'india' | 'japan'>('india');
+    const [modalCountry, setModalCountry] = useState<'india' | 'japan' | 'international'>('india');
 
     const handleAdd = () => {
         setCurrentAccount({
@@ -51,8 +51,13 @@ const BankAccountsPage: React.FC = () => {
     const handleEdit = (account: BankAccount) => {
         setCurrentAccount(account);
         // Detect country based on specialized fields
-        const isJapan = !!(account.swiftCode || account.bankCode || (account.branchCode && account.branchCode.length === 3));
-        setModalCountry(isJapan ? 'japan' : 'india');
+        let ctry: 'india' | 'japan' | 'international' = 'india';
+        if (account.swiftCode && !account.bankCode && !account.branchCode) {
+            ctry = 'international';
+        } else if (account.swiftCode || account.bankCode || (account.branchCode && account.branchCode.length === 3)) {
+            ctry = 'japan';
+        }
+        setModalCountry(ctry);
         setIsEditing(true);
     };
 
@@ -82,10 +87,10 @@ const BankAccountsPage: React.FC = () => {
         if (!currentAccount.accountHolderName?.trim()) newErrors.accountHolderName = 'Account holder name is required';
         if (!currentAccount.branchName?.trim()) newErrors.branchName = 'Branch name is required';
         
-        const isSwift = modalCountry === 'japan';
+        const isSwift = modalCountry === 'japan' || modalCountry === 'international';
         
         // Branch/Bank code validation for Japan
-        if (isSwift) {
+        if (modalCountry === 'japan') {
             if (!currentAccount.branchCode?.trim()) {
                 newErrors.branchCode = 'Branch code is required';
             } else if (currentAccount.branchCode.length !== 3) {
@@ -98,8 +103,10 @@ const BankAccountsPage: React.FC = () => {
                 newErrors.bankCode = 'Bank code must be 4 digits for Japan';
             }
         }
-        if (isSwift) {
-            if (!currentAccount.swiftCode?.trim()) newErrors.swiftCode = 'Swift code is required';
+        if (modalCountry === 'international') {
+            if (!currentAccount.swiftCode?.trim()) newErrors.swiftCode = 'Swift code is required for International invoices';
+        } else if (modalCountry === 'japan') {
+            // SWIFT code optional for Japan
         } else {
             if (!currentAccount.ifscCode?.trim()) newErrors.ifscCode = 'IFSC code is required';
         }
@@ -271,6 +278,21 @@ const BankAccountsPage: React.FC = () => {
                                         className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${modalCountry === 'japan' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-500 hover:text-indigo-600'}`}
                                     >
                                         Japan
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setModalCountry('international');
+                                            setCurrentAccount({
+                                                ...currentAccount,
+                                                ifscCode: '',
+                                                bankCode: '',
+                                                branchCode: ''
+                                            });
+                                        }}
+                                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${modalCountry === 'international' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-500 hover:text-indigo-600'}`}
+                                    >
+                                        International
                                     </button>
                                 </div>
                             </div>

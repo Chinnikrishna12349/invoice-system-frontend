@@ -82,7 +82,7 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
     return formatDate(dateString);
   };
 
-  const currencyCode = country === 'japan' ? 'JPY' : 'INR';
+  const currencyCode = country === 'japan' ? 'JPY' : country === 'international' ? 'USD' : 'INR';
 
   return (
     <div className="bg-white mx-auto shadow-2xl overflow-hidden" style={{ width: '210mm', minHeight: '297mm', padding: '18mm 14mm' }}>
@@ -274,10 +274,20 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
 
           {(() => {
             const isJapan = country === 'japan';
+            const isInternational = country === 'international';
             const swift = bankDetails.swiftCode?.trim();
             const ifsc = bankDetails.ifsc?.trim();
 
-            if (isJapan) {
+            if (isInternational) {
+              // For International: SWIFT Code is mandatory — always show it
+              return (
+                <p className="flex gap-1 leading-tight">
+                  <span className="min-w-[166px]">Swift Code:</span>
+                  <span>{swift || '—'}</span>
+                </p>
+              );
+            } else if (isJapan) {
+              // For Japan Local: SWIFT Code is optional — show only if present
               if (swift && swift.length > 0) {
                 return (
                   <p className="flex gap-1 leading-tight">
@@ -298,6 +308,7 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
               }
             }
             return null;
+
           })()}
         </div>
 

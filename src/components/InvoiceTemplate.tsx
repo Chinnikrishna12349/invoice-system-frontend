@@ -110,7 +110,7 @@ const InvoiceTemplate: React.FC<InvoiceTemplateProps> = ({ country = 'india' }) 
       {/* Footer */}
       <footer className="footer">
         {/* 'Thank you' hidden for Japanese version as per requirement */}
-        {country !== 'japan' && country !== 'jp' && <p>Thank you for your business!</p>}
+
       </footer>
     </div>
   );

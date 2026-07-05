@@ -813,8 +813,10 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         }
         
         // Country-specific bank code validation
-        if (country === 'japan') {
-            if (!bankDetails.swiftCode?.trim()) newErrors.swiftCode = 'Swift code is required';
+        if (country === 'international') {
+            if (!bankDetails.swiftCode?.trim()) newErrors.swiftCode = 'Swift code is required for International invoices';
+        } else if (country === 'japan') {
+            // SWIFT code is optional for Japan local invoices
         } else {
             if (!bankDetails.ifscCode?.trim()) newErrors.ifscCode = 'IFSC code is required';
         }

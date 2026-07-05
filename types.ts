@@ -8,7 +8,7 @@ export interface ServiceItem {
   percentage?: number;
 }
 
-export type Country = 'india' | 'japan';
+export type Country = 'india' | 'japan' | 'international';
 
 export interface Invoice {
   id: string;

@@ -12,7 +12,7 @@ const COUNTRY_PREFERENCE_KEY = 'userCountryPreference';
  */
 export const getCountryPreference = (): Country => {
     const stored = localStorage.getItem(COUNTRY_PREFERENCE_KEY);
-    if (stored === 'india' || stored === 'japan') {
+    if (stored === 'india' || stored === 'japan' || stored === 'international') {
         return stored;
     }
     return 'india'; // Default to India
@@ -65,6 +65,13 @@ export const calculateTax = (
             consumptionTaxRate,
             consumptionTaxAmount,
         };
+    } else if (country === 'international') {
+        // International invoices typically have 0% local tax
+        return {
+            subTotal,
+            taxAmount: 0,
+            grandTotal: subTotal,
+        };
     } else {
         // India: CGST + SGST
         // Use manual rates if provided, otherwise split taxRate
@@ -93,7 +100,7 @@ export const calculateTax = (
  * Get currency symbol based on country
  */
 export const getCurrencySymbol = (country: Country = 'india'): string => {
-    return country === 'japan' ? '¥' : '₹';
+    return country === 'japan' ? '¥' : country === 'international' ? '$' : '₹';
 };
 
 /**
@@ -106,6 +113,11 @@ export const formatCurrency = (amount: number, country: Country = 'india', showD
     if (country === 'japan') {
         const val = showDecimals ? amount : Math.round(amount);
         formattedNumber = val.toLocaleString('ja-JP', {
+            minimumFractionDigits: showDecimals ? 2 : 0,
+            maximumFractionDigits: showDecimals ? 2 : 0
+        });
+    } else if (country === 'international') {
+        formattedNumber = amount.toLocaleString('en-US', {
             minimumFractionDigits: showDecimals ? 2 : 0,
             maximumFractionDigits: showDecimals ? 2 : 0
         });

@@ -16,11 +16,11 @@ interface BankDetailsFormProps {
     data: BankDetailsFormData;
     onChange: (data: BankDetailsFormData) => void;
     errors?: Partial<Record<keyof BankDetailsFormData, string>>;
-    country?: 'india' | 'japan'; // Added country prop
+    country?: 'india' | 'japan' | 'international'; // Added country prop
 }
 
 export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange, errors = {}, country = 'india' }) => {
-    const codeType = country === 'japan' ? 'swift' : 'ifsc';
+    const codeType = (country === 'japan' || country === 'international') ? 'swift' : 'ifsc';
 
     const updateField = (field: keyof BankDetailsFormData, value: string) => {
         let processedValue = value;
@@ -144,7 +144,7 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
 
                 <div>
                     <label htmlFor="codeField" className={labelClasses}>
-                        {codeType === 'swift' ? 'SWIFT Code' : 'IFSC Code'} <span className="text-red-500">*</span>
+                        {codeType === 'swift' ? 'SWIFT Code' : 'IFSC Code'} {country !== 'japan' && <span className="text-red-500">*</span>}
                     </label>
                     <input
                         id="codeField"

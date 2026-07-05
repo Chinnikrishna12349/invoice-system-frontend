@@ -470,6 +470,10 @@ const drawInvoiceContent = async (
             
             const b = companyInfoToUse?.bankDetails;
             const isIndia = (invoice.country || 'india') === 'india';
+            const isInternational = (invoice.country || '') === 'international';
+            const isJapanLocal = (invoice.country || '') === 'japan';
+            // Show SWIFT code: always for International, conditionally for Japan (only if exists), never for India
+            const showSwift = isInternational || (isJapanLocal && b?.swiftCode);
             const details = [
                 { label: t.bankNameLabel || 'Bank Name', value: b?.bankName },
                 { label: t.bankCodeLabel || 'Bank Code', value: b?.bankCode },
@@ -478,7 +482,7 @@ const drawInvoiceContent = async (
                 { label: t.accountTypeLabel || 'Account Type', value: b?.accountType },
                 { label: t.accountNoLabel || 'Account No', value: b?.accountNumber },
                 { label: t.accountHolderLabel || 'Account Name', value: b?.accountHolderName },
-                ...(!isIndia ? [{ label: t.swiftCodeLabel || 'SWIFT Code', value: b?.swiftCode }] : []),
+                ...((showSwift) ? [{ label: t.swiftCodeLabel || 'SWIFT Code', value: b?.swiftCode }] : []),
                 ...(isIndia && language !== 'ja' ? [{ label: t.ifscCodeLabel || 'IFSC', value: b?.ifscCode }] : [])
             ];
 
