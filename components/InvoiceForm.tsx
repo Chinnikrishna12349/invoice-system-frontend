@@ -736,9 +736,6 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
     const validate = (): boolean => {
         const newErrors: Record<string, string> = {};
 
-        if (!formData.poNumber || !formData.poNumber.trim()) {
-            newErrors.poNumber = 'PO Number is required';
-        }
 
         if (!selectedFromId && !selectedInvoice) newErrors.fromCompany = "Please select a sender company";
         if (!formData.date) newErrors.date = 'Invoice Date is required';
@@ -1029,7 +1026,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                     <input type="text" value={formData.invoiceNumber || ''} readOnly className={`${inputClasses(false)} bg-gray-100 text-gray-500`} />
                 </div>
                 <div>
-                    <label className={labelClasses}>PO Number (Mandatory) <span className="text-red-600">*</span></label>
+                    <label className={labelClasses}>PO Number <span className="text-gray-400 font-normal text-xs">(Optional)</span></label>
                     <input type="text" name="poNumber" value={formData.poNumber || ''} onChange={handleChange} className={inputClasses(!!errors.poNumber)} placeholder="Enter PO Number" />
                     {errors.poNumber && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.poNumber}</p>}
                 </div>
