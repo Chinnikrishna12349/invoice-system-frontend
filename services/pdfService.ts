@@ -118,14 +118,12 @@ const getTranslations = async (language: 'en' | 'ja') => {
         consumptionTax: i18n.t('invoice.consumptionTax'),
         total: i18n.t('invoice.total'),
         grandTotal: i18n.t('invoice.grandTotal'),
-        thankYou: i18n.t('invoice.thankYou'),
         invoiceNo: i18n.t('invoice.invoiceNo'),
         date: i18n.t('invoice.dateLabel'),
         dueDate: i18n.t('invoice.dueDate'), // Changed from dueLabel ('Due:') to dueDate ('Due Date') for explicit Requirement
         email: i18n.t('invoice.email'),
         phone: i18n.t('invoice.phone'),
         address: i18n.t('invoice.address'),
-        thankYouMessage: language === 'ja' ? '' : i18n.t('invoice.thankYou'),
         companySeal: language === 'ja' ? '〒 (会社印)' : '',
         paymentInstructions: i18n.t('payment.instructions'),
         bankName: i18n.t('payment.bankName'),
@@ -995,18 +993,6 @@ const drawInvoiceContent = async (
     const finalGrandTotal = invoice.finalAmount !== undefined ? invoice.finalAmount : (shouldCalculateTax ? grandTotal : subTotal);
 
     await drawTotalRow(`${t.grandTotal} (${currencyCode})`, formatAmount(finalGrandTotal, false, true), true);
-
-    // Add Thank You Message ONLY if not Japanese and translation exists
-    if (language !== 'ja' && t.thankYou && t.thankYou.trim().length > 0) {
-        yPosition += 5;
-        await addTextToPdf(doc, t.thankYou, 105, yPosition, {
-            fontSize: 10,
-            fontStyle: 'bold',
-            align: 'center',
-            language
-        });
-        yPosition += 10;
-    }
 
     // Final Page Footer
     // Final Page Footer - Pass dynamic yPosition to remove empty space
