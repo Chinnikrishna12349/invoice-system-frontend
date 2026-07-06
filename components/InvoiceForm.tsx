@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getNextInvoiceNumber } from '../services/apiService';
-import { Invoice, ServiceItem, BankDetails, CompanyInfo } from '../types';
+import { Invoice, ServiceItem, BankDetails, CompanyInfo, Country } from '../types';
 import { useCountry } from '../contexts/CountryContext';
 import { calculateTax, getCurrencySymbol, formatCurrency } from '../services/countryPreferenceService';
 import { useAuth } from '../contexts/AuthContext';
@@ -56,7 +56,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
     const [availableBankAccounts, setAvailableBankAccounts] = useState<BankAccount[]>([]);
     const [selectedBankAccountId, setSelectedBankAccountId] = useState<string>('');
 
-    const getInitialFormData = (currentCountry: 'india' | 'japan') => {
+    const getInitialFormData = (currentCountry: Country) => {
         const defaultDate = new Date();
         const defaultDueDate = new Date(defaultDate);
         defaultDueDate.setDate(defaultDueDate.getDate() + 45);

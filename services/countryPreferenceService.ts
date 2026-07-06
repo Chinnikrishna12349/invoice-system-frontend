@@ -2,7 +2,7 @@
  * Country preference service for persisting user's country selection
  */
 
-export type Country = 'india' | 'japan';
+export type Country = 'india' | 'japan' | 'international';
 
 const COUNTRY_PREFERENCE_KEY = 'userCountryPreference';
 
