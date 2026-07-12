@@ -653,25 +653,21 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
     };
 
     const addService = () => {
-        setFormData(prev => {
-            const baseRate = prev.services?.[0]?.rate || 0;
-            const defaultPercentage = 150; // Holidays + Day Shift
-            return {
-                ...prev,
-                services: [
-                    ...(prev.services || []),
+        setFormData(prev => ({
+            ...prev,
+            services: [
+                ...(prev.services || []),
                 { 
                     id: `service-${Date.now()}`, 
-                    overtime: 'Working Days (OT)', 
+                    overtime: 'Working Days', 
                     description: '', 
                     shift: 'Day Shift', 
                     hours: 0, 
-                    rate: Math.round((baseRate * (120 / 100)) * 100) / 100, 
-                    percentage: 120 
+                    rate: 0, 
+                    percentage: 100 
                 }
-                ]
-            };
-        });
+            ]
+        }));
     };
 
     const handleServiceChange = (index: number, field: keyof ServiceItem, value: any) => {
@@ -697,12 +693,14 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                     targetService.percentage = isDay ? 135 : 140;
                 } else if (targetService.overtime === 'Holiday (OT)') {
                     targetService.percentage = isDay ? 150 : 160;
+                } else {
+                    targetService.percentage = 100;
                 }
             }
             
-            // Auto-calculate Rate based on Base Rate (index 0 rate)
+            // Auto-calculate Rate based on Base Rate (index 0 rate) only if it's an OT item
             const baseRate = updatedServices[0]?.rate || 0;
-            if (index > 0) {
+            if (index > 0 && targetService.overtime !== 'Working Days') {
                 targetService.rate = Math.round((baseRate * ((targetService.percentage || 100) / 100)) * 100) / 100;
             }
         }
@@ -715,10 +713,12 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
         updatedServices[index] = targetService;
 
-        // If Base Rate (index 0 rate) changes, update all other rows' rates
+        // If Base Rate (index 0 rate) changes, update only OT rows' rates
         if (index === 0 && field === 'rate') {
             for (let i = 1; i < updatedServices.length; i++) {
-                updatedServices[i].rate = Math.round((processedValue * ((updatedServices[i].percentage || 100) / 100)) * 100) / 100;
+                if (updatedServices[i].overtime !== 'Working Days') {
+                    updatedServices[i].rate = Math.round((processedValue * ((updatedServices[i].percentage || 100) / 100)) * 100) / 100;
+                }
             }
         }
 
