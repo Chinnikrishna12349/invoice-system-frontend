@@ -1,167 +1,130 @@
 /**
- * Utility to convert English phonetic strings (names, addresses) to Katakana.
- * 
- * Note: This is an approximation based on common phonetic rules.
- * Professional Japanese systems usually require manual input for names (Reading/Furigana).
+ * Utility to convert addresses and names to natural Japanese (Hiragana & Kanji) for Japanese PDF invoices.
+ * Prevents unwanted Katakana conversion of business addresses.
  */
 
-const mapping: { [key: string]: string } = {
-  // Vowels
-  'a': 'ア', 'i': 'イ', 'u': 'ウ', 'e': 'エ', 'o': 'オ',
-  
-  // Consonants + Vowels
-  'ka': 'カ', 'ki': 'キ', 'ku': 'ク', 'ke': 'ケ', 'ko': 'コ',
-  'ga': 'ガ', 'gi': 'ギ', 'gu': 'グ', 'ge': 'ゲ', 'go': 'ゴ',
-  'sa': 'サ', 'shi': 'シ', 'su': 'ス', 'se': 'セ', 'so': 'ソ',
-  'za': 'ザ', 'ji': 'ジ', 'zu': 'ズ', 'ze': 'ゼ', 'zo': 'ゾ',
-  'ta': 'タ', 'chi': 'チ', 'tsu': 'ツ', 'te': 'テ', 'to': 'ト',
-  'da': 'ダ', 'di': 'ディ', 'du': 'ドゥ', 'de': 'デ', 'do': 'ド',
-  'na': 'ナ', 'ni': 'ニ', 'nu': 'ヌ', 'ne': 'ネ', 'no': 'ノ',
-  'ha': 'ハ', 'hi': 'ヒ', 'fu': 'フ', 'he': 'ヘ', 'ho': 'オ', // 'ho' as 'ho' or 'o'
-  'ba': 'バ', 'bi': 'ビ', 'bu': 'ブ', 'be': 'ベ', 'bo': 'ボ',
-  'pa': 'パ', 'pi': 'ピ', 'pu': 'プ', 'pe': 'ペ', 'po': 'ポ',
-  'ma': 'マ', 'mi': 'ミ', 'mu': 'ム', 'me': 'メ', 'mo': 'モ',
-  'ya': 'ヤ', 'yu': 'ユ', 'yo': 'ヨ',
-  'ra': 'ラ', 'ri': 'リ', 'ru': 'ル', 're': 'レ', 'ro': 'ロ',
-  'wa': 'ワ', 'wo': 'ヲ', 'nn': 'ン',
-  
-  // Combinations
-  'kya': 'キャ', 'kyu': 'キュ', 'kyo': 'キョ',
-  'sha': 'シャ', 'shu': 'シュ', 'sho': 'ショ',
-  'cha': 'チャ', 'chu': 'チュ', 'cho': 'チョ',
-  'nya': 'ニャ', 'nyu': 'ニュ', 'nyo': 'ニョ',
-  'hya': 'ヒャ', 'hyu': 'ヒュ', 'hyo': 'ヒョ',
-  'mya': 'ミャ', 'myu': 'ミュ', 'myo': 'ミョ',
-  'rya': 'リャ', 'ryu': 'リュ', 'ryo': 'リョ',
-  'gya': 'ギャ', 'gyu': 'ギュ', 'gyo': 'ギョ',
-  'ja': 'ジャ', 'ju': 'ジュ', 'jo': 'ジョ',
-  'bya': 'ビャ', 'byu': 'ビュ', 'byo': 'ビョ',
-  'pya': 'ピャ', 'pyu': 'ピュ', 'pyo': 'ピョ',
-  
-  // Additional for better English approx
-  'va': 'ヴァ', 'vi': 'ヴィ', 'vu': 'ヴ', 've': 'ヴェ', 'vo': 'ヴォ',
-  'fa': 'ファ', 'fi': 'フィ', 'fe': 'フェ', 'fo': 'フォ',
-  'ti': 'ティ', 'tu': 'トゥ',
-  'la': 'ラ', 'li': 'リ', 'lu': 'ル', 'le': 'レ', 'lo': 'ロ', // Map L to R
-  'v': 'ヴ', 'th': 'サ', 'ph': 'フ',
-  
-  // Vowel-less fallbacks (greedy matching handles them last)
-  'b': 'ブ', 'c': 'ク', 'd': 'ド', 'f': 'フ', 'g': 'グ', 'h': 'ハ', 
-  'j': 'ジュ', 'k': 'ク', 'l': 'ル', 'm': 'ム', 'n': 'ン', 'p': 'プ', 
-  'r': 'ル', 's': 'ス', 't': 'ト', 'w': 'ウ', 'z': 'ズ',
-  'sh': 'シ', 'ch': 'チ', 'ts': 'ツ',
-  'y': 'イ', 'q': 'ク', 'x': 'エクス',
+const fullAddressMap: { [key: string]: string } = {
+  // Full address exact mappings
+  '305-0861, ibaraki-ken, tsukuba-shi, yatabe 1077-58': '〒305-0861 茨城県つくば市谷田部 1077-58',
+  '305-0861 ibaraki-ken tsukuba-shi yatabe 1077-58': '〒305-0861 茨城県つくば市谷田部 1077-58',
+  '106-0044, tokyo, minato-ku, highashiazabu 1-9-11': '〒106-0044 東京都港区東麻布 1-9-11',
+  '106-0044, tokyo, minato-ku, higashiazabu 1-9-11': '〒106-0044 東京都港区東麻布 1-9-11',
+  '106-0044 tokyo minato-ku highashiazabu 1-9-11': '〒106-0044 東京都港区東麻布 1-9-11',
+  '106-0044, tokyo, minato-ku, highashiazabu 3-4-17, higashi azabu k building 3f': '〒106-0044 東京都港区東麻布 3-4-17 東麻布Kビル 3F',
+  '106-0044, tokyo, minato-ku, higashiazabu 3-4-17, higashi azabu k building 3f': '〒106-0044 東京都港区東麻布 3-4-17 東麻布Kビル 3F',
+  '210-0025, kanagawa-ken, kawasaki-shi, kawasaki-ku, shimonamiki 11-5, kawasaki sight city 4-809': '〒210-0025 神奈川県川崎市川崎区下並木 11-5 川崎サイトシティ 4-809',
 };
 
-// Custom replacements for common terms
-const termReplacements: { [key: string]: string } = {
-  'street': 'ストリート',
-  'road': 'ロード',
-  'floor': '階',
+const tokenMap: { [key: string]: string } = {
+  // Prefectures / Cities / Wards in Hiragana & Kanji
+  'ibaraki-ken': '茨城県',
+  'ibaraki ken': '茨城県',
+  'ibaraki': '茨城県',
+  'tsukuba-shi': 'つくば市',
+  'tsukuba shi': 'つくば市',
+  'tsukuba': 'つくば',
+  'yatabe': '谷田部',
+  'tokyo': '東京都',
+  'tokyo-to': '東京都',
+  'minato-ku': '港区',
+  'minato ku': '港区',
+  'highashiazabu': '東麻布',
+  'higashiazabu': '東麻布',
+  'higashi azabu': '東麻布',
+  'kanagawa-ken': '神奈川県',
+  'kanagawa ken': '神奈川県',
+  'kanagawa': '神奈川',
+  'kawasaki-shi': '川崎市',
+  'kawasaki shi': '川崎市',
+  'kawasaki-ku': '川崎区',
+  'kawasaki ku': '川崎区',
+  'shimonamiki': '下並木',
+  'kawasaki sight city': '川崎サイトシティ',
+  'higashi azabu k building 3f': '東麻布Kビル 3F',
+  'k building': 'Kビル',
   'building': 'ビル',
-  'india': 'インディア',
-  'japan': 'ジャパン',
+  'floor': '階',
+  'india': 'インド',
+  'japan': '日本',
+  'andhra pradesh': 'アンドラ・プラデシュ州',
+  'nellore': 'ネロール'
 };
 
-// Single Letters (Initials)
-const initials: { [key: string]: string } = {
-  'A': 'エー', 'B': 'ビー', 'C': 'シー', 'D': 'ディー', 'E': 'イー', 
-  'F': 'エフ', 'G': 'ジー', 'H': 'エイチ', 'I': 'アイ', 'J': 'ジェー', 
-  'K': 'ケー', 'L': 'エル', 'M': 'エム', 'N': 'エヌ', 'O': 'オー', 
-  'P': 'ピー', 'Q': 'キュー', 'R': 'アール', 'S': 'エス', 'T': 'ティー', 
-  'U': 'ユー', 'V': 'ブイ', 'W': 'ダブリュー', 'X': 'エックス', 'Y': 'ワイ', 'Z': 'ゼット'
+const companyNameMap: { [key: string]: string } = {
+  'vision ai llc': '合同会社Vision AI',
+  'ideal folks llc': '合同会社Ideal Folks',
+  'vcas consulting llc': '合同会社VCAS Consulting',
+  'kk blue arbarao': '株式会社Blue Arbarao'
 };
 
 /**
- * Converts English text to Katakana
+ * Converts English address strings to natural Hiragana & Kanji format.
+ * If already containing Japanese Kanji/Hiragana, returns directly.
+ */
+export const toNaturalJapaneseAddress = (text: string): string => {
+  if (!text) return '';
+  const trimmed = text.trim();
+
+  // If already contains Japanese Kanji or Hiragana (or natural postal format with Kanji), keep as is
+  if (/[\u3040-\u309F\u4E00-\u9FAF]/.test(trimmed)) {
+    return trimmed;
+  }
+
+  const lower = trimmed.toLowerCase();
+  if (fullAddressMap[lower]) {
+    return fullAddressMap[lower];
+  }
+
+  // Replace individual address tokens in natural order
+  let result = trimmed;
+  // Sort tokens by length descending so longer phrases match first
+  const sortedTokens = Object.keys(tokenMap).sort((a, b) => b.length - a.length);
+  for (const token of sortedTokens) {
+    const regex = new RegExp(`\\b${token}\\b`, 'gi');
+    result = result.replace(regex, tokenMap[token]);
+  }
+
+  // If result has postal code at start (e.g., 305-0861 or 106-0044) without 〒, add 〒
+  if (/^\d{3}-\d{4}/.test(result) && !result.startsWith('〒')) {
+    result = '〒' + result;
+  }
+
+  return result;
+};
+
+/**
+ * Converts company/client names to natural Japanese format.
+ */
+export const toNaturalJapaneseName = (text: string): string => {
+  if (!text) return '';
+  const trimmed = text.trim();
+  if (/[\u3040-\u309F\u4E00-\u9FAF]/.test(trimmed)) {
+    return trimmed;
+  }
+  const lower = trimmed.toLowerCase();
+  if (companyNameMap[lower]) {
+    return companyNameMap[lower];
+  }
+  // For company names not mapped, return natural name without katakana mangling
+  return trimmed;
+};
+
+/**
+ * Legacy toKatakana export preserved for backwards compatibility.
+ * Now routes through natural Japanese address/name conversion instead of forcing katakana.
  */
 export const toKatakana = (text: string): string => {
   if (!text) return '';
-  
-  // If it already contains Japanese, return as is
-  if (/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text)) {
-    return text;
+  const trimmed = text.trim();
+  if (/[\u3040-\u309F\u4E00-\u9FAF]/.test(trimmed)) {
+    return trimmed;
   }
-
-  let result = '';
-  let i = 0;
-  
-  // Pre-processing: Apply term replacements for whole words
-  let processedText = text;
-  for (const [eng, kat] of Object.entries(termReplacements)) {
-    const regex = new RegExp(`\\b${eng}\\b`, 'gi');
-    processedText = processedText.replace(regex, kat);
+  const lower = trimmed.toLowerCase();
+  if (fullAddressMap[lower]) {
+    return fullAddressMap[lower];
   }
-
-  const lowerText = processedText.toLowerCase();
-  
-  while (i < processedText.length) {
-    const char = processedText[i];
-    
-    // Handle whitespace and punctuation
-    if (/\s/.test(char)) {
-      result += ' ';
-      i++;
-      continue;
-    }
-    
-    // Handle numbers - keep them as is
-    if (/[0-9]/.test(char)) {
-      result += char;
-      i++;
-      continue;
-    }
-
-    if (/[^a-zA-Z]/.test(char)) {
-      result += char;
-      i++;
-      continue;
-    }
-
-    // Handle Single Capital Initial followed by dot or space (e.g. "M.")
-    if (/[A-Z]/.test(char) && (i + 1 === processedText.length || !/[a-z]/.test(processedText[i + 1]))) {
-      result += initials[char] || char;
-      i++;
-      continue;
-    }
-
-    // Try to match phonemes (greedy match)
-    let found = false;
-    // Try 3-char, then 2-char, then 1-char
-    for (let len = 3; len >= 1; len--) {
-      if (i + len <= processedText.length) {
-        const sub = lowerText.substring(i, i + len);
-        if (mapping[sub]) {
-          result += mapping[sub];
-          i += len;
-          found = true;
-          break;
-        }
-      }
-    }
-
-    if (!found) {
-      // Ultimate fallback: check if the character itself is in mapping (like 'n')
-      // if not, skip it if it's English to avoid stray letters
-      const c = lowerText[i];
-      if (mapping[c]) {
-        result += mapping[c];
-      } else {
-        // Skip stray English letters that couldn't be matched
-        console.warn(`Unmatched character in toKatakana: ${char}`);
-      }
-      i++;
-    }
+  if (companyNameMap[lower]) {
+    return companyNameMap[lower];
   }
-
-  // Cleanup: Fix double vowels/consonants approx
-  return result
-    .replace(/ッッ/g, 'ッ')
-    .replace(/ー+/g, 'ー')
-    .replace(/アァ/g, 'ア')
-    .replace(/イィ/g, 'イ')
-    .replace(/ウゥ/g, 'ウ')
-    .replace(/エェ/g, 'エ')
-    .replace(/オォ/g, 'オ')
-    .replace(/[a-zA-Z]/g, ''); // Final safety check: remove ANY remaining English letters
+  return toNaturalJapaneseAddress(trimmed);
 };

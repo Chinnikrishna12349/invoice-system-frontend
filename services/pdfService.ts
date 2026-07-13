@@ -4,7 +4,7 @@ import jsPDF from 'jspdf';
 import i18n from '../src/i18n/i18n';
 import { configureJapaneseFont, renderJapaneseText } from './japaneseFontSupport';
 import { getCompanyInfo } from './authService';
-import { toKatakana } from '../src/utils/katakanaConverter';
+import { toNaturalJapaneseAddress, toNaturalJapaneseName } from '../src/utils/katakanaConverter';
 import visionAiStamp from '../src/assets/visionai-stamp.png';
 import placeholderLogo from '../src/assets/oryfolks-logo.svg';
 import { VISION_AI_LOGO_BASE64 } from '../src/assets/visionAiLogoBase64';
@@ -565,7 +565,7 @@ const drawInvoiceContent = async (
     doc.setFontSize(10);
     // Company Name Bold
     const displayCompanyName = companyInfoToUse?.companyName || invoice.company || t.companyName;
-    const fromNameHeight = await addTextToPdf(doc, language === 'ja' ? toKatakana(displayCompanyName) : displayCompanyName, 14, fromY, {
+    const fromNameHeight = await addTextToPdf(doc, language === 'ja' ? toNaturalJapaneseName(displayCompanyName) : displayCompanyName, 14, fromY, {
         fontSize: 12,
         fontStyle: 'bold',
         language,
@@ -577,35 +577,28 @@ const drawInvoiceContent = async (
     doc.setFontSize(10);
 
     // DYNAMIC ADDRESS GENERATION
-    // Use companyInfoToUse first, fall back to hardcoded only if absolutely necessary logic requires it (which it shouldn't for "dynamic" requirement)
     let fromLines: string[] = [];
 
     if (companyInfoToUse?.companyAddress) {
-        // Split address by newlines or commas if it's a single string
-        // Assuming companyAddress might be multi-line
-        const addressParts = companyInfoToUse.companyAddress.split(/[\n,]+/).map(s => s.trim()).filter(s => s.length > 0);
-        fromLines = [...addressParts];
+        if (language === 'ja') {
+            const jaAddr = toNaturalJapaneseAddress(companyInfoToUse.companyAddress);
+            const postalMatch = jaAddr.match(/^(〒\d{3}-\d{4})\s*(.+)$/);
+            if (postalMatch) {
+                fromLines = [postalMatch[1], postalMatch[2]];
+            } else {
+                fromLines = jaAddr.split(/[\n,]+/).map(s => s.trim()).filter(s => s.length > 0);
+            }
+        } else {
+            const addressParts = companyInfoToUse.companyAddress.split(/[\n,]+/).map(s => s.trim()).filter(s => s.length > 0);
+            fromLines = [...addressParts];
+        }
     } else {
-        // Fallback if no company info (shouldn't happen with AuthContext but safe to keep)
         fromLines = ['Vedayapalem', 'Nellore, Andhra Pradesh', 'PIN: 524004', 'India'];
     }
 
-    // Add Contact Info from Company Info specific fields or fallback
-    // We don't have direct fields in CompanyInfo for GSTIN/Phone/Email in the Type def shown earlier?
-    // Wait, let's check CompanyInfo type in types.ts again.
-    // Type: id, companyName, companyAddress, companyLogoUrl, bankDetails. 
-    // It MISSES gstin, phone, email. 
-    // BUT the implementation plan said "Ensure the company address entered by the user dynamically appears". 
-    // The user issue is "Address". 
-    // I will append the address lines. 
-    // For GSTIN/Phone/Email, if they are not in CompanyInfo, we might have to stick to hardcoded or see if they are in 'user' object?
-    // Re-checking types.ts -> CompanyInfo has limited fields.
-    // ideally we should fetch extended info. 
-    // However, for "Company Address", I will definitely use `companyInfo.companyAddress`.
-
     for (const line of fromLines) {
         if (line && line.trim()) {
-            const displayLine = language === 'ja' ? toKatakana(line.trim()) : line.trim();
+            const displayLine = language === 'ja' ? toNaturalJapaneseAddress(line.trim()) : line.trim();
             const lineHeight = await addTextToPdf(doc, displayLine, 14, fromY, {
                 fontSize: 11,
                 language,
@@ -659,7 +652,7 @@ const drawInvoiceContent = async (
         });
         billToY = fromStartY + 6;
 
-        const employeeNameHeight = await addTextToPdf(doc, language === 'ja' ? toKatakana(invoice.employeeName.trim()) : invoice.employeeName.trim(), billToX, billToY, {
+        const employeeNameHeight = await addTextToPdf(doc, language === 'ja' ? toNaturalJapaneseName(invoice.employeeName.trim()) : invoice.employeeName.trim(), billToX, billToY, {
             fontSize: 12,
             fontStyle: 'bold',
             align: 'left',
@@ -731,7 +724,7 @@ const drawInvoiceContent = async (
             await addTextToPdf(doc, ':', billToColonX, billToY + (language === 'ja' ? 1 : 0), { fontSize: 11, align: 'left', language });
 
             const addressToDisplay = invoice.employeeAddress.replace(/\n/g, ', ').trim();
-            const finalAddress = language === 'ja' ? toKatakana(addressToDisplay) : addressToDisplay;
+            const finalAddress = language === 'ja' ? toNaturalJapaneseAddress(addressToDisplay) : addressToDisplay;
             const valueH = await addTextToPdf(doc, finalAddress, billToValueX, billToY + (language === 'ja' ? 1 : 0), {
                 fontSize: 11,
                 align: 'left',
@@ -890,11 +883,11 @@ const drawInvoiceContent = async (
         // Description
         let lineY = rowTextY - (descLines.length > 1 ? 2 : 0);
         if (descLines.length === 1) {
-            const displayDesc = language === 'ja' ? toKatakana(descLines[0]) : descLines[0];
+            const displayDesc = language === 'ja' ? toNaturalJapaneseName(descLines[0]) : descLines[0];
             await addTextToPdf(doc, displayDesc, colX[1] + 2, rowTextY, { align: 'left', language, maxWidth: descWidth, fontSize: 9 });
         } else {
             for (const line of descLines) {
-                const displayLine = language === 'ja' ? toKatakana(line) : line;
+                const displayLine = language === 'ja' ? toNaturalJapaneseName(line) : line;
                 await addTextToPdf(doc, displayLine, colX[1] + 2, lineY, { align: 'left', language, maxWidth: descWidth, fontSize: 9 });
                 lineY += 5;
             }
