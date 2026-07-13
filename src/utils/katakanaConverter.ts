@@ -3,6 +3,15 @@
  * and convert person/item names in service descriptions to Katakana.
  */
 
+const addSpaceBetweenJaAndEn = (str: string): string => {
+  if (!str) return '';
+  return str
+    .replace(/([\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF])([a-zA-Z0-9])/g, '$1 $2')
+    .replace(/([a-zA-Z0-9])([\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF])/g, '$1 $2')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
 const fullAddressMap: { [key: string]: string } = {
   // Full address exact mappings
   '305-0861, ibaraki-ken, tsukuba-shi, yatabe 1077-58': '〒305-0861 茨城県つくば市谷田部 1077-58',
@@ -10,8 +19,8 @@ const fullAddressMap: { [key: string]: string } = {
   '106-0044, tokyo, minato-ku, highashiazabu 1-9-11': '〒106-0044 東京都港区東麻布 1-9-11',
   '106-0044, tokyo, minato-ku, higashiazabu 1-9-11': '〒106-0044 東京都港区東麻布 1-9-11',
   '106-0044 tokyo minato-ku highashiazabu 1-9-11': '〒106-0044 東京都港区東麻布 1-9-11',
-  '106-0044, tokyo, minato-ku, highashiazabu 3-4-17, higashi azabu k building 3f': '〒106-0044 東京都港区東麻布 3-4-17 東麻布Kビル 3F',
-  '106-0044, tokyo, minato-ku, higashiazabu 3-4-17, higashi azabu k building 3f': '〒106-0044 東京都港区東麻布 3-4-17 東麻布Kビル 3F',
+  '106-0044, tokyo, minato-ku, highashiazabu 3-4-17, higashi azabu k building 3f': '〒106-0044 東京都港区東麻布 3-4-17 東麻布 K ビル 3F',
+  '106-0044, tokyo, minato-ku, higashiazabu 3-4-17, higashi azabu k building 3f': '〒106-0044 東京都港区東麻布 3-4-17 東麻布 K ビル 3F',
   '210-0025, kanagawa-ken, kawasaki-shi, kawasaki-ku, shimonamiki 11-5, kawasaki sight city 4-809': '〒210-0025 神奈川県川崎市川崎区下並木 11-5 川崎サイトシティ 4-809',
 };
 
@@ -40,8 +49,8 @@ const tokenMap: { [key: string]: string } = {
   'kawasaki ku': '川崎区',
   'shimonamiki': '下並木',
   'kawasaki sight city': '川崎サイトシティ',
-  'higashi azabu k building 3f': '東麻布Kビル 3F',
-  'k building': 'Kビル',
+  'higashi azabu k building 3f': '東麻布 K ビル 3F',
+  'k building': 'K ビル',
   'building': 'ビル',
   'floor': '階',
   'india': 'インド',
@@ -51,10 +60,10 @@ const tokenMap: { [key: string]: string } = {
 };
 
 const companyNameMap: { [key: string]: string } = {
-  'vision ai llc': '合同会社Vision AI',
-  'ideal folks llc': '合同会社Ideal Folks',
-  'vcas consulting llc': '合同会社VCAS Consulting',
-  'kk blue arbarao': '株式会社Blue Arbarao'
+  'vision ai llc': '合同会社 Vision AI',
+  'ideal folks llc': '合同会社 Ideal Folks',
+  'vcas consulting llc': '合同会社 VCAS Consulting',
+  'kk blue arbarao': '株式会社 Blue Arbarao'
 };
 
 const exactNameMap: { [key: string]: string } = {
@@ -127,20 +136,20 @@ const phonemeMap: { [key: string]: string } = {
 
 /**
  * Converts English address strings to natural Hiragana & Kanji format.
- * If already containing Japanese Kanji/Hiragana, returns directly.
+ * Automatically adds clean spacing between Japanese characters and English alphanumeric terms.
  */
 export const toNaturalJapaneseAddress = (text: string): string => {
   if (!text) return '';
   const trimmed = text.trim();
 
-  // If already contains Japanese Kanji or Hiragana (or natural postal format with Kanji), keep as is
-  if (/[\u3040-\u309F\u4E00-\u9FAF]/.test(trimmed)) {
-    return trimmed;
-  }
-
   const lower = trimmed.toLowerCase();
   if (fullAddressMap[lower]) {
-    return fullAddressMap[lower];
+    return addSpaceBetweenJaAndEn(fullAddressMap[lower]);
+  }
+
+  // If already contains Japanese Kanji or Hiragana (or natural postal format with Kanji), format space & return
+  if (/[\u3040-\u309F\u4E00-\u9FAF]/.test(trimmed)) {
+    return addSpaceBetweenJaAndEn(trimmed);
   }
 
   // Replace individual address tokens in natural order
@@ -155,23 +164,20 @@ export const toNaturalJapaneseAddress = (text: string): string => {
     result = '〒' + result;
   }
 
-  return result;
+  return addSpaceBetweenJaAndEn(result);
 };
 
 /**
- * Converts company/client names to natural Japanese format.
+ * Converts company/client names to natural Japanese format with clean spacing between Japanese script and English terms.
  */
 export const toNaturalJapaneseName = (text: string): string => {
   if (!text) return '';
   const trimmed = text.trim();
-  if (/[\u3040-\u309F\u4E00-\u9FAF]/.test(trimmed)) {
-    return trimmed;
-  }
   const lower = trimmed.toLowerCase();
   if (companyNameMap[lower]) {
-    return companyNameMap[lower];
+    return addSpaceBetweenJaAndEn(companyNameMap[lower]);
   }
-  return trimmed;
+  return addSpaceBetweenJaAndEn(trimmed);
 };
 
 /**
@@ -179,9 +185,9 @@ export const toNaturalJapaneseName = (text: string): string => {
  */
 export const toPhoneticKatakana = (text: string): string => {
   if (!text) return '';
-  // If already contains Japanese, return as is
+  // If already contains Japanese, ensure neat spacing and return
   if (/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text)) {
-    return text;
+    return addSpaceBetweenJaAndEn(text);
   }
   const trimmed = text.trim();
   const lower = trimmed.toLowerCase();
@@ -249,15 +255,12 @@ export const toPhoneticKatakana = (text: string): string => {
 export const toKatakana = (text: string): string => {
   if (!text) return '';
   const trimmed = text.trim();
-  if (/[\u3040-\u309F\u4E00-\u9FAF]/.test(trimmed)) {
-    return trimmed;
-  }
   const lower = trimmed.toLowerCase();
   if (fullAddressMap[lower]) {
-    return fullAddressMap[lower];
+    return addSpaceBetweenJaAndEn(fullAddressMap[lower]);
   }
   if (companyNameMap[lower]) {
-    return companyNameMap[lower];
+    return addSpaceBetweenJaAndEn(companyNameMap[lower]);
   }
   return toNaturalJapaneseAddress(trimmed);
 };
