@@ -4,7 +4,7 @@ import jsPDF from 'jspdf';
 import i18n from '../src/i18n/i18n';
 import { configureJapaneseFont, renderJapaneseText } from './japaneseFontSupport';
 import { getCompanyInfo } from './authService';
-import { toNaturalJapaneseAddress, toNaturalJapaneseName } from '../src/utils/katakanaConverter';
+import { toNaturalJapaneseAddress, toNaturalJapaneseName, toPhoneticKatakana } from '../src/utils/katakanaConverter';
 import visionAiStamp from '../src/assets/visionai-stamp.png';
 import placeholderLogo from '../src/assets/oryfolks-logo.svg';
 import { VISION_AI_LOGO_BASE64 } from '../src/assets/visionAiLogoBase64';
@@ -883,11 +883,11 @@ const drawInvoiceContent = async (
         // Description
         let lineY = rowTextY - (descLines.length > 1 ? 2 : 0);
         if (descLines.length === 1) {
-            const displayDesc = language === 'ja' ? toNaturalJapaneseName(descLines[0]) : descLines[0];
+            const displayDesc = language === 'ja' ? toPhoneticKatakana(descLines[0]) : descLines[0];
             await addTextToPdf(doc, displayDesc, colX[1] + 2, rowTextY, { align: 'left', language, maxWidth: descWidth, fontSize: 9 });
         } else {
             for (const line of descLines) {
-                const displayLine = language === 'ja' ? toNaturalJapaneseName(line) : line;
+                const displayLine = language === 'ja' ? toPhoneticKatakana(line) : line;
                 await addTextToPdf(doc, displayLine, colX[1] + 2, lineY, { align: 'left', language, maxWidth: descWidth, fontSize: 9 });
                 lineY += 5;
             }

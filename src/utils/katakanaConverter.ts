@@ -1,6 +1,6 @@
 /**
- * Utility to convert addresses and names to natural Japanese (Hiragana & Kanji) for Japanese PDF invoices.
- * Prevents unwanted Katakana conversion of business addresses.
+ * Utility to convert addresses and names to natural Japanese (Hiragana & Kanji) for Japanese PDF invoices,
+ * and convert person/item names in service descriptions to Katakana.
  */
 
 const fullAddressMap: { [key: string]: string } = {
@@ -57,6 +57,74 @@ const companyNameMap: { [key: string]: string } = {
   'kk blue arbarao': '株式会社Blue Arbarao'
 };
 
+const exactNameMap: { [key: string]: string } = {
+  'vijayalakshmi': 'ヴィジャヤラクシュミ',
+  'vijayalakshmi m': 'ヴィジャヤラクシュミ M',
+  'vijayalakshmi. m': 'ヴィジャヤラクシュミ M',
+  'vijayalakshmi m.': 'ヴィジャヤラクシュミ M',
+  'chinnikrishna': 'チンニクリシュナ',
+  'chinnikrishna maddana': 'チンニクリシュナ・マッダナ',
+  'ram kumar': 'ラム・クマール',
+  'ram': 'ラム',
+  'suresh': 'スレシュ',
+  'anitha': 'アニタ',
+  'priya': 'プリヤ',
+  'lakshmi': 'ラクシュミ',
+  'vijay': 'ヴィジャイ',
+  'arun': 'アルン',
+  'karthik': 'カルティク',
+  'divya': 'ディヴィヤ',
+  'rajesh': 'ラジェシュ',
+  'working days': '稼働日',
+  'working days (ot)': '稼働日 (残業)',
+  'holiday': '休日',
+  'holiday (ot)': '休日 (残業)'
+};
+
+const phonemeMap: { [key: string]: string } = {
+  // Vowels
+  'a': 'ア', 'i': 'イ', 'u': 'ウ', 'e': 'エ', 'o': 'オ',
+  // Consonants + Vowels
+  'ka': 'カ', 'ki': 'キ', 'ku': 'ク', 'ke': 'ケ', 'ko': 'コ',
+  'ga': 'ガ', 'gi': 'ギ', 'gu': 'グ', 'ge': 'ゲ', 'go': 'ゴ',
+  'sa': 'サ', 'shi': 'シ', 'su': 'ス', 'se': 'セ', 'so': 'ソ',
+  'za': 'ザ', 'ji': 'ジ', 'zu': 'ズ', 'ze': 'ゼ', 'zo': 'ゾ',
+  'ta': 'タ', 'chi': 'チ', 'tsu': 'ツ', 'te': 'テ', 'to': 'ト',
+  'da': 'ダ', 'di': 'ディ', 'du': 'ドゥ', 'de': 'デ', 'do': 'ド',
+  'na': 'ナ', 'ni': 'ニ', 'nu': 'ヌ', 'ne': 'ネ', 'no': 'ノ',
+  'ha': 'ハ', 'hi': 'ヒ', 'fu': 'フ', 'he': 'ヘ', 'ho': 'ホ',
+  'ba': 'バ', 'bi': 'ビ', 'bu': 'ブ', 'be': 'ベ', 'bo': 'ボ',
+  'pa': 'パ', 'pi': 'ピ', 'pu': 'プ', 'pe': 'ペ', 'po': 'ポ',
+  'ma': 'マ', 'mi': 'ミ', 'mu': 'ム', 'me': 'メ', 'mo': 'モ',
+  'ya': 'ヤ', 'yu': 'ユ', 'yo': 'ヨ',
+  'ra': 'ラ', 'ri': 'リ', 'ru': 'ル', 're': 'レ', 'ro': 'ロ',
+  'wa': 'ワ', 'wo': 'ヲ', 'nn': 'ン',
+  // Combinations
+  'kya': 'キャ', 'kyu': 'キュ', 'kyo': 'キョ',
+  'sha': 'シャ', 'shu': 'シュ', 'sho': 'ショ',
+  'cha': 'チャ', 'chu': 'チュ', 'cho': 'チョ',
+  'nya': 'ニャ', 'nyu': 'ニュ', 'nyo': 'ニョ',
+  'hya': 'ヒャ', 'hyu': 'ヒュ', 'hyo': 'ヒョ',
+  'mya': 'ミャ', 'myu': 'ミュ', 'myo': 'ミョ',
+  'rya': 'リャ', 'ryu': 'リュ', 'ryo': 'リョ',
+  'gya': 'ギャ', 'gyu': 'ギュ', 'gyo': 'ギョ',
+  'ja': 'ジャ', 'ju': 'ジュ', 'jo': 'ジョ',
+  'bya': 'ビャ', 'byu': 'ビュ', 'byo': 'ビョ',
+  'pya': 'ピャ', 'pyu': 'ピュ', 'pyo': 'ピョ',
+  // Additional
+  'va': 'ヴァ', 'vi': 'ヴィ', 'vu': 'ヴ', 've': 'ヴェ', 'vo': 'ヴォ',
+  'fa': 'ファ', 'fi': 'フィ', 'fe': 'フェ', 'fo': 'フォ',
+  'ti': 'ティ', 'tu': 'トゥ',
+  'la': 'ラ', 'li': 'リ', 'lu': 'ル', 'le': 'レ', 'lo': 'ロ',
+  'v': 'ヴ', 'th': 'サ', 'ph': 'フ',
+  // Fallbacks
+  'b': 'ブ', 'c': 'ク', 'd': 'ド', 'f': 'フ', 'g': 'グ', 'h': 'ハ',
+  'j': 'ジュ', 'k': 'ク', 'l': 'ル', 'm': 'ム', 'n': 'ン', 'p': 'プ',
+  'r': 'ル', 's': 'ス', 't': 'ト', 'w': 'ウ', 'z': 'ズ',
+  'sh': 'シ', 'ch': 'チ', 'ts': 'ツ',
+  'y': 'イ', 'q': 'ク', 'x': 'エクス',
+};
+
 /**
  * Converts English address strings to natural Hiragana & Kanji format.
  * If already containing Japanese Kanji/Hiragana, returns directly.
@@ -77,14 +145,12 @@ export const toNaturalJapaneseAddress = (text: string): string => {
 
   // Replace individual address tokens in natural order
   let result = trimmed;
-  // Sort tokens by length descending so longer phrases match first
   const sortedTokens = Object.keys(tokenMap).sort((a, b) => b.length - a.length);
   for (const token of sortedTokens) {
     const regex = new RegExp(`\\b${token}\\b`, 'gi');
     result = result.replace(regex, tokenMap[token]);
   }
 
-  // If result has postal code at start (e.g., 305-0861 or 106-0044) without 〒, add 〒
   if (/^\d{3}-\d{4}/.test(result) && !result.startsWith('〒')) {
     result = '〒' + result;
   }
@@ -105,13 +171,80 @@ export const toNaturalJapaneseName = (text: string): string => {
   if (companyNameMap[lower]) {
     return companyNameMap[lower];
   }
-  // For company names not mapped, return natural name without katakana mangling
   return trimmed;
 };
 
 /**
+ * Converts person/service names in descriptions to Katakana when generating Japanese PDF invoices.
+ */
+export const toPhoneticKatakana = (text: string): string => {
+  if (!text) return '';
+  // If already contains Japanese, return as is
+  if (/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text)) {
+    return text;
+  }
+  const trimmed = text.trim();
+  const lower = trimmed.toLowerCase();
+  if (exactNameMap[lower]) {
+    return exactNameMap[lower];
+  }
+
+  const words = trimmed.split(/\s+/);
+  const katakanaWords = words.map(word => {
+    const wLower = word.toLowerCase();
+    if (exactNameMap[wLower]) {
+      return exactNameMap[wLower];
+    }
+    // Single capital letter like 'M' or 'M.'
+    if (word.length === 1 && /[A-Z]/i.test(word)) {
+      return word.toUpperCase();
+    }
+    if (word.length === 2 && word.endsWith('.') && /[A-Z]/i.test(word[0])) {
+      return word[0].toUpperCase() + '.';
+    }
+
+    let res = '';
+    let i = 0;
+    while (i < wLower.length) {
+      const char = wLower[i];
+      if (/[0-9\-_.]/.test(char)) {
+        res += char;
+        i++;
+        continue;
+      }
+      if (/[^a-z]/.test(char)) {
+        i++;
+        continue;
+      }
+      let matched = false;
+      for (let len = 4; len >= 1; len--) {
+        if (i + len <= wLower.length) {
+          const sub = wLower.substring(i, i + len);
+          if (phonemeMap[sub]) {
+            res += phonemeMap[sub];
+            i += len;
+            matched = true;
+            break;
+          }
+        }
+      }
+      if (!matched) {
+        if (phonemeMap[char]) {
+          res += phonemeMap[char];
+        }
+        i++;
+      }
+    }
+    return res
+      .replace(/ッッ/g, 'ッ')
+      .replace(/ー+/g, 'ー');
+  });
+
+  return katakanaWords.join(' ');
+};
+
+/**
  * Legacy toKatakana export preserved for backwards compatibility.
- * Now routes through natural Japanese address/name conversion instead of forcing katakana.
  */
 export const toKatakana = (text: string): string => {
   if (!text) return '';
