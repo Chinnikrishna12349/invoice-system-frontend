@@ -155,7 +155,6 @@ const getTranslations = async (language: 'en' | 'ja') => {
         swiftCodeLabel: i18n.t('payment.swiftCode') || 'SWIFT Code',
         bankCodeLabel: i18n.t('payment.bankCode') || (language === 'ja' ? '銀行コード：' : 'Bank Code:'),
         ifscCodeLabel: i18n.t('payment.ifsc'),
-        overtime: language === 'ja' ? '勤務形態' : 'Work Type',
         shift: language === 'ja' ? '交代制' : 'Shift',
         percentage: 'Rate %'
     };

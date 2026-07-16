@@ -11,8 +11,8 @@ let mockInvoices: Invoice[] = [
     employeeAddress: '123 Main St, City, Country',
     employeeMobile: '+1234567890',
     services: [
-      { id: '1', overtime: 'Working Days (OT)', description: 'Web Development', shift: 'Day Shift', hours: 10, rate: 100 },
-      { id: '2', overtime: 'Working Days (OT)', description: 'UI/UX Design', shift: 'Day Shift', hours: 5, rate: 80 }
+      { id: '1', description: 'Web Development', shift: 'Day Shift', hours: 10, rate: 100 },
+      { id: '2', description: 'UI/UX Design', shift: 'Day Shift', hours: 5, rate: 80 }
     ],
     taxRate: 10,
     dueDate: '2023-11-15',
@@ -27,8 +27,8 @@ let mockInvoices: Invoice[] = [
     employeeAddress: '456 Oak St, City, Country',
     employeeMobile: '+1987654321',
     services: [
-      { id: '3', overtime: 'Working Days (OT)', description: 'Consulting', shift: 'Day Shift', hours: 8, rate: 120 },
-      { id: '4', overtime: 'Working Days (OT)', description: 'Training', shift: 'Day Shift', hours: 3, rate: 150 }
+      { id: '3', description: 'Consulting', shift: 'Day Shift', hours: 8, rate: 120 },
+      { id: '4', description: 'Training', shift: 'Day Shift', hours: 3, rate: 150 }
     ],
     taxRate: 15,
     dueDate: '2023-12-25',

@@ -6,7 +6,6 @@ interface InvoiceItem {
   hours: number;
   unitPrice: number;
   amount: number;
-  overtime?: string;
   shift?: string;
   percentage?: number;
 }

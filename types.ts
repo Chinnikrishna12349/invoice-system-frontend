@@ -1,6 +1,5 @@
 export interface ServiceItem {
   id: string;
-  overtime: string; // 'Normal Days' | 'Weekends' | 'Holidays'
   description: string;
   shift: string; // '9:00 AM – 10:00 PM' | '10:00 PM – 5:00 AM'
   hours: number;

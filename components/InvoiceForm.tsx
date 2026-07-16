@@ -72,7 +72,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         employeeEmail: '',
         employeeAddress: '',
         employeeMobile: '',
-        services: [{ id: `service-${Date.now()}`, overtime: 'Working Days', description: '', shift: 'Day Shift', hours: 0, rate: 0, percentage: 100 }],
+        services: [{ id: `service-${Date.now()}`, description: '', shift: 'Day Shift', hours: 0, rate: 0, percentage: 100 }],
         taxRate: currentCountry === 'japan' ? 10 : 18,
         cgstRate: currentCountry === 'india' ? 9 : 0,
         sgstRate: currentCountry === 'india' ? 9 : 0,
@@ -257,9 +257,6 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 const isFirstRow = index === 0;
                 return {
                     ...service,
-                    overtime: service.overtime && service.overtime !== 'Normal Days' 
-                        ? service.overtime 
-                        : (isFirstRow ? 'Working Days' : 'Working Days (OT)'),
                     shift: service.shift || 'Day Shift',
                     percentage: service.percentage ? service.percentage : (isFirstRow ? 100 : 120)
                 };
@@ -661,7 +658,6 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 ...(prev.services || []),
                 { 
                     id: `service-${Date.now()}`, 
-                    overtime: 'Working Days', 
                     description: '', 
                     shift: 'Day Shift', 
                     hours: 0, 
@@ -683,26 +679,18 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         
         let targetService = { ...updatedServices[index], [field]: processedValue };
 
-        // Auto-population logic for Percentage and Rate
-        if (field === 'overtime' || field === 'shift') {
+        // Auto-population logic for Percentage and Rate when shift changes
+        if (field === 'shift') {
             if (index === 0) {
                 targetService.percentage = 100;
             } else {
                 const isDay = targetService.shift === 'Day Shift';
-                if (targetService.overtime === 'Working Days (OT)') {
-                    targetService.percentage = isDay ? 120 : 125;
-                } else if (targetService.overtime === 'Weekends (OT)') {
-                    targetService.percentage = isDay ? 135 : 140;
-                } else if (targetService.overtime === 'Holiday (OT)') {
-                    targetService.percentage = isDay ? 150 : 160;
-                } else {
-                    targetService.percentage = 100;
-                }
+                targetService.percentage = isDay ? 120 : 125;
             }
             
-            // Auto-calculate Rate based on Base Rate (index 0 rate) only if it's an OT item
+            // Auto-calculate Rate based on Base Rate (index 0 rate)
             const baseRate = updatedServices[0]?.rate || 0;
-            if (index > 0 && targetService.overtime !== 'Working Days') {
+            if (index > 0) {
                 targetService.rate = Math.round((baseRate * ((targetService.percentage || 100) / 100)) * 100) / 100;
             }
         }
@@ -715,12 +703,10 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
         updatedServices[index] = targetService;
 
-        // If Base Rate (index 0 rate) changes, update only OT rows' rates
+        // If Base Rate (index 0 rate) changes, update other rows' rates based on their percentage
         if (index === 0 && field === 'rate') {
             for (let i = 1; i < updatedServices.length; i++) {
-                if (updatedServices[i].overtime !== 'Working Days') {
-                    updatedServices[i].rate = Math.round((processedValue * ((updatedServices[i].percentage || 100) / 100)) * 100) / 100;
-                }
+                updatedServices[i].rate = Math.round((processedValue * ((updatedServices[i].percentage || 100) / 100)) * 100) / 100;
             }
         }
 
