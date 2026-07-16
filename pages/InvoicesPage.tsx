@@ -83,34 +83,32 @@ export const InvoicesPage: React.FC = () => {
         setShowLanguageModal(true);
     }, [downloadedIds]);
 
-    const handleDownload = useCallback((language: 'en' | 'ja' | 'both') => {
+    const handleDownload = useCallback(async (language: 'en' | 'ja' | 'both') => {
         if (selectedLangInvoice) {
             // Use the snapshot company info from the invoice if available, otherwise fall back to user's current company info
             const invoiceCompanyInfo = selectedLangInvoice.companyInfo || companyInfo;
+            const invoiceToProcess = selectedLangInvoice;
 
-            if (language === 'both') {
-                Promise.all([
-                    generateInvoicePDF(selectedLangInvoice, 'en', invoiceCompanyInfo, true),
-                    generateInvoicePDF(selectedLangInvoice, 'ja', invoiceCompanyInfo, true)
-                ]).then(() => {
-                    setDownloadedIds(prev => new Set([...prev, selectedLangInvoice.id]));
+            setShowLanguageModal(false);
+            setSelectedLangInvoice(null);
+
+            try {
+                if (language === 'both') {
+                    // Execute sequentially to prevent concurrent i18n global state mutations mixing EN & JA
+                    await generateInvoicePDF(invoiceToProcess, 'en', invoiceCompanyInfo, true);
+                    await generateInvoicePDF(invoiceToProcess, 'ja', invoiceCompanyInfo, true);
+                    setDownloadedIds(prev => new Set([...prev, invoiceToProcess.id]));
                     setTimeout(() => {
                         alert('Both English and Japanese invoices downloaded successfully!');
                     }, 150);
-                }).catch((error) => {
-                    console.error('Error generating PDF:', error);
-                    alert('Failed to generate PDF. Please try again.');
-                });
-            } else {
-                generateInvoicePDF(selectedLangInvoice, language, invoiceCompanyInfo).then(() => {
-                    setDownloadedIds(prev => new Set([...prev, selectedLangInvoice.id]));
-                }).catch((error) => {
-                    console.error('Error generating PDF:', error);
-                    alert('Failed to generate PDF. Please try again.');
-                });
+                } else {
+                    await generateInvoicePDF(invoiceToProcess, language, invoiceCompanyInfo);
+                    setDownloadedIds(prev => new Set([...prev, invoiceToProcess.id]));
+                }
+            } catch (error) {
+                console.error('Error generating PDF:', error);
+                alert('Failed to generate PDF. Please try again.');
             }
-            setShowLanguageModal(false);
-            setSelectedLangInvoice(null);
         }
     }, [selectedLangInvoice, companyInfo]);
 
