@@ -1053,10 +1053,10 @@ export const generateInvoicePDF = async (invoice: Invoice, language: 'en' | 'ja'
                 .substring(0, 30)
             : '';
 
-        // Save
-        const fileName = resourceName
-            ? `${invoice.invoiceNumber} ${resourceName}.pdf`
-            : `${invoice.invoiceNumber}.pdf`;
+        // Standardized File Naming across both Downloads and Email Attachments
+        const langSuffix = language === 'ja' ? '_JA' : '_EN';
+        const cleanInvNum = invoice.invoiceNumber ? invoice.invoiceNumber.replace(/[^a-zA-Z0-9_-]/g, '') : 'INV';
+        const fileName = `Invoice_${cleanInvNum}${langSuffix}.pdf`;
 
         const pdfData = doc.output('blob');
         const pdfUrl = URL.createObjectURL(pdfData);

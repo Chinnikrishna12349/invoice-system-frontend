@@ -277,8 +277,9 @@ export const sendInvoiceByEmail = async (
           resourceName = resourceName.substring(0, 50);
         }
       }
-      const filenameEn = `${invoice.invoiceNumber} ${resourceName} (English).pdf`.trim();
-      const filenameJa = `${invoice.invoiceNumber} ${resourceName} (Japanese).pdf`.trim();
+      const cleanInvNum = invoice.invoiceNumber ? invoice.invoiceNumber.replace(/[^a-zA-Z0-9_-]/g, '') : 'INV';
+      const filenameEn = `Invoice_${cleanInvNum}_EN.pdf`;
+      const filenameJa = `Invoice_${cleanInvNum}_JA.pdf`;
 
       const payload = [
         { name: filenameEn, content: toBase64(pdfBytesEn) },
