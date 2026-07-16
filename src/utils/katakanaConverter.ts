@@ -62,10 +62,20 @@ const tokenMap: { [key: string]: string } = {
 };
 
 const companyNameMap: { [key: string]: string } = {
-  'vision ai llc': '合同会社 Vision AI',
-  'ideal folks llc': '合同会社 Ideal Folks',
-  'vcas consulting llc': '合同会社 VCAS Consulting',
-  'kk blue arbarao': '株式会社 Blue Arbarao'
+  'vision ai llc': '合同会社 ヴィジョン・エーアイ',
+  'vision ai': '合同会社 ヴィジョン・エーアイ',
+  '合同会社 vision ai': '合同会社 ヴィジョン・エーアイ',
+  'ideal folks llc': '合同会社 アイディール・フォークス',
+  'ideal folks': '合同会社 アイディール・フォークス',
+  '合同会社 ideal folks': '合同会社 アイディール・フォークス',
+  'vcas consulting llc': '合同会社 ブイキャス・コンサルティング',
+  'vcas consulting': '合同会社 ブイキャス・コンサルティング',
+  '合同会社 vcas consulting': '合同会社 ブイキャス・コンサルティング',
+  'vcas': '合同会社 ブイキャス',
+  'kk blue arbarao': '株式会社 ブルー・アルバラオ',
+  'blue arbarao': '株式会社 ブルー・アルバラオ',
+  '株式会社 blue arbarao': '株式会社 ブルー・アルバラオ',
+  'accenture': 'アクセンチュア'
 };
 
 const exactNameMap: { [key: string]: string } = {
@@ -181,16 +191,52 @@ export const toNaturalJapaneseAddress = (text: string): string => {
 export const toNaturalJapaneseName = (text: string): string => {
   if (!text) return '';
   const trimmed = text.trim();
-  if (/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(trimmed)) {
-    return addSpaceBetweenJaAndEn(trimmed);
-  }
   const lower = trimmed.toLowerCase();
+
+  // 1. Direct exact/lower match
   if (companyNameMap[lower]) {
     return addSpaceBetweenJaAndEn(companyNameMap[lower]);
   }
   if (exactNameMap[lower]) {
     return exactNameMap[lower];
   }
+
+  // 2. Check normalized name stripped of prefixes/suffixes (like "合同会社 ideal folks" -> "ideal folks")
+  const strippedLower = lower
+    .replace(/^合同会社\s*/, '')
+    .replace(/^株式会社\s*/, '')
+    .replace(/\s*合同会社$/, '')
+    .replace(/\s*株式会社$/, '')
+    .replace(/\s*llc$/, '')
+    .trim();
+
+  if (companyNameMap[strippedLower]) {
+    return addSpaceBetweenJaAndEn(companyNameMap[strippedLower]);
+  }
+  if (companyNameMap[`${strippedLower} llc`]) {
+    return addSpaceBetweenJaAndEn(companyNameMap[`${strippedLower} llc`]);
+  }
+  if (exactNameMap[strippedLower]) {
+    return exactNameMap[strippedLower];
+  }
+
+  // 3. If already contains Japanese script (Kanji/Hiragana/Katakana) alongside English words, convert remaining English words inside
+  if (/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(trimmed)) {
+    let result = trimmed;
+    // Replace known multi-word names inside string
+    for (const [k, v] of Object.entries(companyNameMap)) {
+      const regex = new RegExp(`\\b${k}\\b`, 'gi');
+      result = result.replace(regex, v.replace(/^(合同会社|株式会社)\s*/, ''));
+    }
+    // Convert any remaining English words to Katakana phonetics
+    result = result.replace(/\b[a-zA-Z]{2,}\b/g, (match) => {
+      const mLower = match.toLowerCase();
+      if (exactNameMap[mLower]) return exactNameMap[mLower];
+      return toPhoneticKatakana(match);
+    });
+    return addSpaceBetweenJaAndEn(result);
+  }
+
   return toPhoneticKatakana(trimmed);
 };
 
