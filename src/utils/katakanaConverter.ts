@@ -56,7 +56,9 @@ const tokenMap: { [key: string]: string } = {
   'india': 'インド',
   'japan': '日本',
   'andhra pradesh': 'アンドラ・プラデシュ州',
-  'nellore': 'ネロール'
+  'nellore': 'ネロール',
+  'madhavanagar': 'マダヴァナガル',
+  'madhava nagar': 'マダヴァナガル'
 };
 
 const companyNameMap: { [key: string]: string } = {
@@ -67,6 +69,7 @@ const companyNameMap: { [key: string]: string } = {
 };
 
 const exactNameMap: { [key: string]: string } = {
+  'chinni': 'チンニ',
   'vijayalakshmi': 'ヴィジャヤラクシュミ',
   'vijayalakshmi m': 'ヴィジャヤラクシュミ M',
   'vijayalakshmi. m': 'ヴィジャヤラクシュミ M',
@@ -160,6 +163,11 @@ export const toNaturalJapaneseAddress = (text: string): string => {
     result = result.replace(regex, tokenMap[token]);
   }
 
+  // Convert any remaining purely English words (e.g. city names, street names not in tokenMap) to Katakana phonetics
+  result = result.replace(/\b[a-zA-Z]{2,}\b/g, (match) => {
+    return toPhoneticKatakana(match);
+  });
+
   if (/^\d{3}-\d{4}/.test(result) && !result.startsWith('〒')) {
     result = '〒' + result;
   }
@@ -173,11 +181,17 @@ export const toNaturalJapaneseAddress = (text: string): string => {
 export const toNaturalJapaneseName = (text: string): string => {
   if (!text) return '';
   const trimmed = text.trim();
+  if (/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(trimmed)) {
+    return addSpaceBetweenJaAndEn(trimmed);
+  }
   const lower = trimmed.toLowerCase();
   if (companyNameMap[lower]) {
     return addSpaceBetweenJaAndEn(companyNameMap[lower]);
   }
-  return addSpaceBetweenJaAndEn(trimmed);
+  if (exactNameMap[lower]) {
+    return exactNameMap[lower];
+  }
+  return toPhoneticKatakana(trimmed);
 };
 
 /**
