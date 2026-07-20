@@ -30,12 +30,12 @@ export const FROM_COMPANIES: DummyCompany[] = [
         bankDetails: {
             bankName: 'ＧＭＯあおぞらネット銀行',
             accountNumber: '2165551',
-            accountHolderName: 'VISION AI',
+            accountHolderName: 'ヴイジヨンエーアイ',
             ifscCode: '',
             swiftCode: 'GMAZJPJT', // GMO Aozora Net Bank
             bankCode: '0033', // GMO Aozora Net Bank
             branchName: '法人第二営業部',
-            branchCode: '002',
+            branchCode: '102',
             accountType: 'Savings'
         }
     },
