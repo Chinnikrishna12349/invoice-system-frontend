@@ -763,7 +763,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         }
 
         if (!formData.employeeAddress?.trim()) newErrors.employeeAddress = "Address is required"; // Mandatory Address
-        if (!formData.employeeMobile?.trim()) newErrors.employeeMobile = "Phone is required"; // Mandatory Phone
+        if (formData.clientType === 'company' && !formData.employeeMobile?.trim()) newErrors.employeeMobile = "Phone is required"; // Mandatory Phone for Company
 
         // Date is already checked above, so we can remove the duplicate check if it exists
 
@@ -1377,7 +1377,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                                 {errors.employeeAddress && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.employeeAddress}</p>}
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-semibold text-gray-500 mb-1">{clientType === 'company' ? 'Company Phone' : 'Employee Phone'} <span className="text-red-500">*</span></label>
+                                                <label className="block text-xs font-semibold text-gray-500 mb-1">{clientType === 'company' ? 'Company Phone' : 'Employee Phone'} {clientType === 'company' && <span className="text-red-500">*</span>}</label>
                                                 <input
                                                     type="text"
                                                     name="employeeMobile"
