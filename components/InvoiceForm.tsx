@@ -1631,6 +1631,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                         type="number"
                                         name="cgstRate"
                                         value={formData.cgstRate}
+                                        onKeyDown={(e) => { if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault(); }}
                                         onWheel={(e) => (e.target as HTMLElement).blur()}
                                         onChange={handleChange}
                                         className={inputClasses(false)}
@@ -1645,6 +1646,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                         type="number"
                                         name="sgstRate"
                                         value={formData.sgstRate}
+                                        onKeyDown={(e) => { if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault(); }}
                                         onWheel={(e) => (e.target as HTMLElement).blur()}
                                         onChange={handleChange}
                                         className={inputClasses(false)}
@@ -1681,6 +1683,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                             type="number"
                                             name="taxRate"
                                             value={formData.taxRate}
+                                            onKeyDown={(e) => { if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault(); }}
                                             onWheel={(e) => (e.target as HTMLElement).blur()}
                                             onChange={handleChange}
                                             className={inputClasses(false)}
