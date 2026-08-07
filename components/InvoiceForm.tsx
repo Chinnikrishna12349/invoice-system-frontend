@@ -803,7 +803,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         } else if (country === 'japan') {
             // SWIFT code is optional for Japan local invoices
         } else {
-            if (!bankDetails.ifscCode?.trim()) newErrors.ifscCode = 'IFSC code is required';
+            if (!bankDetails.ifscCode?.trim()) {
+                newErrors.ifscCode = 'IFSC code is required';
+            } else if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(bankDetails.ifscCode)) {
+                newErrors.ifscCode = 'Invalid IFSC code format';
+            }
         }
 
         if (!bankDetails.accountType) {
