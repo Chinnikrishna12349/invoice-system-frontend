@@ -757,9 +757,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             }
         }
 
-        const employeeEmailError = validateEmail(formData.employeeEmail);
-        if (employeeEmailError) {
-            newErrors.employeeEmail = employeeEmailError;
+        if (formData.employeeEmail?.trim()) {
+            const employeeEmailError = validateEmail(formData.employeeEmail);
+            if (employeeEmailError) {
+                newErrors.employeeEmail = employeeEmailError;
+            }
         }
 
         if (!formData.employeeAddress?.trim()) newErrors.employeeAddress = "Address is required"; // Mandatory Address
@@ -1352,7 +1354,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                     {(!hasOptions || isOtherTo || selectedToId === 'other') && (
                                         <div className="mt-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
                                             <div>
-                                                <label className="block text-xs font-semibold text-gray-500 mb-1">{clientType === 'company' ? 'Company Name' : 'Employee Name'}</label>
+                                                <label className="block text-xs font-semibold text-gray-500 mb-1">{clientType === 'company' ? 'Company Name' : 'Employee Name'} <span className="text-red-500">*</span></label>
                                                 <input
                                                     type="text"
                                                     name="employeeName"
