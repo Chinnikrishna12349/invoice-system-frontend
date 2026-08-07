@@ -575,7 +575,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             if (country === 'japan') {
                 processedValue = processedValue.slice(0, 11);
             } else {
-                processedValue = processedValue.slice(0, 15);
+                processedValue = processedValue.slice(0, 10);
             }
         }
         setFormData(prev => {
@@ -763,7 +763,14 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         }
 
         if (!formData.employeeAddress?.trim()) newErrors.employeeAddress = "Address is required"; // Mandatory Address
-        if (formData.clientType === 'company' && !formData.employeeMobile?.trim()) newErrors.employeeMobile = "Phone is required"; // Mandatory Phone for Company
+        if (formData.clientType === 'company' && !formData.employeeMobile?.trim()) {
+            newErrors.employeeMobile = "Phone is required"; // Mandatory Phone for Company
+        } else if (formData.employeeMobile?.trim()) {
+            const requiredLength = country === 'japan' ? 11 : 10;
+            if (formData.employeeMobile.replace(/\D/g, '').length !== requiredLength) {
+                newErrors.employeeMobile = `Phone number must be exactly ${requiredLength} digits`;
+            }
+        }
 
         // Date is already checked above, so we can remove the duplicate check if it exists
 
