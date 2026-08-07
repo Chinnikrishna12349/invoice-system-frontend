@@ -39,14 +39,17 @@ const createAuthHeaders = (): HeadersInit => {
 const handleUnauthorized = (): void => {
   localStorage.removeItem('authToken');
   localStorage.removeItem('authUser');
-  window.location.href = '/';
+  window.location.href = '/?sessionExpired=true';
 };
 
 /**
  * Check response for 401 and handle accordingly
  */
-const checkAuthError = (response: Response): void => {
+const checkAuthError = (response: Response, draftPayload?: any): void => {
   if (response.status === 401) {
+    if (draftPayload) {
+      localStorage.setItem('draftInvoice', JSON.stringify(draftPayload));
+    }
     handleUnauthorized();
     throw new Error('Session expired. Please login again.');
   }
@@ -69,7 +72,7 @@ export const createInvoice = async (invoice: Invoice): Promise<Invoice> => {
     body: JSON.stringify(invoice),
   });
 
-  checkAuthError(response);
+  checkAuthError(response, invoice);
 
   if (!response.ok) {
     throw new Error(`Failed to create invoice: ${response.statusText}`);
@@ -93,7 +96,7 @@ export const updateInvoice = async (id: string, invoice: Invoice): Promise<Invoi
     body: JSON.stringify(invoice),
   });
 
-  checkAuthError(response);
+  checkAuthError(response, invoice);
 
   if (!response.ok) {
     throw new Error(`Failed to update invoice: ${response.statusText}`);

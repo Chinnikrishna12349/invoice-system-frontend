@@ -8,6 +8,15 @@ export const LandingPage: React.FC = () => {
     const { isAuthenticated, isLoading } = useAuth();
     const navigate = useNavigate();
     const [isLogin, setIsLogin] = useState(true);
+    const [sessionExpiredMessage, setSessionExpiredMessage] = useState(false);
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('sessionExpired') === 'true') {
+            setSessionExpiredMessage(true);
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    }, []);
 
     // Redirect if already authenticated removed as per user request to always land on login
     /*
@@ -41,6 +50,24 @@ export const LandingPage: React.FC = () => {
                         Streamline your invoicing process
                     </p>
                 </div>
+
+                {sessionExpiredMessage && (
+                    <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-md shadow-sm">
+                        <div className="flex">
+                            <div className="flex-shrink-0">
+                                <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                </svg>
+                            </div>
+                            <div className="ml-3">
+                                <p className="text-sm text-red-700 font-medium">
+                                    Your session has expired. Please log in again. 
+                                    <br/><span className="font-bold text-red-800">Your draft has been saved.</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Auth Card */}
                 <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 sm:p-10 backdrop-blur-sm bg-white/90">

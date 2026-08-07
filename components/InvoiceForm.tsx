@@ -182,6 +182,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
     const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
 
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [draftRestored, setDraftRestored] = useState(false);
 
     // State for custom logo and signature files
     const [customLogoFile, setCustomLogoFile] = useState<File | null>(null);
@@ -207,6 +208,27 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
     // Initialize/Reset Logic
     useEffect(() => {
         if (!selectedInvoice) {
+            const draft = localStorage.getItem('draftInvoice');
+            if (draft) {
+                try {
+                    const parsedDraft = JSON.parse(draft);
+                    setFormData(parsedDraft);
+                    setDraftRestored(true);
+                    if (parsedDraft.companyInfo?.bankDetails) {
+                        setBankDetails(parsedDraft.companyInfo.bankDetails);
+                    }
+                    setClientType(parsedDraft.clientType || 'company');
+                    setIsOtherFrom(true);
+                    setIsOtherTo(true);
+                    setSelectedFromId('other');
+                    setSelectedToId('other');
+                    setShowTaxToggle(country === 'japan');
+                    return; // Exit early to prevent resetting form data
+                } catch (e) {
+                    console.error("Failed to parse draft", e);
+                }
+            }
+
             setFormData(getInitialFormData(country));
             setBankDetails({
                 bankName: '',
@@ -963,6 +985,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             // Reset Form Data after successful save (as requested)
             if (!selectedInvoice) {
                 localStorage.removeItem('dashboard_autosave');
+                localStorage.removeItem('draftInvoice');
                 setFormData(getInitialFormData(country));
                 // Reset specialized states
                 setSelectedToId('');
@@ -1020,6 +1043,22 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
     return (
         <form onSubmit={handleSubmit} noValidate className="space-y-8">
+            
+            {draftRestored && (
+                <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg flex items-center justify-between mb-4 shadow-sm animate-in fade-in slide-in-from-top-2">
+                    <div className="flex items-center">
+                        <svg className="w-5 h-5 mr-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <p className="text-sm font-medium">Your unsaved draft from the expired session has been restored successfully.</p>
+                    </div>
+                    <button type="button" onClick={() => setDraftRestored(false)} className="text-blue-500 hover:text-blue-700 focus:outline-none">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            )}
 
             {/* 0. Invoice Meta (Date, Number) - Moved to Top */}
             <div className="bg-white rounded-3xl border border-gray-100 p-6 grid grid-cols-1 md:grid-cols-4 gap-6 relative z-40">
