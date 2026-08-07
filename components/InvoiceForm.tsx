@@ -1338,7 +1338,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                     {errors.toClient && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.toClient}</p>}
 
                                     {/* Manual entry - Show if NO options exist OR "Other" is selected */}
-                                    {(!hasOptions || isOtherTo || !selectedToId || selectedToId === 'other') && (
+                                    {(!hasOptions || isOtherTo || selectedToId === 'other') && (
                                         <div className="mt-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
                                             <div>
                                                 <label className="block text-xs font-semibold text-gray-500 mb-1">{clientType === 'company' ? 'Company Name' : 'Employee Name'}</label>
@@ -1394,21 +1394,25 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             );
                         })()}
                         {formData.employeeName && !isOtherTo && selectedToId && selectedToId !== 'other' && (
-                            <div className="mt-3 space-y-3">
-                                <p className="text-xs text-gray-500 px-1">
-                                    {formData.employeeAddress}
-                                </p>
-                                <div>
-                                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 px-1">Recipient Email (Mandatory)</label>
-                                    <input
-                                        type="email"
-                                        name="employeeEmail"
-                                        value={formData.employeeEmail || ''}
-                                        onChange={handleChange}
-                                        placeholder="Enter recipient email"
-                                        className={inputClasses(!!errors.employeeEmail)}
-                                    />
-                                    {errors.employeeEmail && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.employeeEmail}</p>}
+                            <div className="mt-4 p-4 bg-gray-50 border border-gray-100 rounded-xl space-y-2">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <h4 className="text-sm font-bold text-gray-800">{formData.employeeName}</h4>
+                                        <p className="text-xs text-gray-500 mt-1">{formData.employeeAddress}</p>
+                                    </div>
+                                    <span className="px-2 py-1 bg-blue-100 text-blue-700 text-[10px] font-bold rounded-md uppercase tracking-wider">
+                                        {clientType}
+                                    </span>
+                                </div>
+                                <div className="pt-2 flex flex-col gap-2 text-xs text-gray-600">
+                                    <div className="flex items-center gap-2">
+                                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                                        {formData.employeeEmail || 'No Email provided'}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                                        {formData.employeeMobile || 'No Phone provided'}
+                                    </div>
                                 </div>
                             </div>
                         )}
