@@ -5,12 +5,12 @@
  */
 export const validateCompanyName = (name: string): boolean => {
     // Regex matches the allowed characters only.
-    // Allowed: A-Za-z0-9, space, &, ., ,, ', (, ), -, /
-    const allowedRegex = /^[A-Za-z0-9\s&.,'()/-]*$/;
+    // Allowed: Letters (including Japanese), Numbers, space, &, ., ,, ', (, ), -, /
+    const allowedRegex = /^[\p{L}\p{N}\s&.,'()/\-]*$/u;
     return allowedRegex.test(name);
 };
 
-export const COMPANY_NAME_VALIDATION_ERROR = "Company name contains invalid characters. Allowed: A-Z, 0-9, space, and & . , ' ( ) - /";
+export const COMPANY_NAME_VALIDATION_ERROR = "Company name contains invalid characters. Allowed: Letters (including Japanese), Numbers, space, and & . , ' ( ) - /";
 
 /**
  * Validates an employee name against the allowed characters.
@@ -18,12 +18,12 @@ export const COMPANY_NAME_VALIDATION_ERROR = "Company name contains invalid char
  * Not allowed characters: Numbers (0-9), Special characters
  */
 export const validateEmployeeName = (name: string): boolean => {
-    // Regex matches the allowed characters only: Alphabets and spaces.
-    const allowedRegex = /^[A-Za-z\s]*$/;
+    // Regex matches the allowed characters only: Letters (including Japanese) and spaces.
+    const allowedRegex = /^[\p{L}\s]*$/u;
     return allowedRegex.test(name);
 };
 
-export const EMPLOYEE_NAME_VALIDATION_ERROR = "Employee name should not contain special characters and digits. Only alphabets and spaces are allowed.";
+export const EMPLOYEE_NAME_VALIDATION_ERROR = "Employee name should not contain special characters and digits. Only letters (including Japanese) and spaces are allowed.";
 
 export const validateEmail = (email: string | undefined): string | null => {
     if (!email || email.trim() === '') {
