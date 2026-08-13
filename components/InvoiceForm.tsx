@@ -1400,7 +1400,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                     {errors.toClient && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.toClient}</p>}
 
                                     {/* Manual entry - Show if NO options exist OR "Other" is selected */}
-                                    {(!hasOptions || isOtherTo || selectedToId === 'other') && (
+                                    {((!hasOptions && !selectedToId) || isOtherTo || selectedToId === 'other') && (
                                         <div className="mt-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
                                             <div>
                                                 <label className="block text-xs font-semibold text-gray-500 mb-1">{clientType === 'company' ? 'Company Name' : 'Employee Name'} <span className="text-red-500">*</span></label>
