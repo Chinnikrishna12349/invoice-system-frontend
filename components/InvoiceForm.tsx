@@ -646,8 +646,18 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             let errorMsg = errors[name];
 
             if (name === 'employeeEmail' || name === 'fromEmail') {
-                stillHasError = !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(processedValue);
-                errorMsg = "Invalid email format";
+                if (processedValue.trim() === '') {
+                    if (name === 'fromEmail') {
+                        stillHasError = true;
+                        errorMsg = "Field is required";
+                    } else {
+                        stillHasError = false;
+                        errorMsg = "";
+                    }
+                } else {
+                    stillHasError = !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(processedValue);
+                    errorMsg = "Invalid email format";
+                }
             } else if (name === 'employeeName') {
                 if (clientType === 'company') {
                     stillHasError = !validateCompanyName(processedValue);
@@ -658,7 +668,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 }
             } else if (!processedValue.trim()) {
                 stillHasError = true;
-                errorMsg = "Field is required";
+                errorMsg = name === 'employeeMobile' ? "This field is mandatory" : "Field is required";
             }
 
             if (stillHasError) {
@@ -787,8 +797,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         }
 
         if (!formData.employeeAddress?.trim()) newErrors.employeeAddress = "Address is required"; // Mandatory Address
-        if (formData.clientType === 'company' && !formData.employeeMobile?.trim()) {
-            newErrors.employeeMobile = "Phone is required"; // Mandatory Phone for Company
+        if (!formData.employeeMobile?.trim()) {
+            newErrors.employeeMobile = "This field is mandatory"; // Mandatory Phone for both
         } else if (formData.employeeMobile?.trim()) {
             const requiredLength = country === 'japan' ? 11 : 10;
             if (formData.employeeMobile.replace(/\D/g, '').length !== requiredLength) {
@@ -1429,7 +1439,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                                 {errors.employeeAddress && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.employeeAddress}</p>}
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-semibold text-gray-500 mb-1">{clientType === 'company' ? 'Company Phone' : 'Employee Phone'} {clientType === 'company' && <span className="text-red-500">*</span>}</label>
+                                                <label className="block text-xs font-semibold text-gray-500 mb-1">{clientType === 'company' ? 'Company Phone' : 'Employee Phone'} <span className="text-red-500">*</span></label>
                                                 <input
                                                     type="text"
                                                     name="employeeMobile"
