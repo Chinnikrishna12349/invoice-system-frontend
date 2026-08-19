@@ -20,6 +20,17 @@ const AppContent: React.FC = () => {
     // Show navigation on all authenticated pages except landing
     const showNavigation = isAuthenticated && location.pathname !== '/';
 
+    useEffect(() => {
+        const handleAuthExpired = () => {
+            window.location.href = '/?sessionExpired=true';
+        };
+
+        window.addEventListener('auth:expired', handleAuthExpired);
+        return () => {
+            window.removeEventListener('auth:expired', handleAuthExpired);
+        };
+    }, []);
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
             {showNavigation && (
