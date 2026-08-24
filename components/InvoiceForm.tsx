@@ -61,10 +61,17 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         const defaultDueDate = new Date(defaultDate);
         defaultDueDate.setDate(defaultDueDate.getDate() + 45);
         
+        const formatLocalDate = (d: Date) => {
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
         return {
         invoiceNumber: '',
-        date: defaultDate.toISOString().split('T')[0],
-        dueDate: defaultDueDate.toISOString().split('T')[0],
+        date: formatLocalDate(defaultDate),
+        dueDate: formatLocalDate(defaultDueDate),
         poNumber: '',
         fromEmail: '',
         company: '',
@@ -603,10 +610,16 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         setFormData(prev => {
             const newData: Partial<Invoice> = { ...prev, [name]: processedValue as any };
             if (name === 'date') {
-                const newDate = new Date(processedValue);
-                if (!isNaN(newDate.getTime())) {
-                    newDate.setDate(newDate.getDate() + 45);
-                    newData.dueDate = newDate.toISOString().split('T')[0];
+                const parts = processedValue.split('-');
+                if (parts.length === 3) {
+                    const newDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+                    if (!isNaN(newDate.getTime())) {
+                        newDate.setDate(newDate.getDate() + 45);
+                        const year = newDate.getFullYear();
+                        const month = String(newDate.getMonth() + 1).padStart(2, '0');
+                        const day = String(newDate.getDate()).padStart(2, '0');
+                        newData.dueDate = `${year}-${month}-${day}`;
+                    }
                 }
             }
             return newData;
@@ -957,6 +970,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
         const invoice: Invoice = {
             ...formData as Invoice,
+            employeeEmail: formData.employeeEmail?.trim() || undefined,
             id: selectedInvoice?.id || `invoice-${Date.now()}`,
             invoiceNumber: formData.invoiceNumber || 'INV-DRAFT',
             dueDate: dueDateStr,
@@ -1400,7 +1414,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                     {errors.toClient && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.toClient}</p>}
 
                                     {/* Manual entry - Show if NO options exist OR "Other" is selected */}
-                                    {((!hasOptions && !selectedToId) || isOtherTo || selectedToId === 'other') && (
+                                    {((!hasOptions && !selectedToId) || selectedToId === 'other') && (
                                         <div className="mt-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
                                             <div>
                                                 <label className="block text-xs font-semibold text-gray-500 mb-1">{clientType === 'company' ? 'Company Name' : 'Employee Name'} <span className="text-red-500">*</span></label>

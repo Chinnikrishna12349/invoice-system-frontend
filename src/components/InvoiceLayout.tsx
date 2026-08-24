@@ -1,4 +1,5 @@
 import { formatCurrency, Country, formatDate } from '../../services/countryPreferenceService';
+import { useTranslation } from 'react-i18next';
 
 interface InvoiceItem {
   sno: number;
@@ -76,6 +77,9 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
   isVisionAI,
   signatureUrl,
 }) => {
+  const { t, i18n } = useTranslation();
+  const language = i18n.language;
+
   // Use centralized formatDate
   const formatDateLocal = (dateString: string) => {
     return formatDate(dateString);
@@ -216,98 +220,53 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
           </tbody>
         </table>
       </div>
-
       {/* Footer: Bank Details and Signature horizontally aligned */}
       <div className="mt-12 flex justify-between items-end">
         {/* Bank Details (Left) */}
-        <div className="text-[10pt] space-y-1">
-          <h3 className="font-bold text-[11pt] mb-3">Bank Details:</h3>
-          {bankDetails.bankName && (
-            <p className="flex gap-1 leading-tight">
-              <span className="min-w-[166px]">Bank Name:</span>
-              <span>{bankDetails.bankName}</span>
-            </p>
-          )}
-
-          {bankDetails.bankCode && (
-            <p className="flex gap-1 leading-tight">
-              <span className="min-w-[166px]">Bank Code:</span>
-              <span>{bankDetails.bankCode}</span>
-            </p>
-          )}
-
-          {bankDetails.branchName && (
-            <p className="flex gap-1 leading-tight">
-              <span className="min-w-[166px]">Branch:</span>
-              <span>{bankDetails.branchName}</span>
-            </p>
-          )}
-
-          {bankDetails.branchCode && (
-            <p className="flex gap-1 leading-tight">
-              <span className="min-w-[166px]">Branch Code:</span>
-              <span>{bankDetails.branchCode}</span>
-            </p>
-          )}
-
-          {bankDetails.accountType && (
-            <p className="flex gap-1 leading-tight">
-              <span className="min-w-[166px]">Account Type:</span>
-              <span>{bankDetails.accountType}</span>
-            </p>
-          )}
-
-          {bankDetails.accountNumber && (
-            <p className="flex gap-1 leading-tight">
-              <span className="min-w-[166px]">Account No:</span>
-              <span>{bankDetails.accountNumber}</span>
-            </p>
-          )}
-
-          {bankDetails.accountName && (
-            <p className="flex gap-1 leading-tight">
-              <span className="min-w-[166px]">Account Holder:</span>
-              <span>{bankDetails.accountName}</span>
-            </p>
-          )}
-
+        <div className="text-[10pt]">
           {(() => {
-            const isJapan = country === 'japan';
+            const hasBankDetails = bankDetails && Object.values(bankDetails).some(v => v && v.toString().trim().length > 0);
+            if (!hasBankDetails) return null;
+
+            const isIndia = country === 'india';
             const isInternational = country === 'international';
+            const isJapanLocal = country === 'japan';
             const swift = bankDetails.swiftCode?.trim();
             const ifsc = bankDetails.ifsc?.trim();
+            const showSwift = isInternational || (isJapanLocal && swift);
 
-            if (isInternational) {
-              // For International: SWIFT Code is mandatory — always show it
-              return (
-                <p className="flex gap-1 leading-tight">
-                  <span className="min-w-[166px]">Swift Code:</span>
-                  <span>{swift || '—'}</span>
-                </p>
-              );
-            } else if (isJapan) {
-              // For Japan Local: SWIFT Code is optional — show only if present
-              if (swift && swift.length > 0) {
-                return (
-                  <p className="flex gap-1 leading-tight">
-                    <span className="min-w-[166px]">Swift Code:</span>
-                    <span>{swift}</span>
-                  </p>
-                );
-              }
-            } else {
-              // For India: ONLY show IFSC Code. Do NOT show SWIFT Code.
-              if (ifsc && ifsc.length > 0) {
-                return (
-                  <p className="flex gap-1 leading-tight">
-                    <span className="min-w-[166px]">IFSC Code:</span>
-                    <span>{ifsc}</span>
-                  </p>
-                );
-              }
-            }
-            return null;
+            const details = [
+                { label: t('payment.bankName', 'Bank Name'), value: bankDetails.bankName },
+                { label: t('payment.bankCode', 'Bank Code'), value: bankDetails.bankCode },
+                { label: t('payment.branchName', 'Branch Name'), value: bankDetails.branchName },
+                { label: t('payment.branchCode', 'Branch Code'), value: bankDetails.branchCode },
+                { label: t('payment.accountType', 'Account Type'), value: bankDetails.accountType },
+                { label: t('payment.accountNumber', 'Account No'), value: bankDetails.accountNumber },
+                { label: t('payment.accountName', 'Account Name'), value: bankDetails.accountName },
+                ...((showSwift) ? [{ label: t('payment.swiftCode', 'SWIFT Code'), value: swift }] : []),
+                ...(isIndia && language !== 'ja' ? [{ label: t('payment.ifsc', 'IFSC'), value: ifsc }] : [])
+            ];
 
+            const validDetails = details.filter(item => item.value && item.value.toString().trim().length > 0);
+            const labelWidthClass = language === 'ja' ? "min-w-[135px]" : "min-w-[113px]";
+
+            return (
+              <>
+                <h3 className="font-bold text-[11pt] mb-3">{t('payment.instructions', 'Bank Details:')}</h3>
+                <div className="space-y-[1.5px]">
+                  {validDetails.map((item, index) => {
+                    const labelText = item.label.replace(/[：:]/g, '');
+                    return (
+                      <p key={index} className="flex leading-tight">
+                        <span className={labelWidthClass}>{labelText}</span>
+                        <span className="min-w-[15px]">:</span>
+                        <span>{item.value}</span>
+                      </p>
+                    );
+                  })}
+                </div>
+              </>
+            );
           })()}
         </div>
 

@@ -72,6 +72,7 @@ export const Dashboard: React.FC = () => {
             const errorMessage = err instanceof Error ? err.message : 'Failed to save invoice';
             setError(errorMessage);
             alert(errorMessage);
+            throw err;
         }
     }, [selectedInvoice, country, navigate, user?.id]);
 
