@@ -92,14 +92,14 @@
     "email": "Email: ---"
   },
   "payment": {
-    "instructions": "Payment Details",
+    "instructions": "Bank Details",
     "bankName": "Bank Name",
     "branchName": "Branch Name",
     "bankCode": "Bank Code",
     "accountType": "Account Type",
     "accountNumber": "Account No",
     "accountName": "Account Name",
-    "ifsc": "IFSC",
+    "ifsc": "IFSC Code",
     "branchCode": "Branch Code",
     "swiftCode": "SWIFT Code",
     "note": "Please pay within 15 days from invoice issue date.",
