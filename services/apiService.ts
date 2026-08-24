@@ -49,6 +49,9 @@ const checkAuthError = (response: Response, draftPayload?: any): void => {
   if (response.status === 401) {
     if (draftPayload) {
       localStorage.setItem('draftInvoice', JSON.stringify(draftPayload));
+      alert('Your session has expired. Your in-progress invoice has been saved as a draft. You will be redirected to the login page.');
+    } else {
+      alert('Your session has expired. You will be redirected to the login page.');
     }
     handleUnauthorized();
     throw new Error('Session expired. Please login again.');
