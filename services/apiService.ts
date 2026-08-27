@@ -37,9 +37,8 @@ const createAuthHeaders = (): HeadersInit => {
  * Handle 401 Unauthorized responses - clear auth and redirect
  */
 const handleUnauthorized = (): void => {
-  localStorage.removeItem('authToken');
-  localStorage.removeItem('authUser');
-  window.location.href = '/?sessionExpired=true';
+  // Instead of hard refreshing the page, dispatch an event so React can route smoothly
+  window.dispatchEvent(new CustomEvent('auth:expired'));
 };
 
 /**
@@ -49,9 +48,6 @@ const checkAuthError = (response: Response, draftPayload?: any): void => {
   if (response.status === 401) {
     if (draftPayload) {
       localStorage.setItem('draftInvoice', JSON.stringify(draftPayload));
-      alert('Your session has expired. Your in-progress invoice has been saved as a draft. You will be redirected to the login page.');
-    } else {
-      alert('Your session has expired. You will be redirected to the login page.');
     }
     handleUnauthorized();
     throw new Error('Session expired. Please login again.');

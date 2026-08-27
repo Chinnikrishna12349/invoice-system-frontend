@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { CountryProvider } from './contexts/CountryContext';
 import { Navigation } from './components/Navigation';
@@ -12,8 +12,9 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { Invoice } from './types';
 
 const AppContent: React.FC = () => {
-    const { isAuthenticated, isLoading } = useAuth();
+    const { isAuthenticated, isLoading, logout } = useAuth();
     const location = useLocation();
+    const navigate = useNavigate();
 
 
     // Show navigation only on authenticated routes
@@ -22,14 +23,15 @@ const AppContent: React.FC = () => {
 
     useEffect(() => {
         const handleAuthExpired = () => {
-            window.location.href = '/?sessionExpired=true';
+            logout();
+            navigate('/?sessionExpired=true', { replace: true });
         };
 
         window.addEventListener('auth:expired', handleAuthExpired);
         return () => {
             window.removeEventListener('auth:expired', handleAuthExpired);
         };
-    }, []);
+    }, [logout, navigate]);
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
