@@ -26,6 +26,7 @@
     "jspdf": "^4.1.0",
     "jspdf-autotable": "^5.0.2",
     "nodemailer": "^7.0.11",
+    "playwright": "^1.62.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-i18next": "^16.5.0",
@@ -44,5 +45,18 @@
     "tailwindcss": "^4.1.17",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
-  }
+  },
+  "description": "> A complete, production-ready Invoice Management System built with React, Spring Boot, and MongoDB. Features comprehensive invoice creation, PDF generation, email functionality, and MongoDB data persistence.",
+  "main": "convert-logo.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Chinnikrishna12349/invoice-system-frontend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Chinnikrishna12349/invoice-system-frontend/issues"
+  },
+  "homepage": "https://github.com/Chinnikrishna12349/invoice-system-frontend#readme"
 }

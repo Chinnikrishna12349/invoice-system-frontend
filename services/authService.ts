@@ -521,5 +521,9 @@ export const logout = (): void => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem(COMPANY_INFO_KEY);
+    
+    // Clear draft data to prevent leaking into a different user's session
+    localStorage.removeItem('draftInvoice');
+    localStorage.removeItem('dashboard_autosave');
 };
 
