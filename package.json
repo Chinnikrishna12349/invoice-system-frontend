@@ -19,6 +19,7 @@
     "brevo": "^1.0.0",
     "cors": "^2.8.5",
     "express": "^5.2.1",
+    "form-data": "^4.0.6",
     "html2canvas": "^1.4.1",
     "i18next": "^25.7.3",
     "i18next-browser-languagedetector": "^8.2.0",
