@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Invoice } from '../types';
-import { calculateTax, formatCurrency } from '../services/countryPreferenceService';
+import { calculateTax, formatCurrency, formatDate } from '../services/countryPreferenceService';
 import { ICONS } from '../constants';
 import { sendInvoiceByEmail } from "../services/apiService";
 import { SendEmailModal } from './SendEmailModal';
@@ -129,15 +129,7 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({ invoices, onEdit, onDe
                                         <div className="text-gray-500 text-xs">{invoice.employeeEmail}</div>
                                     </td>
                                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                        {(() => {
-                                            if (!invoice.date) return '';
-                                            // Handle YYYY-MM-DD directly
-                                            if (invoice.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                                                const [year, month, day] = invoice.date.split('-');
-                                                return `${day}/${month}/${year}`;
-                                            }
-                                            return new Date(invoice.date).toLocaleDateString();
-                                        })()}
+                                        {formatDate(invoice.date)}
                                     </td>
                                     <td className="whitespace-nowrap px-3 py-4 text-sm text-right font-medium text-gray-900">
                                         {formatCurrency(calculateTotal(invoice), invoice.country, false)}

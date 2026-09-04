@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { FROM_COMPANIES, TO_COMPANIES, TO_EMPLOYEES, DummyCompany, DummyClient } from '../src/data/dummyCompanies';
 import { BankDetailsForm } from './BankDetailsForm';
 import { CustomDropdown } from './CustomDropdown';
+import { CustomDatePicker } from './CustomDatePicker';
 import { getHiddenSenders, getHiddenClients, hideSender, hideClient } from '../src/utils/companyStorage';
 import InvoiceLayout from '../src/components/InvoiceLayout';
 import { ImageUpload } from './ImageUpload';
@@ -1085,17 +1086,21 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 </div>
                 <div>
                     <label className={labelClasses}>Date</label>
-                    <input type="date" name="date" value={formData.date || ''} onChange={handleChange} className={inputClasses(!!errors.date)} />
+                    <CustomDatePicker
+                        name="date"
+                        value={formData.date || ''}
+                        onChange={handleChange}
+                        hasError={!!errors.date}
+                    />
                     {errors.date && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.date}</p>}
                 </div>
                 <div>
                     <label className={labelClasses}>Due Date</label>
-                    <input
-                        type="date"
+                    <CustomDatePicker
                         name="dueDate"
                         value={formData.dueDate || ''}
                         onChange={handleChange}
-                        className={inputClasses(!!errors.dueDate)}
+                        hasError={!!errors.dueDate}
                     />
                     {errors.dueDate && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.dueDate}</p>}
                 </div>

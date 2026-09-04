@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { InvoiceList } from '../components/InvoiceList';
+import { CustomDatePicker } from '../components/CustomDatePicker';
 import { Invoice } from '../types';
 import { generateInvoicePDF } from '../services/pdfService';
 import { Modal } from '../components/Modal';
@@ -225,23 +226,25 @@ export const InvoicesPage: React.FC = () => {
                             <div className="flex items-center gap-3">
                                 <div className="flex items-center gap-2">
                                     <span className="text-sm font-medium text-gray-500">From</span>
-                                    <input
-                                        type="date"
-                                        value={fromDate}
-                                        onChange={(e) => setFromDate(e.target.value)}
-                                        className="border border-gray-300 rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
-                                        title="From date"
-                                    />
+                                    <div className="w-36">
+                                        <CustomDatePicker
+                                            value={fromDate}
+                                            onChange={(e) => setFromDate(e.target.value)}
+                                            placeholder="DD/MM/YYYY"
+                                            title="From date"
+                                        />
+                                    </div>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className="text-sm font-medium text-gray-500">To</span>
-                                    <input
-                                        type="date"
-                                        value={toDate}
-                                        onChange={(e) => setToDate(e.target.value)}
-                                        className="border border-gray-300 rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
-                                        title="To date"
-                                    />
+                                    <div className="w-36">
+                                        <CustomDatePicker
+                                            value={toDate}
+                                            onChange={(e) => setToDate(e.target.value)}
+                                            placeholder="DD/MM/YYYY"
+                                            title="To date"
+                                        />
+                                    </div>
                                 </div>
                                 {(fromDate || toDate) && (
                                     <button

@@ -135,6 +135,14 @@ export const formatCurrency = (amount: number, country: Country = 'india', showD
  * Standardize date format to DD/MM/YYYY
  */
 export const formatDate = (date: string | Date): string => {
+    if (!date) return '';
+    if (typeof date === 'string' && date.match(/^(\d{4})-(\d{2})-(\d{2})/)) {
+        const match = date.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (match) {
+            const [, year, month, day] = match;
+            return `${day}/${month}/${year}`;
+        }
+    }
     const d = new Date(date);
     if (isNaN(d.getTime())) return String(date);
     const day = String(d.getDate()).padStart(2, '0');
@@ -142,4 +150,5 @@ export const formatDate = (date: string | Date): string => {
     const year = d.getFullYear();
     return `${day}/${month}/${year}`;
 };
+
 
