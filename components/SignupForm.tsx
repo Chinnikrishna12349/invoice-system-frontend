@@ -43,9 +43,21 @@ export const SignupForm: React.FC = () => {
     const validateForm = (): boolean => {
         const newErrors: Record<string, string> = {};
 
-        if (!name.trim()) newErrors.name = 'Name is required';
-        if (!email.trim()) newErrors.email = 'Email is required';
-        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) newErrors.email = 'Invalid email format';
+        if (!name.trim()) {
+            newErrors.name = 'Name is required';
+        } else if (!/^[\p{L}\s.'-]+$/u.test(name.trim())) {
+            newErrors.name = 'Full name should not contain special characters or digits. Only letters and spaces are allowed.';
+        } else if (name.trim().length > 100) {
+            newErrors.name = 'Name cannot exceed 100 characters';
+        }
+
+        if (!email.trim()) {
+            newErrors.email = 'Email is required';
+        } else if (email.trim().length > 254) {
+            newErrors.email = 'Email is too long. Maximum allowed length is 254 characters.';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            newErrors.email = 'Invalid email format';
+        }
 
         if (!password) newErrors.password = 'Password is required';
         else if (password.length < 6) newErrors.password = 'Password must be at least 6 characters';
@@ -177,6 +189,7 @@ export const SignupForm: React.FC = () => {
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                                 required
+                                maxLength={100}
                                 className={inputClasses(!!errors.name)}
                                 placeholder="John Doe"
                             />
@@ -193,6 +206,7 @@ export const SignupForm: React.FC = () => {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
+                                maxLength={254}
                                 className={inputClasses(!!errors.email)}
                                 placeholder="you@example.com"
                             />

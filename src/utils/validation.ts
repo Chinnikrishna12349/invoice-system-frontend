@@ -48,7 +48,7 @@ export const validateEmail = (email: string | undefined): string | null => {
     // 4. Email with multiple @ symbols
     const atCount = (email.match(/@/g) || []).length;
     if (atCount === 0) {
-        return "Email must include a valid domain extension (e.g., .com, .org).";
+        return "Please include an '@' in the email address (e.g., user@example.com).";
     }
     if (atCount > 1) {
         return "Email must contain only one '@' symbol.";
@@ -80,5 +80,36 @@ export const validateEmail = (email: string | undefined): string | null => {
         return "Email contains unsupported characters. Please use valid email format.";
     }
 
+    return null;
+};
+
+/**
+ * Validates SWIFT/BIC code format (ISO 9362 standard).
+ * 8 or 11 characters:
+ * - 4 letters (Bank Code)
+ * - 2 letters (Country Code)
+ * - 2 alphanumeric (Location Code)
+ * - 3 alphanumeric (Branch Code - optional for 11 chars)
+ */
+export const validateSwiftCode = (code: string | undefined, isRequired: boolean = false): string | null => {
+    if (!code || !code.trim()) {
+        return isRequired ? "SWIFT code is required." : null;
+    }
+    const clean = code.trim().toUpperCase();
+    if (clean.length !== 8 && clean.length !== 11) {
+        return "SWIFT/BIC code must be exactly 8 or 11 characters long.";
+    }
+    if (!/^[A-Z]{4}/.test(clean)) {
+        return "Bank Code (first 4 characters of SWIFT) must contain letters only (A–Z).";
+    }
+    if (!/^[A-Z]{4}[A-Z]{2}/.test(clean)) {
+        return "Country Code (characters 5–6 of SWIFT) must contain letters only (A–Z).";
+    }
+    if (!/^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}/.test(clean)) {
+        return "Location Code (characters 7–8 of SWIFT) must be letters or numbers (A–Z, 0–9).";
+    }
+    if (clean.length === 11 && !/^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}[A-Z0-9]{3}$/.test(clean)) {
+        return "Branch Code (characters 9–11 of SWIFT) must be letters or numbers (A–Z, 0–9).";
+    }
     return null;
 };

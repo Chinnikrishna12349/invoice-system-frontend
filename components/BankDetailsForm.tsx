@@ -21,37 +21,40 @@ interface BankDetailsFormProps {
 
 export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange, errors = {}, country = 'india' }) => {
     const codeType = (country === 'japan' || country === 'international') ? 'swift' : 'ifsc';
+    const [showSwiftInfo, setShowSwiftInfo] = useState(false);
 
     const updateField = (field: keyof BankDetailsFormData, value: string) => {
         let processedValue = value;
 
-        // Bug 1 & 9: Account Number Validation (Numeric only)
-        if (field === 'accountNumber') {
-            processedValue = value.replace(/\D/g, '');
-            if (country === 'japan') {
-                processedValue = processedValue.slice(0, 7);
-            } else {
-                processedValue = processedValue.slice(0, 18);
-            }
+        // Bank Name (max 100)
+        if (field === 'bankName') {
+            processedValue = value.slice(0, 100);
         }
 
-        // Fix: Account Name Validation — allow English letters, spaces, AND Japanese characters
-        // Supports: Hiragana, Katakana (full/half-width), Kanji, full-width alphanumerics, middle dot
+        // Account Number: allow up to 50 characters (do not block whitespace while typing so empty validation works on submit)
+        if (field === 'accountNumber') {
+            processedValue = value.slice(0, 50);
+        }
+
+        // Account Holder Name: allow English letters, spaces, and Japanese characters up to 100 chars
         if (field === 'accountHolderName') {
             processedValue = value.replace(
-                /[^a-zA-Z\s\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\uFF01-\uFF9F\u3000-\u303F\uFF65\u30FB]/g,
+                /[^a-zA-Z\s\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\uFF01-\uFF9F\u3000-\u303F\uFF65\u30FB.'-]/g,
                 ''
-            );
-            // Limit to reasonable length
-            processedValue = processedValue.slice(0, 50);
+            ).slice(0, 100);
         }
 
-        // Bug 3: SWIFT Code Validation (Alpha-numeric, max 11)
+        // SWIFT / IFSC Code Validation (Alpha-numeric, max 11)
         if (field === 'swiftCode' || field === 'ifscCode') {
             processedValue = value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 11);
         }
 
-        // Bug 4: Branch Code Validation (Numeric only, max 3 for Japan)
+        // Branch Name (max 100)
+        if (field === 'branchName') {
+            processedValue = value.slice(0, 100);
+        }
+
+        // Branch Code Validation (Numeric only, max 3 for Japan)
         if (field === 'branchCode') {
             processedValue = value.replace(/\D/g, '');
             if (country === 'japan') {
@@ -59,7 +62,7 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
             }
         }
 
-        // Add Bank Code validation (Numeric only, max 4 for Japan)
+        // Bank Code validation (Numeric only, max 4 for Japan)
         if (field === 'bankCode') {
             processedValue = value.replace(/\D/g, '');
             if (country === 'japan') {
@@ -96,8 +99,9 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                         value={data.bankName}
                         onChange={(e) => updateField('bankName', e.target.value)}
                         required
+                        maxLength={100}
                         className={inputClasses(!!errors.bankName)}
-                        placeholder="Enter bank name"
+                        placeholder="Enter bank name (max 100 characters)"
                     />
                     {errors.bankName && (
                         <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.bankName}</p>
@@ -115,8 +119,9 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                         value={data.accountNumber}
                         onChange={(e) => updateField('accountNumber', e.target.value)}
                         required
+                        maxLength={50}
                         className={inputClasses(!!errors.accountNumber)}
-                        placeholder="Enter account number"
+                        placeholder="Enter account number (max 50 characters)"
                     />
                     {errors.accountNumber && (
                         <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.accountNumber}</p>
@@ -134,8 +139,9 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                         value={data.accountHolderName}
                         onChange={(e) => updateField('accountHolderName', e.target.value)}
                         required
+                        maxLength={100}
                         className={inputClasses(!!errors.accountHolderName)}
-                        placeholder="Enter account holder name"
+                        placeholder="Enter account holder name (max 100 characters)"
                     />
                     {errors.accountHolderName && (
                         <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.accountHolderName}</p>
@@ -143,9 +149,23 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                 </div>
 
                 <div>
-                    <label htmlFor="codeField" className={labelClasses}>
-                        {codeType === 'swift' ? 'SWIFT Code' : 'IFSC Code'} {country !== 'japan' && <span className="text-red-500">*</span>}
-                    </label>
+                    <div className="flex justify-between items-center mb-1.5">
+                        <label htmlFor="codeField" className="block text-sm font-medium leading-6 text-gray-900">
+                            {codeType === 'swift' ? 'SWIFT Code' : 'IFSC Code'} {country !== 'japan' && <span className="text-red-500">*</span>}
+                        </label>
+                        {codeType === 'swift' && (
+                            <button
+                                type="button"
+                                onClick={() => setShowSwiftInfo(!showSwiftInfo)}
+                                className="text-xs text-blue-600 hover:text-blue-800 underline flex items-center gap-1"
+                            >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                {showSwiftInfo ? 'Hide Format Rules' : 'SWIFT/BIC Format Info'}
+                            </button>
+                        )}
+                    </div>
                     <input
                         id="codeField"
                         type="text"
@@ -159,11 +179,26 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                                 updateField('ifscCode', val);
                             }
                         }}
+                        maxLength={11}
                         className={inputClasses(!!errors.ifscCode || !!errors.swiftCode)}
-                        placeholder={`Enter ${codeType === 'swift' ? 'Swift' : 'IFSC'} code`}
+                        placeholder={`Enter ${codeType === 'swift' ? '8 or 11-char SWIFT' : 'IFSC'} code`}
                     />
                     {(errors.ifscCode || errors.swiftCode) && (
                         <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.ifscCode || errors.swiftCode}</p>
+                    )}
+
+                    {codeType === 'swift' && (showSwiftInfo || true) && (
+                        <div className="mt-2 p-2.5 bg-blue-50/70 border border-blue-100 rounded-lg text-xs text-blue-900 space-y-1">
+                            <p className="font-semibold text-blue-950 flex items-center gap-1">
+                                ℹ️ SWIFT/BIC Code Format (8 or 11 Characters):
+                            </p>
+                            <ul className="list-disc list-inside space-y-0.5 text-[11px] text-blue-800">
+                                <li><strong>Positions 1–4 (Bank Code):</strong> 4 letters (A–Z only)</li>
+                                <li><strong>Positions 5–6 (Country Code):</strong> 2 letters (A–Z only, e.g., JP, IN)</li>
+                                <li><strong>Positions 7–8 (Location Code):</strong> 2 letters or numbers (A–Z, 0–9)</li>
+                                <li><strong>Positions 9–11 (Branch Code - Optional):</strong> 3 letters or numbers (A–Z, 0–9)</li>
+                            </ul>
+                        </div>
                     )}
                 </div>
 
@@ -178,8 +213,9 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                         value={data.branchName}
                         onChange={(e) => updateField('branchName', e.target.value)}
                         required
+                        maxLength={100}
                         className={inputClasses(!!errors.branchName)}
-                        placeholder="Enter branch name"
+                        placeholder="Enter branch name (max 100 characters)"
                     />
                     {errors.branchName && (
                         <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.branchName}</p>

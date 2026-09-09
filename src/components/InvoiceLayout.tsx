@@ -112,33 +112,33 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
       <div className="flex justify-between mb-8 text-[10pt]">
         <div className="w-1/2 pr-4">
           <h3 className="font-bold text-gray-900 mb-1">From:</h3>
-          <p className="font-bold text-gray-900 mb-1">{from.name}</p>
-          <div className="text-gray-700 leading-relaxed">
+          <p className="font-bold text-gray-900 mb-1 break-words">{from.name}</p>
+          <div className="text-gray-700 leading-relaxed break-words" style={{ wordBreak: 'break-word' }}>
             {from.address.map((line, index) => (
-              <p key={index}>{line}</p>
+              <p key={index} className="break-words">{line}</p>
             ))}
-            {from.email && <p>{from.email}</p>}
+            {from.email && <p className="break-words">{from.email}</p>}
           </div>
         </div>
         <div className="w-1/2 pl-[26mm] text-left">
           <h3 className="font-bold text-gray-900 mb-1">Bill To:</h3>
-          <p className="font-bold text-gray-900 mb-1">{billTo.name}</p>
-          <div className="text-gray-700 leading-relaxed space-y-1">
+          <p className="font-bold text-gray-900 mb-1 break-words">{billTo.name}</p>
+          <div className="text-gray-700 leading-relaxed space-y-1 break-words" style={{ wordBreak: 'break-word' }}>
             {billTo.email && (
               <div className="flex">
                 <span className="min-w-[65px] font-normal">Email:</span>
-                <span>{billTo.email}</span>
+                <span className="break-words">{billTo.email}</span>
               </div>
             )}
             {billTo.phone && (
               <div className="flex">
                 <span className="min-w-[65px] font-normal">Phone:</span>
-                <span>{billTo.phone}</span>
+                <span className="break-words">{billTo.phone}</span>
               </div>
             )}
             <div className="flex">
               <span className="min-w-[65px] font-normal">Address:</span>
-              <span className="flex-1">{billTo.address.replace(/\n/g, ', ')}</span>
+              <span className="flex-1 break-words" style={{ wordBreak: 'break-word' }}>{billTo.address.replace(/\n/g, ', ')}</span>
             </div>
           </div>
         </div>

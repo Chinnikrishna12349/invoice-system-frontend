@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { bankAccountService, BankAccount } from '../services/bankAccountService';
 import { BankDetailsForm } from '../components/BankDetailsForm';
+import { validateSwiftCode } from '../src/utils/validation';
 
 const BankAccountsPage: React.FC = () => {
     const { user } = useAuth();
@@ -82,12 +83,29 @@ const BankAccountsPage: React.FC = () => {
 
         // Validation
         const newErrors: Record<string, string> = {};
-        if (!currentAccount.bankName?.trim()) newErrors.bankName = 'Bank name is required';
-        if (!currentAccount.accountNumber?.trim()) newErrors.accountNumber = 'Account number is required';
-        if (!currentAccount.accountHolderName?.trim()) newErrors.accountHolderName = 'Account holder name is required';
-        if (!currentAccount.branchName?.trim()) newErrors.branchName = 'Branch name is required';
-        
-        const isSwift = modalCountry === 'japan' || modalCountry === 'international';
+        if (!currentAccount.bankName?.trim()) {
+            newErrors.bankName = 'Bank name is required';
+        } else if (currentAccount.bankName.trim().length > 100) {
+            newErrors.bankName = 'Bank name cannot exceed 100 characters';
+        }
+
+        if (!currentAccount.accountNumber?.trim()) {
+            newErrors.accountNumber = 'Account number is required';
+        } else if (currentAccount.accountNumber.trim().length > 50) {
+            newErrors.accountNumber = 'Account number cannot exceed 50 characters';
+        }
+
+        if (!currentAccount.accountHolderName?.trim()) {
+            newErrors.accountHolderName = 'Account holder name is required';
+        } else if (currentAccount.accountHolderName.trim().length > 100) {
+            newErrors.accountHolderName = 'Account holder name cannot exceed 100 characters';
+        }
+
+        if (!currentAccount.branchName?.trim()) {
+            newErrors.branchName = 'Branch name is required';
+        } else if (currentAccount.branchName.trim().length > 100) {
+            newErrors.branchName = 'Branch name cannot exceed 100 characters';
+        }
         
         // Branch/Bank code validation for Japan
         if (modalCountry === 'japan') {
@@ -102,11 +120,14 @@ const BankAccountsPage: React.FC = () => {
             } else if (currentAccount.bankCode.length !== 4) {
                 newErrors.bankCode = 'Bank code must be 4 digits for Japan';
             }
-        }
-        if (modalCountry === 'international') {
-            if (!currentAccount.swiftCode?.trim()) newErrors.swiftCode = 'Swift code is required for International invoices';
-        } else if (modalCountry === 'japan') {
-            // SWIFT code optional for Japan
+
+            if (currentAccount.swiftCode?.trim()) {
+                const swiftErr = validateSwiftCode(currentAccount.swiftCode, false);
+                if (swiftErr) newErrors.swiftCode = swiftErr;
+            }
+        } else if (modalCountry === 'international') {
+            const swiftErr = validateSwiftCode(currentAccount.swiftCode, true);
+            if (swiftErr) newErrors.swiftCode = swiftErr;
         } else {
             if (!currentAccount.ifscCode?.trim()) newErrors.ifscCode = 'IFSC code is required';
         }

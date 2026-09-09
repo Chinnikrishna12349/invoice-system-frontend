@@ -14,9 +14,8 @@ import InvoiceLayout from '../src/components/InvoiceLayout';
 import { ImageUpload } from './ImageUpload';
 import { bankAccountService, BankAccount } from '../services/bankAccountService';
 import visionAiStamp from '../src/assets/visionai-stamp.png';
-import { VISION_AI_LOGO_BASE64 } from '../src/assets/visionAiLogoBase64';
 import { mapInvoiceToLayoutProps } from '../src/utils/invoiceMapping';
-import { validateCompanyName, COMPANY_NAME_VALIDATION_ERROR, validateEmployeeName, EMPLOYEE_NAME_VALIDATION_ERROR, validateEmail } from '../src/utils/validation';
+import { validateCompanyName, COMPANY_NAME_VALIDATION_ERROR, validateEmployeeName, EMPLOYEE_NAME_VALIDATION_ERROR, validateEmail, validateSwiftCode } from '../src/utils/validation';
 
 interface InvoiceFormProps {
     onSave: (invoice: Invoice) => Promise<void>;
@@ -603,6 +602,12 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         if (name === 'employeeMobile') {
             // Allow numbers, +, -, spaces, and parentheses up to 25 characters
             processedValue = value.replace(/[^0-9+\-\s()]/g, '').slice(0, 25);
+        } else if (name === 'poNumber') {
+            processedValue = value.slice(0, 50);
+        } else if (name === 'employeeAddress') {
+            processedValue = value.slice(0, 500);
+        } else if (name === 'fromEmail' || name === 'employeeEmail') {
+            processedValue = value.slice(0, 254);
         }
         setFormData(prev => {
             const newData: Partial<Invoice> = { ...prev, [name]: processedValue as any };
@@ -763,8 +768,15 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
 
         if (!selectedFromId && !selectedInvoice) newErrors.fromCompany = "Please select a sender company";
-        if (!formData.date) newErrors.date = 'Invoice Date is required';
-        if (!formData.dueDate) newErrors.dueDate = 'Due Date is required';
+        if (!formData.date) {
+            newErrors.date = 'Invoice Date is required';
+        }
+        if (!formData.dueDate) {
+            newErrors.dueDate = 'Due Date is required';
+        } else if (formData.date && new Date(formData.dueDate) < new Date(formData.date)) {
+            newErrors.dueDate = 'Due date cannot be earlier than invoice date';
+        }
+
         const fromEmailError = validateEmail(formData.fromEmail);
         if (fromEmailError) {
             newErrors.fromEmail = fromEmailError;
@@ -772,11 +784,13 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
         // Validate manual company name entry if "Other" or dynamic sender is selected
         const isOtherOrDynamicFrom = isOtherFrom || (selectedFromId && selectedFromId.startsWith('dynamic-from-'));
-        if (isOtherOrDynamicFrom && formData.company) {
-            if (!validateCompanyName(formData.company)) {
+        if (isOtherOrDynamicFrom) {
+            if (!formData.company?.trim()) {
+                newErrors.fromCompany = 'Sender Company is required';
+            } else if (!validateCompanyName(formData.company)) {
                 newErrors.fromCompany = COMPANY_NAME_VALIDATION_ERROR;
             }
-        } else if (!selectedFromId) {
+        } else if (!selectedFromId && !selectedInvoice) {
             newErrors.fromCompany = 'Sender Company is required';
         }
 
@@ -803,12 +817,15 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             }
         }
 
-        if (!formData.employeeAddress?.trim()) newErrors.employeeAddress = "Address is required"; // Mandatory Address
+        if (!formData.employeeAddress?.trim()) {
+            newErrors.employeeAddress = "Address is required"; // Mandatory Address
+        } else if (formData.employeeAddress.trim().length > 500) {
+            newErrors.employeeAddress = "Address cannot exceed 500 characters";
+        }
+
         if (!formData.employeeMobile?.trim()) {
             newErrors.employeeMobile = "This field is mandatory"; // Mandatory Phone for both
         }
-
-        // Date is already checked above, so we can remove the duplicate check if it exists
 
         if (!formData.services || formData.services.length === 0) {
             newErrors.services = 'At least one service is required';
@@ -820,10 +837,29 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             });
         }
 
-        if (!bankDetails.bankName?.trim()) newErrors.bankName = 'Bank name is required';
-        if (!bankDetails.accountNumber?.trim()) newErrors.accountNumber = 'Account number is required';
-        if (!bankDetails.accountHolderName?.trim()) newErrors.accountHolderName = 'Account holder name is required';
-        if (!bankDetails.branchName?.trim()) newErrors.branchName = 'Branch name is required';
+        if (!bankDetails.bankName?.trim()) {
+            newErrors.bankName = 'Bank name is required';
+        } else if (bankDetails.bankName.trim().length > 100) {
+            newErrors.bankName = 'Bank name cannot exceed 100 characters';
+        }
+
+        if (!bankDetails.accountNumber?.trim()) {
+            newErrors.accountNumber = 'Account number is required';
+        } else if (bankDetails.accountNumber.trim().length > 50) {
+            newErrors.accountNumber = 'Account number cannot exceed 50 characters';
+        }
+
+        if (!bankDetails.accountHolderName?.trim()) {
+            newErrors.accountHolderName = 'Account holder name is required';
+        } else if (bankDetails.accountHolderName.trim().length > 100) {
+            newErrors.accountHolderName = 'Account holder name cannot exceed 100 characters';
+        }
+
+        if (!bankDetails.branchName?.trim()) {
+            newErrors.branchName = 'Branch name is required';
+        } else if (bankDetails.branchName.trim().length > 100) {
+            newErrors.branchName = 'Branch name cannot exceed 100 characters';
+        }
         
         // Branch/Bank code validation for Japan
         if (country === 'japan') {
@@ -838,13 +874,14 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             } else if (bankDetails.bankCode.length !== 4) {
                 newErrors.bankCode = 'Bank code must be 4 digits for Japan';
             }
-        }
-        
-        // Country-specific bank code validation
-        if (country === 'international') {
-            if (!bankDetails.swiftCode?.trim()) newErrors.swiftCode = 'Swift code is required for International invoices';
-        } else if (country === 'japan') {
-            // SWIFT code is optional for Japan local invoices
+
+            if (bankDetails.swiftCode?.trim()) {
+                const swiftErr = validateSwiftCode(bankDetails.swiftCode, false);
+                if (swiftErr) newErrors.swiftCode = swiftErr;
+            }
+        } else if (country === 'international') {
+            const swiftErr = validateSwiftCode(bankDetails.swiftCode, true);
+            if (swiftErr) newErrors.swiftCode = swiftErr;
         } else {
             if (!bankDetails.ifscCode?.trim()) {
                 newErrors.ifscCode = 'IFSC code is required';
@@ -1081,7 +1118,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 </div>
                 <div>
                     <label className={labelClasses}>PO Number <span className="text-gray-400 font-normal text-xs">(Optional)</span></label>
-                    <input type="text" name="poNumber" value={formData.poNumber || ''} onChange={handleChange} className={inputClasses(!!errors.poNumber)} placeholder="Enter PO Number" />
+                    <input type="text" name="poNumber" maxLength={50} value={formData.poNumber || ''} onChange={handleChange} className={inputClasses(!!errors.poNumber)} placeholder="Enter PO Number (max 50 chars)" />
                     {errors.poNumber && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.poNumber}</p>}
                 </div>
                 <div>
@@ -1151,14 +1188,15 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                 {(isOtherFrom || (selectedFromId && selectedFromId.startsWith('dynamic-from-'))) && (
                                     <>
                                         <div>
-                                            <label className="block text-xs font-semibold text-gray-500 mb-1">Company Name</label>
+                                            <label className="block text-xs font-semibold text-gray-500 mb-1">Company Name <span className="text-red-500">*</span></label>
                                             <input
                                                 type="text"
-                                                placeholder="Enter company name"
+                                                placeholder="Enter company name (max 100 characters)"
+                                                maxLength={100}
                                                 className={inputClasses(!!errors.fromCompany)}
                                                 value={formData.company}
                                                 onChange={(e) => {
-                                                    const val = e.target.value;
+                                                    const val = e.target.value.slice(0, 100);
                                                     const dynamicPrefix = generateDynamicPrefix(val);
                                                     if (val && !validateCompanyName(val)) {
                                                         setErrors(prev => ({ ...prev, fromCompany: COMPANY_NAME_VALIDATION_ERROR }));
@@ -1184,12 +1222,13 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                         <div>
                                             <label className="block text-xs font-semibold text-gray-500 mb-1">Company Address</label>
                                             <textarea
-                                                placeholder="Enter company address"
+                                                placeholder="Enter company address (max 500 characters)"
+                                                maxLength={500}
                                                 className={inputClasses(false)}
                                                 rows={2}
                                                 value={formData.companyInfo?.companyAddress}
                                                 onChange={(e) => {
-                                                    const val = e.target.value;
+                                                    const val = e.target.value.slice(0, 500);
                                                     setFormData(prev => ({
                                                         ...prev,
                                                         companyInfo: {
@@ -1267,9 +1306,10 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             <input
                                 type="email"
                                 name="fromEmail"
+                                maxLength={254}
                                 value={formData.fromEmail || ''}
                                 onChange={handleChange}
-                                placeholder="Enter From Email address"
+                                placeholder="Enter From Email address (max 254 chars)"
                                 className={inputClasses(!!errors.fromEmail)}
                             />
                             {errors.fromEmail && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.fromEmail}</p>}
@@ -1414,7 +1454,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                                 <input
                                                     type="text"
                                                     name="employeeName"
-                                                    placeholder={`Enter ${clientType === 'company' ? 'company' : 'employee'} name`}
+                                                    maxLength={100}
+                                                    placeholder={`Enter ${clientType === 'company' ? 'company' : 'employee'} name (max 100 chars)`}
                                                     className={inputClasses(!!errors.employeeName)}
                                                     value={formData.employeeName}
                                                     onChange={handleChange}
@@ -1426,7 +1467,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                                 <input
                                                     type="email"
                                                     name="employeeEmail"
-                                                    placeholder={`Enter ${clientType === 'company' ? 'company' : 'employee'} email`}
+                                                    maxLength={254}
+                                                    placeholder={`Enter ${clientType === 'company' ? 'company' : 'employee'} email (max 254 chars)`}
                                                     className={inputClasses(!!errors.employeeEmail)}
                                                     value={formData.employeeEmail}
                                                     onChange={handleChange}
@@ -1437,7 +1479,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                                 <label className="block text-xs font-semibold text-gray-500 mb-1">{clientType === 'company' ? 'Company Address' : 'Employee Address'} <span className="text-red-500">*</span></label>
                                                 <textarea
                                                     name="employeeAddress"
-                                                    placeholder={`Enter ${clientType === 'company' ? 'company' : 'employee'} address`}
+                                                    maxLength={500}
+                                                    placeholder={`Enter ${clientType === 'company' ? 'company' : 'employee'} address (max 500 chars)`}
                                                     className={inputClasses(!!errors.employeeAddress)}
                                                     rows={2}
                                                     value={formData.employeeAddress}
