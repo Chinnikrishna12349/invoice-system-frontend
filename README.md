@@ -2,6 +2,10 @@
 
 > A complete, production-ready Invoice Management System built with React, Spring Boot, and MongoDB. Features comprehensive invoice creation, PDF generation, email functionality, and MongoDB data persistence.
 
+🌐 **Live Application URL (Netlify):** [https://sparkling-stardust-b46625.netlify.app/](https://sparkling-stardust-b46625.netlify.app/)  
+⚙️ **Live Backend API (Render):** `https://invoice-system-backend-z58v.onrender.com`  
+💻 **Local Development:** Frontend: `http://localhost:3007` | Backend: `http://localhost:8080`
+
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Status](https://img.shields.io/badge/status-Production%20Ready-brightgreen.svg)
