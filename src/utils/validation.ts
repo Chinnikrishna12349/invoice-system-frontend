@@ -113,3 +113,70 @@ export const validateSwiftCode = (code: string | undefined, isRequired: boolean 
     }
     return null;
 };
+
+/**
+ * Validates phone numbers across country contexts:
+ * - India: Must be digits only and exactly 10 digits.
+ * - Japan: Must be 10 or 11 digits.
+ * - International: 7 to 15 digits.
+ */
+export const validatePhoneNumber = (phone: string | undefined, country: 'india' | 'japan' | 'international' = 'india'): string | null => {
+    if (!phone || !phone.trim()) {
+        return "This field is mandatory";
+    }
+    const trimmed = phone.trim();
+
+    if (country === 'india') {
+        if (/[^0-9]/.test(trimmed)) {
+            return "Phone number must contain digits only";
+        }
+        if (trimmed.length !== 10) {
+            return "Phone number must be exactly 10 digits";
+        }
+    } else if (country === 'japan') {
+        const cleanDigits = trimmed.replace(/\D/g, '');
+        if (/[^0-9\-]/.test(trimmed)) {
+            return "Phone number contains invalid characters";
+        }
+        if (cleanDigits.length < 10 || cleanDigits.length > 11) {
+            return "Phone number must be 10 or 11 digits for Japan";
+        }
+    } else {
+        const cleanDigits = trimmed.replace(/\D/g, '');
+        if (cleanDigits.length < 7 || cleanDigits.length > 15) {
+            return "Phone number must be between 7 and 15 digits";
+        }
+    }
+    return null;
+};
+
+/**
+ * Validates address fields:
+ * - Must not be empty.
+ * - Max 500 characters.
+ * - Must contain letters or numbers (cannot consist purely of special characters/punctuation).
+ */
+export const validateAddress = (address: string | undefined): string | null => {
+    if (!address || !address.trim()) {
+        return "Address is required";
+    }
+    if (address.trim().length > 500) {
+        return "Address cannot exceed 500 characters";
+    }
+    if (!/[\p{L}\p{N}]/u.test(address)) {
+        return "Address must contain valid letters or numbers, and cannot consist solely of special characters";
+    }
+    return null;
+};
+
+/**
+ * Validates Bank Name and Branch Name:
+ * - Allowed: Letters (including Japanese), numbers, spaces, and & . - ' /
+ * - Rejects arbitrary special characters (e.g. ! @ # $ % ^ * + = < > ? ~ `)
+ */
+export const validateBankOrBranchName = (name: string | undefined): boolean => {
+    if (!name || !name.trim()) return false;
+    const allowedRegex = /^[\p{L}\p{N}\s&.\-'/]*$/u;
+    return allowedRegex.test(name.trim());
+};
+

@@ -126,7 +126,7 @@ export const SignupForm: React.FC = () => {
 
     return (
         <>
-            <form onSubmit={handleSubmit} className="space-y-8">
+            <form onSubmit={handleSubmit} noValidate className="space-y-8">
                 {/* Backend Status Indicator */}
                 {backendStatus === 'checking' && (
                     <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg shadow-sm animate-pulse">
@@ -205,8 +205,6 @@ export const SignupForm: React.FC = () => {
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                required
-                                maxLength={254}
                                 className={inputClasses(!!errors.email)}
                                 placeholder="you@example.com"
                             />

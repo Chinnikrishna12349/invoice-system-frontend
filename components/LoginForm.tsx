@@ -12,6 +12,20 @@ export const LoginForm: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+
+        if (!email.trim()) {
+            setError('Email is required');
+            return;
+        }
+        if (email.trim().length > 254) {
+            setError('Email is too long. Maximum allowed length is 254 characters.');
+            return;
+        }
+        if (!password) {
+            setError('Password is required');
+            return;
+        }
+
         setIsLoading(true);
 
         // Show "Waking up..." if login takes more than 3s
@@ -31,7 +45,7 @@ export const LoginForm: React.FC = () => {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
             {error && (
                 <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
                     <p className="text-red-700 text-sm">{error}</p>

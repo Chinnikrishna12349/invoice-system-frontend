@@ -178,24 +178,24 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
                     <td className="border-r border-gray-900 p-2 text-left text-[10pt] whitespace-pre-wrap">{item.description}</td>
                     <td className="border-r border-gray-900 p-2 text-right text-[10pt] pr-4">{item.hours}</td>
                     <td className="border-r border-gray-900 p-2 text-right text-[10pt] pr-4">{formatCurrency(item.unitPrice, country, true, false)}</td>
-                    <td className="p-2 text-right text-[10pt] pr-4">{formatCurrency(item.amount, country, true, false)}</td>
+                    <td className="p-2 text-right text-[10pt] pr-4 break-all max-w-[38mm]">{formatCurrency(item.amount, country, true, false)}</td>
                   </tr>
                 );
             })}
             {/* Totals Section */}
             <tr className="border-b border-gray-900">
               <td colSpan={4} className="border-r border-gray-900 p-2 text-left font-bold text-[10pt]">SubTotal</td>
-              <td className="p-2 text-right text-[10pt] pr-4 font-bold">{formatCurrency(subtotal, country, true, false)}</td>
+              <td className="p-2 text-right text-[10pt] pr-4 font-bold break-all max-w-[38mm]">{formatCurrency(subtotal, country, true, false)}</td>
             </tr>
             {country === 'india' ? (
               <>
                 <tr className="border-b border-gray-900">
                   <td colSpan={4} className="border-r border-gray-900 p-2 text-left font-bold text-[10pt]">CGST ({cgstRate ?? (taxRate / 2)}%)</td>
-                  <td className="p-2 text-right text-[10pt] pr-4 font-bold">{formatCurrency(Math.round((subtotal * ((cgstRate ?? (taxRate / 2)) / 100)) * 100) / 100, country, true, false)}</td>
+                  <td className="p-2 text-right text-[10pt] pr-4 font-bold break-all max-w-[38mm]">{formatCurrency(Math.round((subtotal * ((cgstRate ?? (taxRate / 2)) / 100)) * 100) / 100, country, true, false)}</td>
                 </tr>
                 <tr className="border-b border-gray-900">
                   <td colSpan={4} className="border-r border-gray-900 p-2 text-left font-bold text-[10pt]">SGST ({sgstRate ?? (taxRate / 2)}%)</td>
-                  <td className="p-2 text-right text-[10pt] pr-4 font-bold">{formatCurrency(Math.round((subtotal * ((sgstRate ?? (taxRate / 2)) / 100)) * 100) / 100, country, true, false)}</td>
+                  <td className="p-2 text-right text-[10pt] pr-4 font-bold break-all max-w-[38mm]">{formatCurrency(Math.round((subtotal * ((sgstRate ?? (taxRate / 2)) / 100)) * 100) / 100, country, true, false)}</td>
                 </tr>
 
               </>
@@ -203,19 +203,19 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
               taxAmount > 0 && (
                 <tr className="border-b border-gray-900">
                   <td colSpan={4} className="border-r border-gray-900 p-2 text-left font-bold text-[10pt]">Consumption Tax ({taxRate}%)</td>
-                  <td className="p-2 text-right text-[10pt] pr-4 font-bold">{formatCurrency(taxAmount, country, true, false)}</td>
+                  <td className="p-2 text-right text-[10pt] pr-4 font-bold break-all max-w-[38mm]">{formatCurrency(taxAmount, country, true, false)}</td>
                 </tr>
               )
             )}
             {roundOff !== undefined && roundOff !== 0 && (
               <tr className="border-b border-gray-900">
                 <td colSpan={4} className="border-r border-gray-900 p-2 text-left font-bold text-[10pt]">Round Off</td>
-                <td className="p-2 text-right text-[10pt] pr-4 font-bold">{formatCurrency(roundOff, country, true, false)}</td>
+                <td className="p-2 text-right text-[10pt] pr-4 font-bold break-all max-w-[38mm]">{formatCurrency(roundOff, country, true, false)}</td>
               </tr>
             )}
             <tr className="border-b border-gray-900">
               <td colSpan={4} className="border-r border-gray-900 p-2 text-left font-bold text-[10pt]">Grand Total ({currencyCode})</td>
-              <td className="p-2 text-right text-[10pt] pr-4 font-bold">{formatCurrency(grandTotal, country, true, false)}</td>
+              <td className="p-2 text-right text-[10pt] pr-4 font-bold break-all max-w-[38mm]">{formatCurrency(grandTotal, country, true, false)}</td>
             </tr>
           </tbody>
         </table>
@@ -223,7 +223,7 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
       {/* Footer: Bank Details and Signature horizontally aligned */}
       <div className="mt-12 flex justify-between items-end">
         {/* Bank Details (Left) */}
-        <div className="text-[10pt]">
+        <div className="text-[10pt] max-w-[105mm] flex-1 mr-4">
           {(() => {
             const hasBankDetails = bankDetails && Object.values(bankDetails).some(v => v && v.toString().trim().length > 0);
             if (!hasBankDetails) return null;
@@ -237,9 +237,11 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
 
             const details = [
                 { label: t('payment.bankName', 'Bank Name'), value: bankDetails.bankName },
-                { label: t('payment.bankCode', 'Bank Code'), value: bankDetails.bankCode },
+                ...(!isIndia ? [
+                    { label: t('payment.bankCode', 'Bank Code'), value: bankDetails.bankCode },
+                    { label: t('payment.branchCode', 'Branch Code'), value: bankDetails.branchCode }
+                ] : []),
                 { label: t('payment.branchName', 'Branch Name'), value: bankDetails.branchName },
-                { label: t('payment.branchCode', 'Branch Code'), value: bankDetails.branchCode },
                 { label: t('payment.accountType', 'Account Type'), value: bankDetails.accountType },
                 { label: t('payment.accountNumber', 'Account No'), value: bankDetails.accountNumber },
                 { label: t('payment.accountName', 'Account Name'), value: bankDetails.accountName },
@@ -257,10 +259,10 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
                   {validDetails.map((item, index) => {
                     const labelText = item.label.replace(/[：:]/g, '');
                     return (
-                      <p key={index} className="flex leading-tight">
-                        <span className={labelWidthClass}>{labelText}</span>
-                        <span className="min-w-[15px]">:</span>
-                        <span>{item.value}</span>
+                      <p key={index} className="flex leading-tight items-start">
+                        <span className={`${labelWidthClass} shrink-0`}>{labelText}</span>
+                        <span className="min-w-[15px] shrink-0">:</span>
+                        <span className="break-words whitespace-normal max-w-[60mm]">{item.value}</span>
                       </p>
                     );
                   })}
@@ -271,7 +273,7 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
         </div>
 
         {/* Signature Section (Right) - Horizontally aligned with Account Holder row */}
-        <div className="w-[80mm] text-center relative mb-4">
+        <div className="w-[80mm] shrink-0 text-center relative mb-4">
           {((isVisionAI && stampUrl) || signatureUrl) && (
             <img
               src={signatureUrl || stampUrl}

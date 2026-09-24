@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { bankAccountService, BankAccount } from '../services/bankAccountService';
 import { BankDetailsForm } from '../components/BankDetailsForm';
-import { validateSwiftCode } from '../src/utils/validation';
+import { validateSwiftCode, validateBankOrBranchName } from '../src/utils/validation';
 
 const BankAccountsPage: React.FC = () => {
     const { user } = useAuth();
@@ -42,7 +42,7 @@ const BankAccountsPage: React.FC = () => {
             bankCode: '',
             branchName: '',
             branchCode: '',
-            accountType: 'Savings',
+            accountType: '',
             userId: user?.id
         });
         setModalCountry('india');
@@ -87,10 +87,18 @@ const BankAccountsPage: React.FC = () => {
             newErrors.bankName = 'Bank name is required';
         } else if (currentAccount.bankName.trim().length > 100) {
             newErrors.bankName = 'Bank name cannot exceed 100 characters';
+        } else if (!validateBankOrBranchName(currentAccount.bankName)) {
+            newErrors.bankName = 'Bank name should not contain special characters';
         }
 
         if (!currentAccount.accountNumber?.trim()) {
             newErrors.accountNumber = 'Account number is required';
+        } else if (/[^\d]/.test(currentAccount.accountNumber.trim())) {
+            newErrors.accountNumber = 'Account number must contain only numeric digits';
+        } else if (modalCountry === 'international' && currentAccount.accountNumber.trim().length > 20) {
+            newErrors.accountNumber = 'Account number cannot exceed 20 digits';
+        } else if (modalCountry === 'india' && currentAccount.accountNumber.trim().length > 18) {
+            newErrors.accountNumber = 'Account number cannot exceed 18 digits';
         } else if (currentAccount.accountNumber.trim().length > 50) {
             newErrors.accountNumber = 'Account number cannot exceed 50 characters';
         }
@@ -105,9 +113,15 @@ const BankAccountsPage: React.FC = () => {
             newErrors.branchName = 'Branch name is required';
         } else if (currentAccount.branchName.trim().length > 100) {
             newErrors.branchName = 'Branch name cannot exceed 100 characters';
+        } else if (!validateBankOrBranchName(currentAccount.branchName)) {
+            newErrors.branchName = 'Branch name should not contain special characters';
+        }
+
+        if (!currentAccount.accountType?.trim()) {
+            newErrors.accountType = 'Account type is required';
         }
         
-        // Branch/Bank code validation for Japan
+        // Branch/Bank code validation for Japan / International
         if (modalCountry === 'japan') {
             if (!currentAccount.branchCode?.trim()) {
                 newErrors.branchCode = 'Branch code is required';
@@ -128,8 +142,26 @@ const BankAccountsPage: React.FC = () => {
         } else if (modalCountry === 'international') {
             const swiftErr = validateSwiftCode(currentAccount.swiftCode, true);
             if (swiftErr) newErrors.swiftCode = swiftErr;
+
+            if (!currentAccount.bankCode?.trim()) {
+                newErrors.bankCode = 'Bank code is required';
+            } else if (currentAccount.bankCode.trim().length > 20) {
+                newErrors.bankCode = 'Bank code cannot exceed 20 characters';
+            }
+
+            if (!currentAccount.branchCode?.trim()) {
+                newErrors.branchCode = 'Branch code is required';
+            } else if (currentAccount.branchCode.trim().length > 20) {
+                newErrors.branchCode = 'Branch code cannot exceed 20 characters';
+            }
         } else {
-            if (!currentAccount.ifscCode?.trim()) newErrors.ifscCode = 'IFSC code is required';
+            if (!currentAccount.ifscCode?.trim()) {
+                newErrors.ifscCode = 'IFSC code is required';
+            } else if (currentAccount.ifscCode.trim().length !== 11) {
+                newErrors.ifscCode = 'IFSC code must be exactly 11 characters';
+            } else if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(currentAccount.ifscCode.trim())) {
+                newErrors.ifscCode = 'Invalid IFSC code format (e.g., SBIN0001234)';
+            }
         }
 
         if (Object.keys(newErrors).length > 0) {
@@ -212,17 +244,17 @@ const BankAccountsPage: React.FC = () => {
                                 </button>
                             </div>
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-1">{account.bankName}</h3>
+                        <h3 className="text-xl font-bold text-gray-900 mb-1 break-words">{account.bankName}</h3>
                         <p className="text-gray-500 text-sm mb-4">{account.accountType}</p>
 
                         <div className="space-y-2 text-sm text-gray-600 border-t pt-4">
-                            <div className="flex justify-between">
-                                <span>Account Number:</span>
-                                <span className="font-mono font-semibold">{account.accountNumber}</span>
+                            <div className="flex justify-between items-start gap-2">
+                                <span className="shrink-0">Account Number:</span>
+                                <span className="font-mono font-semibold break-all text-right">{account.accountNumber}</span>
                             </div>
-                            <div className="flex justify-between">
-                                <span>Holder Name:</span>
-                                <span className="font-semibold">{account.accountHolderName}</span>
+                            <div className="flex justify-between items-start gap-2">
+                                <span className="shrink-0">Holder Name:</span>
+                                <span className="font-semibold break-words text-right">{account.accountHolderName}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span>{account.swiftCode ? 'SWIFT' : 'IFSC'}:</span>
@@ -269,7 +301,7 @@ const BankAccountsPage: React.FC = () => {
                                 </svg>
                             </button>
                         </div>
-                        <form onSubmit={handleSubmit} className="p-8">
+                        <form onSubmit={handleSubmit} noValidate className="p-8">
                             <div className="mb-6 px-4 py-3 bg-indigo-50 rounded-2xl border border-indigo-100 flex items-center justify-between">
                                 <span className="text-sm font-medium text-indigo-900">Account Region</span>
                                 <div className="flex bg-white rounded-xl p-1 shadow-sm border border-indigo-100">
@@ -306,9 +338,7 @@ const BankAccountsPage: React.FC = () => {
                                             setModalCountry('international');
                                             setCurrentAccount({
                                                 ...currentAccount,
-                                                ifscCode: '',
-                                                bankCode: '',
-                                                branchCode: ''
+                                                ifscCode: ''
                                             });
                                         }}
                                         className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${modalCountry === 'international' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-500 hover:text-indigo-600'}`}

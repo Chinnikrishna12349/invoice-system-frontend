@@ -31,9 +31,10 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
             processedValue = value.slice(0, 100);
         }
 
-        // Account Number: allow up to 50 characters (do not block whitespace while typing so empty validation works on submit)
+        // Account Number: allow digits and whitespace up to limit (strip alphabets/symbols, allow space so empty validation triggers on submit)
         if (field === 'accountNumber') {
-            processedValue = value.slice(0, 50);
+            const maxLen = country === 'international' ? 20 : (country === 'india' ? 18 : 50);
+            processedValue = value.replace(/[^\d\s]/g, '').slice(0, maxLen);
         }
 
         // Account Holder Name: allow English letters, spaces, and Japanese characters up to 100 chars
@@ -54,19 +55,21 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
             processedValue = value.slice(0, 100);
         }
 
-        // Branch Code Validation (Numeric only, max 3 for Japan)
+        // Branch Code Validation (Numeric only for Japan max 3, max 20 for International)
         if (field === 'branchCode') {
-            processedValue = value.replace(/\D/g, '');
             if (country === 'japan') {
-                processedValue = processedValue.slice(0, 3);
+                processedValue = value.replace(/\D/g, '').slice(0, 3);
+            } else {
+                processedValue = value.slice(0, 20);
             }
         }
 
-        // Bank Code validation (Numeric only, max 4 for Japan)
+        // Bank Code validation (Numeric only for Japan max 4, max 20 for International)
         if (field === 'bankCode') {
-            processedValue = value.replace(/\D/g, '');
             if (country === 'japan') {
-                processedValue = processedValue.slice(0, 4);
+                processedValue = value.replace(/\D/g, '').slice(0, 4);
+            } else {
+                processedValue = value.slice(0, 20);
             }
         }
 
@@ -98,7 +101,6 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                         name="bankName"
                         value={data.bankName}
                         onChange={(e) => updateField('bankName', e.target.value)}
-                        required
                         maxLength={100}
                         className={inputClasses(!!errors.bankName)}
                         placeholder="Enter bank name (max 100 characters)"
@@ -118,10 +120,9 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                         name="accountNumber"
                         value={data.accountNumber}
                         onChange={(e) => updateField('accountNumber', e.target.value)}
-                        required
-                        maxLength={50}
+                        maxLength={country === 'international' ? 20 : (country === 'india' ? 18 : 50)}
                         className={inputClasses(!!errors.accountNumber)}
-                        placeholder="Enter account number (max 50 characters)"
+                        placeholder={`Enter account number (max ${country === 'international' ? 20 : (country === 'india' ? 18 : 50)} digits)`}
                     />
                     {errors.accountNumber && (
                         <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.accountNumber}</p>
@@ -138,7 +139,6 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                         name="accountHolderName"
                         value={data.accountHolderName}
                         onChange={(e) => updateField('accountHolderName', e.target.value)}
-                        required
                         maxLength={100}
                         className={inputClasses(!!errors.accountHolderName)}
                         placeholder="Enter account holder name (max 100 characters)"
@@ -212,7 +212,6 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                         name="branchName"
                         value={data.branchName}
                         onChange={(e) => updateField('branchName', e.target.value)}
-                        required
                         maxLength={100}
                         className={inputClasses(!!errors.branchName)}
                         placeholder="Enter branch name (max 100 characters)"
@@ -234,10 +233,9 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                                 name="bankCode"
                                 value={data.bankCode || ''}
                                 onChange={(e) => updateField('bankCode', e.target.value)}
-                                required
-                                maxLength={4}
+                                maxLength={country === 'japan' ? 4 : 20}
                                 className={inputClasses(!!errors.bankCode)}
-                                placeholder="Enter 4-digit bank code"
+                                placeholder={country === 'japan' ? 'Enter 4-digit bank code' : 'Enter bank code (max 20 characters)'}
                             />
                             {errors.bankCode && (
                                 <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.bankCode}</p>
@@ -252,12 +250,11 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                                 id="branchCode"
                                 type="text"
                                 name="branchCode"
-                                value={data.branchCode}
+                                value={data.branchCode || ''}
                                 onChange={(e) => updateField('branchCode', e.target.value)}
-                                required
-                                maxLength={country === 'japan' ? 3 : undefined}
+                                maxLength={country === 'japan' ? 3 : 20}
                                 className={inputClasses(!!errors.branchCode)}
-                                placeholder="Enter branch code"
+                                placeholder={country === 'japan' ? 'Enter 3-digit branch code' : 'Enter branch code (max 20 characters)'}
                             />
                             {errors.branchCode && (
                                 <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.branchCode}</p>
@@ -276,7 +273,6 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                         value={data.accountType || ''}
                         onChange={(e) => updateField('accountType', e.target.value)}
                         className={inputClasses(!!errors.accountType)}
-                        required
                     >
                         <option value="">Select Account Type</option>
                         <option value="Savings">Savings</option>

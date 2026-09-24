@@ -473,9 +473,11 @@ const drawInvoiceContent = async (
             const showSwift = isInternational || (isJapanLocal && b?.swiftCode);
             const details = [
                 { label: t.bankNameLabel || 'Bank Name', value: b?.bankName },
-                { label: t.bankCodeLabel || 'Bank Code', value: b?.bankCode },
+                ...(!isIndia ? [
+                    { label: t.bankCodeLabel || 'Bank Code', value: b?.bankCode },
+                    { label: t.branchCodeLabel || 'Branch Code', value: b?.branchCode }
+                ] : []),
                 { label: t.branchLabel || 'Branch Name', value: b?.branchName },
-                { label: t.branchCodeLabel || 'Branch Code', value: b?.branchCode },
                 { label: t.accountTypeLabel || 'Account Type', value: b?.accountType },
                 { label: t.accountNoLabel || 'Account No', value: b?.accountNumber },
                 { label: t.accountHolderLabel || 'Account Name', value: b?.accountHolderName },

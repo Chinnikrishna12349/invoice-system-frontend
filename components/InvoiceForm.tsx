@@ -15,7 +15,7 @@ import { ImageUpload } from './ImageUpload';
 import { bankAccountService, BankAccount } from '../services/bankAccountService';
 import visionAiStamp from '../src/assets/visionai-stamp.png';
 import { mapInvoiceToLayoutProps } from '../src/utils/invoiceMapping';
-import { validateCompanyName, COMPANY_NAME_VALIDATION_ERROR, validateEmployeeName, EMPLOYEE_NAME_VALIDATION_ERROR, validateEmail, validateSwiftCode } from '../src/utils/validation';
+import { validateCompanyName, COMPANY_NAME_VALIDATION_ERROR, validateEmployeeName, EMPLOYEE_NAME_VALIDATION_ERROR, validateEmail, validateSwiftCode, validatePhoneNumber, validateAddress, validateBankOrBranchName } from '../src/utils/validation';
 
 interface InvoiceFormProps {
     onSave: (invoice: Invoice) => Promise<void>;
@@ -713,6 +713,9 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
     const handleServiceChange = (index: number, field: keyof ServiceItem, value: any) => {
         const updatedServices = [...(formData.services || [])];
         let processedValue = value;
+        if (field === 'description' && typeof value === 'string') {
+            processedValue = value.slice(0, 500);
+        }
         if ((field === 'hours' || field === 'rate') && typeof value === 'number') {
             processedValue = field === 'hours' 
                 ? Math.max(0, Math.round(value * 100) / 100) 
@@ -773,8 +776,12 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         }
         if (!formData.dueDate) {
             newErrors.dueDate = 'Due Date is required';
-        } else if (formData.date && new Date(formData.dueDate) < new Date(formData.date)) {
+        } else if (formData.date && formData.dueDate < formData.date) {
             newErrors.dueDate = 'Due date cannot be earlier than invoice date';
+        }
+
+        if (formData.poNumber && formData.poNumber.trim().length > 50) {
+            newErrors.poNumber = 'PO Number cannot exceed 50 characters';
         }
 
         const fromEmailError = validateEmail(formData.fromEmail);
@@ -817,23 +824,35 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             }
         }
 
-        if (!formData.employeeAddress?.trim()) {
-            newErrors.employeeAddress = "Address is required"; // Mandatory Address
-        } else if (formData.employeeAddress.trim().length > 500) {
-            newErrors.employeeAddress = "Address cannot exceed 500 characters";
+        const addressError = validateAddress(formData.employeeAddress);
+        if (addressError) {
+            newErrors.employeeAddress = addressError;
         }
 
-        if (!formData.employeeMobile?.trim()) {
-            newErrors.employeeMobile = "This field is mandatory"; // Mandatory Phone for both
+        const phoneError = validatePhoneNumber(formData.employeeMobile, country);
+        if (phoneError) {
+            newErrors.employeeMobile = phoneError;
         }
 
         if (!formData.services || formData.services.length === 0) {
             newErrors.services = 'At least one service is required';
         } else {
             formData.services.forEach((service, index) => {
-                if (!service.description?.trim()) newErrors[`service-${index}-description`] = 'Description required';
-                if (service.hours <= 0) newErrors[`service-${index}-hours`] = 'Hours > 0';
-                if (service.rate <= 0) newErrors[`service-${index}-rate`] = 'Rate > 0';
+                if (!service.description?.trim()) {
+                    newErrors[`service-${index}-description`] = 'Description required';
+                } else if (service.description.trim().length > 500) {
+                    newErrors[`service-${index}-description`] = 'Description cannot exceed 500 characters';
+                }
+                if (service.hours <= 0) {
+                    newErrors[`service-${index}-hours`] = 'Hours > 0';
+                } else if (service.hours > 100000) {
+                    newErrors[`service-${index}-hours`] = 'Hours cannot exceed 100,000';
+                }
+                if (service.rate <= 0) {
+                    newErrors[`service-${index}-rate`] = 'Rate > 0';
+                } else if (service.rate > 100000000) {
+                    newErrors[`service-${index}-rate`] = 'Rate cannot exceed 100,000,000';
+                }
             });
         }
 
@@ -841,10 +860,18 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             newErrors.bankName = 'Bank name is required';
         } else if (bankDetails.bankName.trim().length > 100) {
             newErrors.bankName = 'Bank name cannot exceed 100 characters';
+        } else if (!validateBankOrBranchName(bankDetails.bankName)) {
+            newErrors.bankName = 'Bank name should not contain special characters';
         }
 
         if (!bankDetails.accountNumber?.trim()) {
             newErrors.accountNumber = 'Account number is required';
+        } else if (/[^\d]/.test(bankDetails.accountNumber.trim())) {
+            newErrors.accountNumber = 'Account number must contain only numeric digits';
+        } else if (country === 'international' && bankDetails.accountNumber.trim().length > 20) {
+            newErrors.accountNumber = 'Account number cannot exceed 20 digits';
+        } else if (country === 'india' && bankDetails.accountNumber.trim().length > 18) {
+            newErrors.accountNumber = 'Account number cannot exceed 18 digits';
         } else if (bankDetails.accountNumber.trim().length > 50) {
             newErrors.accountNumber = 'Account number cannot exceed 50 characters';
         }
@@ -859,9 +886,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             newErrors.branchName = 'Branch name is required';
         } else if (bankDetails.branchName.trim().length > 100) {
             newErrors.branchName = 'Branch name cannot exceed 100 characters';
+        } else if (!validateBankOrBranchName(bankDetails.branchName)) {
+            newErrors.branchName = 'Branch name should not contain special characters';
         }
         
-        // Branch/Bank code validation for Japan
+        // Branch/Bank code validation for Japan / International
         if (country === 'japan') {
             if (!bankDetails.branchCode?.trim()) {
                 newErrors.branchCode = 'Branch code is required';
@@ -882,11 +911,25 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         } else if (country === 'international') {
             const swiftErr = validateSwiftCode(bankDetails.swiftCode, true);
             if (swiftErr) newErrors.swiftCode = swiftErr;
+
+            if (!bankDetails.bankCode?.trim()) {
+                newErrors.bankCode = 'Bank code is required';
+            } else if (bankDetails.bankCode.trim().length > 20) {
+                newErrors.bankCode = 'Bank code cannot exceed 20 characters';
+            }
+
+            if (!bankDetails.branchCode?.trim()) {
+                newErrors.branchCode = 'Branch code is required';
+            } else if (bankDetails.branchCode.trim().length > 20) {
+                newErrors.branchCode = 'Branch code cannot exceed 20 characters';
+            }
         } else {
             if (!bankDetails.ifscCode?.trim()) {
                 newErrors.ifscCode = 'IFSC code is required';
-            } else if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(bankDetails.ifscCode)) {
-                newErrors.ifscCode = 'Invalid IFSC code format';
+            } else if (bankDetails.ifscCode.trim().length !== 11) {
+                newErrors.ifscCode = 'IFSC code must be exactly 11 characters';
+            } else if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(bankDetails.ifscCode.trim())) {
+                newErrors.ifscCode = 'Invalid IFSC code format (e.g., SBIN0001234)';
             }
         }
 
@@ -1137,6 +1180,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                         name="dueDate"
                         value={formData.dueDate || ''}
                         onChange={handleChange}
+                        minDate={formData.date || undefined}
                         hasError={!!errors.dueDate}
                     />
                     {errors.dueDate && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.dueDate}</p>}
@@ -1673,6 +1717,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                     name={`service-${index}-description`}
                                     value={service.description} 
                                     placeholder="Enter description"
+                                    maxLength={500}
                                     onChange={(e) => handleServiceChange(index, 'description', e.target.value)} 
                                     className={inputClasses(!!errors[`service-${index}-description`])} 
                                 />
