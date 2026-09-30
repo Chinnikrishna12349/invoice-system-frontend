@@ -404,6 +404,10 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
     const handleFromCompanyChange = (companyId: string) => {
         setSelectedBankAccountId('');
+        setErrors(prev => {
+            const { fromCompany, fromCompanyAddress, ...rest } = prev;
+            return rest;
+        });
         if (companyId === 'other') {
             setIsOtherFrom(true);
             setSelectedFromId('other');
@@ -801,6 +805,15 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             newErrors.fromCompany = 'Sender Company is required';
         }
 
+        // Validate sender company address if entered
+        if (formData.companyInfo?.companyAddress && formData.companyInfo.companyAddress.trim().length > 0) {
+            if (formData.companyInfo.companyAddress.length > 500) {
+                newErrors.fromCompanyAddress = 'Company address cannot exceed 500 characters';
+            } else if (!/[\p{L}\p{N}]/u.test(formData.companyInfo.companyAddress)) {
+                newErrors.fromCompanyAddress = 'Company address must contain valid letters or numbers, and cannot consist solely of special characters';
+            }
+        }
+
         if (!selectedToId && !isOtherTo) {
             newErrors.toClient = "Please select a client";
         }
@@ -1052,6 +1065,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             clientType: clientType,
             companyInfo: formData.companyInfo ? {
                 ...formData.companyInfo,
+                companyAddress: formData.companyInfo.companyAddress ? formData.companyInfo.companyAddress.slice(0, 500) : '',
                 companyLogoUrl: finalLogoUrl,
                 signatureUrl: finalSignatureUrl,
                 bankDetails: bankDetails // Ensure the latest (possibly edited) bank details are used
@@ -1266,13 +1280,23 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                         <div>
                                             <label className="block text-xs font-semibold text-gray-500 mb-1">Company Address</label>
                                             <textarea
+                                                name="fromCompanyAddress"
                                                 placeholder="Enter company address (max 500 characters)"
                                                 maxLength={500}
-                                                className={inputClasses(false)}
+                                                className={inputClasses(!!errors.fromCompanyAddress)}
                                                 rows={2}
-                                                value={formData.companyInfo?.companyAddress}
+                                                value={formData.companyInfo?.companyAddress || ''}
                                                 onChange={(e) => {
-                                                    const val = e.target.value.slice(0, 500);
+                                                    const rawVal = e.target.value;
+                                                    const val = rawVal.slice(0, 500);
+                                                    if (rawVal.length > 500) {
+                                                        setErrors(prev => ({ ...prev, fromCompanyAddress: 'Company address cannot exceed 500 characters' }));
+                                                    } else {
+                                                        setErrors(prev => {
+                                                            const { fromCompanyAddress, ...rest } = prev;
+                                                            return rest;
+                                                        });
+                                                    }
                                                     setFormData(prev => ({
                                                         ...prev,
                                                         companyInfo: {
@@ -1282,6 +1306,9 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                                     }));
                                                 }}
                                             />
+                                            {errors.fromCompanyAddress && (
+                                                <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.fromCompanyAddress}</p>
+                                            )}
                                         </div>
                                     </>
                                 )}
