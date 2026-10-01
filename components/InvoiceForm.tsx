@@ -187,6 +187,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
     const [isSaving, setIsSaving] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
     const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
+    const [previewError, setPreviewError] = useState<string | null>(null);
 
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [draftRestored, setDraftRestored] = useState(false);
@@ -530,6 +531,10 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
     const handleToClientChange = (clientId: string) => {
         setSelectedBankAccountId('');
+        setErrors(prev => {
+            const { toClient, employeeName, employeeEmail, employeeAddress, employeeMobile, ...rest } = prev;
+            return rest;
+        });
         if (clientId === 'other') {
             setIsOtherTo(true);
             setSelectedToId('other');
@@ -1073,6 +1078,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         };
 
         setPreviewInvoice(invoice);
+        setPreviewError(null);
         setShowPreview(true);
         setIsSaving(false); // RE-ENABLE button for the preview modal confirm step
     };
@@ -1081,6 +1087,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         if (!previewInvoice) return;
 
         setIsSaving(true);
+        setPreviewError(null);
         // Do NOT call setShowPreview(false) here, let the user see the "Saving..." state on the confirm button
 
         try {
@@ -1120,11 +1127,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             }
             setPreviewInvoice(null);
             setIsSaving(false);
-        } catch (error) {
+        } catch (error: any) {
             setIsSaving(false);
-            // Keep preview open so user can try again or go back to edit
             console.error("Save error:", error);
-            // alert is handled by Dashboard/onSave usually, but we keep isSaving false to re-enable button
+            const msg = error instanceof Error ? error.message : (typeof error === 'string' ? error : 'Unable to save invoice, please try again.');
+            setPreviewError(msg);
         }
     };
 
@@ -1597,6 +1604,10 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                         {formData.employeeMobile || 'No Phone provided'}
                                     </div>
                                 </div>
+                                {errors.employeeName && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.employeeName}</p>}
+                                {errors.employeeEmail && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.employeeEmail}</p>}
+                                {errors.employeeAddress && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.employeeAddress}</p>}
+                                {errors.employeeMobile && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.employeeMobile}</p>}
                             </div>
                         )}
                     </div>
@@ -1964,37 +1975,47 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             </div>
 
                             {/* Preview Footer */}
-                            <div className="bg-white px-8 py-6 border-t border-gray-200 flex flex-col sm:flex-row justify-center gap-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPreview(false)}
-                                    className="px-10 py-3.5 border-2 border-gray-200 text-gray-700 rounded-2xl font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
-                                >
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                                    </svg>
-                                    Back to Edit
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={handleConfirmSave}
-                                    disabled={isSaving}
-                                    className="px-12 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-2xl font-bold hover:from-blue-700 hover:to-indigo-800 shadow-xl shadow-blue-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                                >
-                                    {isSaving ? (
-                                        <>
-                                            <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                                            Saving...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <span>Confirm & Create</span>
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                        </>
-                                    )}
-                                </button>
+                            <div className="bg-white px-8 py-6 border-t border-gray-200 flex flex-col items-center gap-4">
+                                {previewError && (
+                                    <div className="w-full max-w-xl bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-center text-sm font-semibold animate-pulse flex items-center justify-center gap-2">
+                                        <svg className="w-5 h-5 flex-shrink-0 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                        </svg>
+                                        <span>{previewError}</span>
+                                    </div>
+                                )}
+                                <div className="flex flex-col sm:flex-row justify-center gap-4 w-full">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPreview(false)}
+                                        className="px-10 py-3.5 border-2 border-gray-200 text-gray-700 rounded-2xl font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+                                    >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                        </svg>
+                                        Back to Edit
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleConfirmSave}
+                                        disabled={isSaving}
+                                        className="px-12 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-2xl font-bold hover:from-blue-700 hover:to-indigo-800 shadow-xl shadow-blue-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                                    >
+                                        {isSaving ? (
+                                            <>
+                                                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                                                Saving...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span>Confirm & Create</span>
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>

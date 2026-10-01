@@ -134,14 +134,24 @@ export const validatePhoneNumber = (phone: string | undefined, country: 'india' 
             return "Phone number must be exactly 10 digits";
         }
     } else if (country === 'japan') {
-        const cleanDigits = trimmed.replace(/\D/g, '');
-        if (/[^0-9\-]/.test(trimmed)) {
+        if (!/^\+?[0-9\-\s]+$/.test(trimmed)) {
             return "Phone number contains invalid characters";
         }
-        if (cleanDigits.length < 10 || cleanDigits.length > 11) {
-            return "Phone number must be 10 or 11 digits for Japan";
+        const cleanDigits = trimmed.replace(/\D/g, '');
+        const isInternational = trimmed.startsWith('+81') || (trimmed.startsWith('81') && cleanDigits.length > 11);
+        if (isInternational) {
+            if (cleanDigits.length < 11 || cleanDigits.length > 12) {
+                return "Phone number must be 10 or 11 digits for Japan";
+            }
+        } else {
+            if (cleanDigits.length < 10 || cleanDigits.length > 11) {
+                return "Phone number must be 10 or 11 digits for Japan";
+            }
         }
     } else {
+        if (!/^\+?[0-9\-\s]+$/.test(trimmed)) {
+            return "Phone number contains invalid characters";
+        }
         const cleanDigits = trimmed.replace(/\D/g, '');
         if (cleanDigits.length < 7 || cleanDigits.length > 15) {
             return "Phone number must be between 7 and 15 digits";
