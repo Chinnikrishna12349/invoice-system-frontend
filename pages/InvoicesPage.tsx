@@ -39,19 +39,20 @@ export const InvoicesPage: React.FC = () => {
             setError(null);
             // Pass user.id to API for backend isolation
             const response = await getAllInvoices(user?.id);
-            setInvoices(response);
+            setInvoices(Array.isArray(response) ? response : []);
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Failed to load invoices';
             console.error('Error loading invoices:', errorMessage);
             setError(errorMessage);
+            setInvoices([]);
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [user?.id]);
 
     useEffect(() => {
         loadInvoices();
-    }, [loadInvoices, user?.id]);
+    }, [loadInvoices]);
 
     const handleDeleteClick = useCallback((id: string) => {
         setInvoiceToDelete(id);
@@ -124,9 +125,10 @@ export const InvoicesPage: React.FC = () => {
     }, []);
 
     // Helper to normalize any date string to YYYY-MM-DD
-    const normalizeToYYYYMMDD = (dateStr: string): string => {
+    const normalizeToYYYYMMDD = (dateStr: any): string => {
         if (!dateStr) return '';
-        const trimmed = dateStr.trim();
+        const str = typeof dateStr === 'string' ? dateStr : String(dateStr);
+        const trimmed = str.trim();
 
         // 1. Check for YYYY-MM-DD (standard)
         if (trimmed.match(/^\d{4}-\d{2}-\d{2}/)) {
@@ -150,13 +152,17 @@ export const InvoicesPage: React.FC = () => {
     };
 
     // Filter invoices based on search term and date
-    const filteredInvoices = invoices.filter(invoice => {
+    const filteredInvoices = (Array.isArray(invoices) ? invoices : []).filter(invoice => {
+        if (!invoice) return false;
         // Text search filter
-        const searchLower = searchTerm.toLowerCase();
-        const matchesText = !searchTerm || (
-            invoice.invoiceNumber.toLowerCase().includes(searchLower) ||
-            invoice.employeeName.toLowerCase().includes(searchLower) ||
-            invoice.employeeEmail.toLowerCase().includes(searchLower)
+        const searchLower = (searchTerm || '').trim().toLowerCase();
+        const num = String(invoice.invoiceNumber || '').toLowerCase();
+        const name = String(invoice.employeeName || '').toLowerCase();
+        const email = String(invoice.employeeEmail || '').toLowerCase();
+        const matchesText = !searchLower || (
+            num.includes(searchLower) ||
+            name.includes(searchLower) ||
+            email.includes(searchLower)
         );
 
         // Date filter

@@ -9,6 +9,7 @@ import { InvoicesPage } from './pages/InvoicesPage';
 import InvoicePage from './pages/InvoicePage';
 import BankAccountsPage from './pages/BankAccountsPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { Invoice } from './types';
 
 const AppContent: React.FC = () => {
@@ -38,46 +39,55 @@ const AppContent: React.FC = () => {
             {showNavigation && (
                 <Navigation />
             )}
-            {/* Error display removed */}
-            <Routes>
-                <Route
-                    path="/"
-                    element={<LandingPage />}
-                />
-                <Route
-                    path="/dashboard"
-                    element={
-                        <ProtectedRoute>
-                            <Dashboard />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/invoices"
-                    element={
-                        <ProtectedRoute>
-                            <InvoicesPage />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/invoice/:id"
-                    element={
-                        <ProtectedRoute>
-                            <InvoicePage />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/bank-accounts"
-                    element={
-                        <ProtectedRoute>
-                            <BankAccountsPage />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+            <ErrorBoundary fallbackTitle="Application Error" fallbackMessage="An error occurred while loading this view.">
+                <Routes>
+                    <Route
+                        path="/"
+                        element={<LandingPage />}
+                    />
+                    <Route
+                        path="/dashboard"
+                        element={
+                            <ProtectedRoute>
+                                <ErrorBoundary fallbackTitle="Dashboard Error">
+                                    <Dashboard />
+                                </ErrorBoundary>
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/invoices"
+                        element={
+                            <ProtectedRoute>
+                                <ErrorBoundary fallbackTitle="Invoices Loading Error" fallbackMessage="Could not display invoices. Please refresh or check your connection.">
+                                    <InvoicesPage />
+                                </ErrorBoundary>
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/invoice/:id"
+                        element={
+                            <ProtectedRoute>
+                                <ErrorBoundary fallbackTitle="Invoice Detail Error">
+                                    <InvoicePage />
+                                </ErrorBoundary>
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/bank-accounts"
+                        element={
+                            <ProtectedRoute>
+                                <ErrorBoundary fallbackTitle="Bank Accounts Error">
+                                    <BankAccountsPage />
+                                </ErrorBoundary>
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+            </ErrorBoundary>
         </div>
     );
 };

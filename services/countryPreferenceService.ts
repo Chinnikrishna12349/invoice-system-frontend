@@ -53,13 +53,16 @@ export const calculateTax = (
     cgstRateManual?: number,
     sgstRateManual?: number
 ): TaxCalculationResult => {
+    const safeSubTotal = (subTotal !== null && subTotal !== undefined && !isNaN(Number(subTotal))) ? Number(subTotal) : 0;
+    const safeTaxRate = (taxRate !== null && taxRate !== undefined && !isNaN(Number(taxRate))) ? Number(taxRate) : 0;
+
     if (country === 'japan') {
-        const consumptionTaxRate = taxRate;
-        const consumptionTaxAmount = subTotal * (consumptionTaxRate / 100);
-        const grandTotal = subTotal + consumptionTaxAmount;
+        const consumptionTaxRate = safeTaxRate;
+        const consumptionTaxAmount = safeSubTotal * (consumptionTaxRate / 100);
+        const grandTotal = safeSubTotal + consumptionTaxAmount;
 
         return {
-            subTotal,
+            subTotal: safeSubTotal,
             taxAmount: consumptionTaxAmount,
             grandTotal,
             consumptionTaxRate,
@@ -68,23 +71,23 @@ export const calculateTax = (
     } else if (country === 'international') {
         // International invoices typically have 0% local tax
         return {
-            subTotal,
+            subTotal: safeSubTotal,
             taxAmount: 0,
-            grandTotal: subTotal,
+            grandTotal: safeSubTotal,
         };
     } else {
         // India: CGST + SGST
         // Use manual rates if provided, otherwise split taxRate
-        const cgstRate = cgstRateManual !== undefined ? cgstRateManual : taxRate / 2;
-        const sgstRate = sgstRateManual !== undefined ? sgstRateManual : taxRate / 2;
+        const cgstRate = cgstRateManual !== undefined ? cgstRateManual : safeTaxRate / 2;
+        const sgstRate = sgstRateManual !== undefined ? sgstRateManual : safeTaxRate / 2;
 
         // Round each component to 2 decimal places to ensure displayed sum matches total
-        const cgstAmount = Math.round((subTotal * (cgstRate / 100)) * 100) / 100;
-        const sgstAmount = Math.round((subTotal * (sgstRate / 100)) * 100) / 100;
-        const grandTotal = subTotal + cgstAmount + sgstAmount;
+        const cgstAmount = Math.round((safeSubTotal * (cgstRate / 100)) * 100) / 100;
+        const sgstAmount = Math.round((safeSubTotal * (sgstRate / 100)) * 100) / 100;
+        const grandTotal = safeSubTotal + cgstAmount + sgstAmount;
 
         return {
-            subTotal,
+            subTotal: safeSubTotal,
             taxAmount: cgstAmount + sgstAmount,
             grandTotal,
             cgstRate,
@@ -104,25 +107,26 @@ export const getCurrencySymbol = (country: Country = 'india'): string => {
 };
 
 /**
- * Format amount with currency symbol
+ * Format amount with currency symbol safely preventing null/undefined crashes
  */
 export const formatCurrency = (amount: number, country: Country = 'india', showDecimals: boolean = true, includeSymbol: boolean = true): string => {
     const symbol = getCurrencySymbol(country);
+    const safeAmount = (amount !== null && amount !== undefined && !isNaN(Number(amount))) ? Number(amount) : 0;
 
     let formattedNumber = '';
     if (country === 'japan') {
-        const val = showDecimals ? amount : Math.round(amount);
+        const val = showDecimals ? safeAmount : Math.round(safeAmount);
         formattedNumber = val.toLocaleString('ja-JP', {
             minimumFractionDigits: showDecimals ? 2 : 0,
             maximumFractionDigits: showDecimals ? 2 : 0
         });
     } else if (country === 'international') {
-        formattedNumber = amount.toLocaleString('en-US', {
+        formattedNumber = safeAmount.toLocaleString('en-US', {
             minimumFractionDigits: showDecimals ? 2 : 0,
             maximumFractionDigits: showDecimals ? 2 : 0
         });
     } else {
-        formattedNumber = amount.toLocaleString('en-IN', {
+        formattedNumber = safeAmount.toLocaleString('en-IN', {
             minimumFractionDigits: showDecimals ? 2 : 0,
             maximumFractionDigits: showDecimals ? 2 : 0
         });
@@ -132,11 +136,11 @@ export const formatCurrency = (amount: number, country: Country = 'india', showD
 };
 
 /**
- * Standardize date format to DD/MM/YYYY
+ * Standardize date format to DD/MM/YYYY safely
  */
 export const formatDate = (date: string | Date): string => {
     if (!date) return '';
-    if (typeof date === 'string' && date.match(/^(\d{4})-(\d{2})-(\d{2})/)) {
+    if (typeof date === 'string') {
         const match = date.match(/^(\d{4})-(\d{2})-(\d{2})/);
         if (match) {
             const [, year, month, day] = match;
@@ -144,11 +148,12 @@ export const formatDate = (date: string | Date): string => {
         }
     }
     const d = new Date(date);
-    if (isNaN(d.getTime())) return String(date);
+    if (isNaN(d.getTime())) return String(date || '');
     const day = String(d.getDate()).padStart(2, '0');
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const year = d.getFullYear();
     return `${day}/${month}/${year}`;
 };
+
 
 

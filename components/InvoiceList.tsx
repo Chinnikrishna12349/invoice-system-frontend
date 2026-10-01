@@ -48,9 +48,10 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({ invoices, onEdit, onDe
 
 
     const sortedInvoices = useMemo(() => {
+        if (!Array.isArray(invoices)) return [];
         return [...invoices].sort((a, b) => {
-            const aNum = a.invoiceNumber || '';
-            const bNum = b.invoiceNumber || '';
+            const aNum = String(a?.invoiceNumber || '');
+            const bNum = String(b?.invoiceNumber || '');
 
             // Extract prefix and number
             const aMatch = aNum.match(/^([a-zA-Z-]*?)(\d+)$/);
@@ -73,25 +74,29 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({ invoices, onEdit, onDe
         });
     }, [invoices]);
 
-    const calculateTotal = (invoice: Invoice) => {
-        if (invoice.finalAmount !== undefined) {
-            return invoice.finalAmount;
+    const calculateTotal = (invoice: Invoice): number => {
+        if (!invoice) return 0;
+        if (invoice.finalAmount !== undefined && invoice.finalAmount !== null && !isNaN(Number(invoice.finalAmount))) {
+            return Number(invoice.finalAmount);
         }
 
-        const subTotal = invoice.services?.reduce((acc, service) =>
-            acc + (service.hours * service.rate), 0) || 0;
+        const subTotal = (invoice.services || []).reduce((acc, service) => {
+            const hrs = Number(service?.hours) || 0;
+            const rate = Number(service?.rate) || 0;
+            return acc + (hrs * rate);
+        }, 0);
 
         const taxCalculation = calculateTax(
             subTotal,
-            invoice.taxRate || 0,
+            Number(invoice.taxRate) || 0,
             invoice.country,
             invoice.cgstRate,
             invoice.sgstRate
         );
-        return taxCalculation.grandTotal;
+        return taxCalculation?.grandTotal ?? subTotal;
     };
 
-    if (invoices.length === 0) {
+    if (!Array.isArray(invoices) || invoices.length === 0) {
         return (
             <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-white/40 p-12 text-center ring-1 ring-white/60">
                 <div className="text-4xl mb-4">📭</div>
@@ -119,14 +124,14 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({ invoices, onEdit, onDe
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200 bg-white">
-                            {sortedInvoices.map((invoice) => (
-                                <tr key={invoice.id} className="hover:bg-slate-50 transition-colors">
+                            {sortedInvoices.map((invoice, idx) => (
+                                <tr key={invoice.id || `inv-${idx}`} className="hover:bg-slate-50 transition-colors">
                                     <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-blue-600 sm:pl-6">
-                                        {invoice.invoiceNumber}
+                                        {invoice.invoiceNumber || '—'}
                                     </td>
                                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
-                                        <div className="font-medium">{invoice.employeeName}</div>
-                                        <div className="text-gray-500 text-xs">{invoice.employeeEmail}</div>
+                                        <div className="font-medium">{invoice.employeeName || 'Unnamed Client'}</div>
+                                        <div className="text-gray-500 text-xs">{invoice.employeeEmail || ''}</div>
                                     </td>
                                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                         {formatDate(invoice.date)}
