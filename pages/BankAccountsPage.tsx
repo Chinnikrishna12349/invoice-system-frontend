@@ -224,7 +224,7 @@ const BankAccountsPage: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {accounts.map((account) => (
-                    <div key={account.id} className="bg-white/95 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/20 hover:scale-[1.02] transition-transform">
+                    <div key={account.id} className="bg-white/95 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/20 hover:scale-[1.02] transition-transform overflow-hidden">
                         <div className="flex justify-between items-start mb-4">
                             <div className="bg-indigo-100 p-3 rounded-2xl text-indigo-600">
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -244,31 +244,31 @@ const BankAccountsPage: React.FC = () => {
                                 </button>
                             </div>
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-1 break-words">{account.bankName}</h3>
-                        <p className="text-gray-500 text-sm mb-4">{account.accountType}</p>
+                        <h3 className="text-xl font-bold text-gray-900 mb-1 break-all">{account.bankName}</h3>
+                        <p className="text-gray-500 text-sm mb-4 break-words">{account.accountType}</p>
 
                         <div className="space-y-2 text-sm text-gray-600 border-t pt-4">
-                            <div className="flex justify-between items-start gap-2">
+                            <div className="flex justify-between items-start gap-2 min-w-0">
                                 <span className="shrink-0">Account Number:</span>
-                                <span className="font-mono font-semibold break-all text-right">{account.accountNumber}</span>
+                                <span className="font-mono font-semibold break-all text-right min-w-0">{account.accountNumber}</span>
                             </div>
-                            <div className="flex justify-between items-start gap-2">
+                            <div className="flex justify-between items-start gap-2 min-w-0">
                                 <span className="shrink-0">Holder Name:</span>
-                                <span className="font-semibold break-words text-right">{account.accountHolderName}</span>
+                                <span className="font-semibold break-all text-right min-w-0">{account.accountHolderName}</span>
                             </div>
-                            <div className="flex justify-between">
-                                <span>{account.swiftCode ? 'SWIFT' : 'IFSC'}:</span>
-                                <span className="font-mono font-semibold">{account.swiftCode || account.ifscCode}</span>
+                            <div className="flex justify-between items-start gap-2 min-w-0">
+                                <span className="shrink-0">{account.swiftCode ? 'SWIFT' : 'IFSC'}:</span>
+                                <span className="font-mono font-semibold break-all text-right min-w-0">{account.swiftCode || account.ifscCode}</span>
                             </div>
                             {account.bankCode && (
-                                <div className="flex justify-between">
-                                    <span>Bank Code:</span>
-                                    <span className="font-mono font-semibold">{account.bankCode}</span>
+                                <div className="flex justify-between items-start gap-2 min-w-0">
+                                    <span className="shrink-0">Bank Code:</span>
+                                    <span className="font-mono font-semibold break-all text-right min-w-0">{account.bankCode}</span>
                                 </div>
                             )}
-                            <div className="flex justify-between">
-                                <span>Branch Code:</span>
-                                <span className="font-mono font-semibold">{account.branchCode}</span>
+                            <div className="flex justify-between items-start gap-2 min-w-0">
+                                <span className="shrink-0">Branch Code:</span>
+                                <span className="font-mono font-semibold break-all text-right min-w-0">{account.branchCode}</span>
                             </div>
                         </div>
                     </div>
