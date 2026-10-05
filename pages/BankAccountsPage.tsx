@@ -245,7 +245,14 @@ const BankAccountsPage: React.FC = () => {
                             </div>
                         </div>
                         <h3 className="text-xl font-bold text-gray-900 mb-1 break-all">{account.bankName}</h3>
-                        <p className="text-gray-500 text-sm mb-4 break-words">{account.accountType}</p>
+                        <div className="flex justify-between items-center text-sm text-gray-500 mb-4 gap-2 min-w-0">
+                            <span className="shrink-0 font-medium">{account.accountType}</span>
+                            {account.branchName && (
+                                <span className="font-semibold text-gray-700 break-all text-right min-w-0" title={`Branch: ${account.branchName}`}>
+                                    {account.branchName}
+                                </span>
+                            )}
+                        </div>
 
                         <div className="space-y-2 text-sm text-gray-600 border-t pt-4">
                             <div className="flex justify-between items-start gap-2 min-w-0">
