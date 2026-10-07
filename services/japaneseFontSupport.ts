@@ -122,23 +122,27 @@ export const isJapaneseFontAssetLoaded = async (): Promise<boolean> => {
       return true;
     }
 
-    // Try loading the font for Japanese characters
+    // Check if any Noto Sans JP font face was blocked / failed with error in the browser
+    const allFaces = Array.from(document.fonts);
+    const notoFaces = allFaces.filter(f => f.family.includes('Noto Sans JP'));
+
+    const hasBlockedError = notoFaces.some(f => f.status === 'error');
+    const hasLoadedSuccess = notoFaces.some(f => f.status === 'loaded');
+
+    // If the font assets are currently in an error state (blocked by DevTools)
+    if (hasBlockedError && !hasLoadedSuccess) {
+      console.warn('Noto Sans JP font assets are in error state (blocked by DevTools/network)');
+      return false;
+    }
+
+    // Attempt to load the font family
     try {
-      const loadedFaces = await document.fonts.load('16px "Noto Sans JP"', '請求書');
-      if (!loadedFaces || loadedFaces.length === 0) {
-        return false;
-      }
-      const hasLoaded = loadedFaces.some((f) => f.status === 'loaded');
-      if (!hasLoaded) {
+      const loaded = await document.fonts.load('16px "Noto Sans JP"');
+      if (loaded && loaded.length > 0 && loaded.some(f => f.status === 'error')) {
         return false;
       }
     } catch (loadErr) {
       console.warn('document.fonts.load rejected for Noto Sans JP:', loadErr);
-      return false;
-    }
-
-    const isReady = document.fonts.check('16px "Noto Sans JP"', '請求書');
-    if (!isReady) {
       return false;
     }
 
