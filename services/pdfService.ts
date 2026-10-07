@@ -2,7 +2,7 @@ import { Invoice, CompanyInfo } from '../types';
 import { calculateTax, Country, formatCurrency, formatDate } from '../services/countryPreferenceService';
 import jsPDF from 'jspdf';
 import i18n from '../src/i18n/i18n';
-import { configureJapaneseFont, renderJapaneseText } from './japaneseFontSupport';
+import { configureJapaneseFont, renderJapaneseText, isJapaneseFontAssetLoaded } from './japaneseFontSupport';
 import { getCompanyInfo } from './authService';
 import { toNaturalJapaneseAddress, toNaturalJapaneseName, toPhoneticKatakana } from '../src/utils/katakanaConverter';
 import visionAiStamp from '../src/assets/visionai-stamp.png';
@@ -997,6 +997,14 @@ const drawInvoiceContent = async (
 
 // Generate PDF and return as bytes for email attachment
 export const generateInvoicePDFBytes = async (invoice: Invoice, language: 'en' | 'ja' = 'en', companyInfoParam?: CompanyInfo | null): Promise<Uint8Array> => {
+    if (language === 'ja') {
+        const isFontReady = await isJapaneseFontAssetLoaded();
+        if (!isFontReady) {
+            console.error('Japanese font asset unavailable (Noto Sans JP blocked or failed to load)');
+            throw new Error('Japanese font asset unavailable (Noto Sans JP)');
+        }
+    }
+
     // Get translations from i18n
     const t = await getTranslations(language);
 
@@ -1023,6 +1031,15 @@ export const generateInvoicePDFBytes = async (invoice: Invoice, language: 'en' |
 };
 
 export const generateInvoicePDF = async (invoice: Invoice, language: 'en' | 'ja' = 'en', companyInfoParam?: CompanyInfo | null, silent: boolean = false) => {
+    // If Japanese is requested, verify that the Japanese font asset is loaded
+    if (language === 'ja') {
+        const isFontReady = await isJapaneseFontAssetLoaded();
+        if (!isFontReady) {
+            console.error('Japanese font asset unavailable (Noto Sans JP blocked or failed to load)');
+            throw new Error('Japanese font asset unavailable (Noto Sans JP)');
+        }
+    }
+
     // Get translations from i18n
     const t = await getTranslations(language);
 
@@ -1079,6 +1096,6 @@ export const generateInvoicePDF = async (invoice: Invoice, language: 'en' | 'ja'
 
     } catch (error) {
         console.error('Error generating PDF:', error);
-        alert(`Failed to generate PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw error;
     }
 };

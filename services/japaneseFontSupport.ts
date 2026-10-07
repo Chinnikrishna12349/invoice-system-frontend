@@ -112,10 +112,41 @@ export const configureJapaneseFont = (doc: jsPDF): void => {
 };
 
 /**
- * Check if a string contains Japanese characters
+ * Verifies if the Japanese font asset (Noto Sans JP) is loaded and available.
+ * If the font asset failed to load or was blocked by network blocking / DevTools,
+ * this returns false to prevent generating PDFs without the designated font.
  */
-export const containsJapanese = (text: string): boolean => {
-  // Check for Hiragana, Katakana, or Kanji
-  return /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF\u00A5\u20B9]/.test(text);
+export const isJapaneseFontAssetLoaded = async (): Promise<boolean> => {
+  try {
+    if (typeof document === 'undefined' || !document.fonts) {
+      return true;
+    }
+
+    // Try loading the font for Japanese characters
+    try {
+      const loadedFaces = await document.fonts.load('16px "Noto Sans JP"', '請求書');
+      if (!loadedFaces || loadedFaces.length === 0) {
+        return false;
+      }
+      const hasLoaded = loadedFaces.some((f) => f.status === 'loaded');
+      if (!hasLoaded) {
+        return false;
+      }
+    } catch (loadErr) {
+      console.warn('document.fonts.load rejected for Noto Sans JP:', loadErr);
+      return false;
+    }
+
+    const isReady = document.fonts.check('16px "Noto Sans JP"', '請求書');
+    if (!isReady) {
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.warn('Japanese font asset check failed:', err);
+    return false;
+  }
 };
+
 
