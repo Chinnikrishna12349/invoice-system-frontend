@@ -176,8 +176,8 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
                   <tr key={idx} className="border-b border-gray-900 min-h-[12mm]">
                     <td className="border-r border-gray-900 p-2 text-center text-[10pt]">{idx + 1}</td>
                     <td className="border-r border-gray-900 p-2 text-left text-[10pt] whitespace-pre-wrap">{item.description}</td>
-                    <td className="border-r border-gray-900 p-2 text-right text-[10pt] pr-4">{item.hours}</td>
-                    <td className="border-r border-gray-900 p-2 text-right text-[10pt] pr-4">{formatCurrency(item.unitPrice, country, true, false)}</td>
+                    <td className="border-r border-gray-900 p-2 text-right text-[10pt] pr-4 break-all max-w-[25mm]">{item.hours}</td>
+                    <td className="border-r border-gray-900 p-2 text-right text-[10pt] pr-4 break-all max-w-[35mm]">{formatCurrency(item.unitPrice, country, true, false)}</td>
                     <td className="p-2 text-right text-[10pt] pr-4 break-all max-w-[38mm]">{formatCurrency(item.amount, country, true, false)}</td>
                   </tr>
                 );

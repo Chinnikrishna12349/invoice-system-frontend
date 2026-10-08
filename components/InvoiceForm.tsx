@@ -724,11 +724,53 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         let processedValue = value;
         if (field === 'description' && typeof value === 'string') {
             processedValue = value.slice(0, 500);
+            if (!processedValue.trim()) {
+                setErrors(prev => ({ ...prev, [`service-${index}-description`]: 'Description required' }));
+            } else {
+                setErrors(prev => {
+                    const next = { ...prev };
+                    delete next[`service-${index}-description`];
+                    return next;
+                });
+            }
         }
-        if ((field === 'hours' || field === 'rate') && typeof value === 'number') {
-            processedValue = field === 'hours' 
-                ? Math.max(0, Math.round(value * 100) / 100) 
-                : Math.max(0, value);
+        if (field === 'hours') {
+            const num = typeof value === 'number' ? value : parseFloat(value);
+            if (!isNaN(num)) {
+                processedValue = Math.max(0, Math.round(num * 100) / 100);
+                if (num > 100000) {
+                    setErrors(prev => ({ ...prev, [`service-${index}-hours`]: 'Hours cannot exceed 100,000' }));
+                } else if (num <= 0 && value !== '') {
+                    setErrors(prev => ({ ...prev, [`service-${index}-hours`]: 'Hours > 0' }));
+                } else {
+                    setErrors(prev => {
+                        const next = { ...prev };
+                        delete next[`service-${index}-hours`];
+                        return next;
+                    });
+                }
+            } else {
+                processedValue = 0;
+            }
+        }
+        if (field === 'rate') {
+            const num = typeof value === 'number' ? value : parseFloat(value);
+            if (!isNaN(num)) {
+                processedValue = Math.max(0, Math.round(num * 100) / 100);
+                if (num > 100000000) {
+                    setErrors(prev => ({ ...prev, [`service-${index}-rate`]: 'Rate cannot exceed 100,000,000' }));
+                } else if (num <= 0 && value !== '') {
+                    setErrors(prev => ({ ...prev, [`service-${index}-rate`]: 'Rate > 0' }));
+                } else {
+                    setErrors(prev => {
+                        const next = { ...prev };
+                        delete next[`service-${index}-rate`];
+                        return next;
+                    });
+                }
+            } else {
+                processedValue = 0;
+            }
         }
         
         let targetService = { ...updatedServices[index], [field]: processedValue };
@@ -1767,11 +1809,16 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                     type="number"
                                     step="0.01"
                                     min="0"
+                                    max="100000"
                                     name={`service-${index}-hours`}
                                     value={service.hours || ''}
                                     placeholder="0"
+                                    onKeyDown={(e) => { if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault(); }}
                                     onWheel={(e) => (e.target as HTMLElement).blur()}
-                                    onChange={(e) => handleServiceChange(index, 'hours', parseFloat(e.target.value))}
+                                    onChange={(e) => {
+                                        const v = e.target.value === '' ? '' : parseFloat(e.target.value);
+                                        handleServiceChange(index, 'hours', v);
+                                    }}
                                     className={inputClasses(!!errors[`service-${index}-hours`])}
                                 />
                                 {errors[`service-${index}-hours`] && <p className="mt-1 text-[10px] text-red-600 font-bold animate-pulse">{errors[`service-${index}-hours`]}</p>}
@@ -1782,11 +1829,16 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                     type="number"
                                     step="0.01"
                                     min="0"
+                                    max="100000000"
                                     name={`service-${index}-rate`}
                                     value={service.rate || ''}
                                     placeholder="0.00"
+                                    onKeyDown={(e) => { if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault(); }}
                                     onWheel={(e) => (e.target as HTMLElement).blur()}
-                                    onChange={(e) => handleServiceChange(index, 'rate', parseFloat(e.target.value))}
+                                    onChange={(e) => {
+                                        const v = e.target.value === '' ? '' : parseFloat(e.target.value);
+                                        handleServiceChange(index, 'rate', v);
+                                    }}
                                     className={inputClasses(!!errors[`service-${index}-rate`])}
                                 />
                                 {errors[`service-${index}-rate`] && <p className="mt-1 text-[10px] text-red-600 font-bold animate-pulse">{errors[`service-${index}-rate`]}</p>}
@@ -1797,7 +1849,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                     type="text"
                                     readOnly
                                     value={formatCurrency(Math.round((service.hours * service.rate) * 100) / 100, country, true, false)}
-                                    className={`${inputClasses(false)} text-right font-semibold text-gray-700 bg-gray-50/50 cursor-default select-none`}
+                                    title={formatCurrency(Math.round((service.hours * service.rate) * 100) / 100, country, true, false)}
+                                    className={`${inputClasses(false)} text-right font-semibold text-gray-700 bg-gray-50/50 cursor-default select-none truncate`}
                                 />
                             </div>
                             <div className="flex justify-center items-center pb-1">
@@ -1815,9 +1868,10 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             </div>
 
             {/* 5. Totals */}
-            <div className="bg-slate-50 rounded-3xl p-8 border border-slate-100">
-                <div className="flex justify-between items-center mb-4">
-                    <div className="w-2/3 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-slate-50 rounded-3xl p-6 md:p-8 border border-slate-100 overflow-hidden">
+                <div className="flex flex-col lg:flex-row justify-between items-start gap-8 mb-4">
+                    {/* Tax Controls (Left) */}
+                    <div className="w-full lg:w-1/2 grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {country === 'india' ? (
                             <>
                                 <div>
@@ -1892,37 +1946,65 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             </div>
                         )}
                     </div>
-                    <div className="text-right">
-                        <p className="text-sm text-gray-600">Subtotal: {formatCurrency(subTotal, country)}</p>
+
+                    {/* Summary Card (Right) */}
+                    <div className="w-full lg:w-1/2 max-w-lg lg:ml-auto bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col gap-2 overflow-hidden">
+                        <div className="flex justify-between items-baseline gap-4 py-1.5 border-b border-slate-100">
+                            <span className="text-sm font-medium text-gray-600 shrink-0">Subtotal:</span>
+                            <span className="text-sm font-semibold text-gray-800 break-all text-right select-all">
+                                {formatCurrency(subTotal, country)}
+                            </span>
+                        </div>
                         {country === 'india' ? (
                             <>
-                                <p className="text-sm text-gray-500">CGST ({formData.cgstRate}%): {formatCurrency(subTotal * ((formData.cgstRate || 0) / 100), country)}</p>
-                                <p className="text-sm text-gray-500">SGST ({formData.sgstRate}%): {formatCurrency(subTotal * ((formData.sgstRate || 0) / 100), country)}</p>
+                                <div className="flex justify-between items-baseline gap-4 py-1.5 border-b border-slate-100">
+                                    <span className="text-sm font-medium text-gray-500 shrink-0">CGST ({formData.cgstRate}%):</span>
+                                    <span className="text-sm font-medium text-gray-700 break-all text-right select-all">
+                                        {formatCurrency(subTotal * ((formData.cgstRate || 0) / 100), country)}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between items-baseline gap-4 py-1.5 border-b border-slate-100">
+                                    <span className="text-sm font-medium text-gray-500 shrink-0">SGST ({formData.sgstRate}%):</span>
+                                    <span className="text-sm font-medium text-gray-700 break-all text-right select-all">
+                                        {formatCurrency(subTotal * ((formData.sgstRate || 0) / 100), country)}
+                                    </span>
+                                </div>
                             </>
                         ) : (
                             showTaxToggle ? (
-                                <p className="text-sm text-gray-500">Tax ({formData.taxRate}%): {formatCurrency(subTotal * ((formData.taxRate || 0) / 100), country)}</p>
+                                <div className="flex justify-between items-baseline gap-4 py-1.5 border-b border-slate-100">
+                                    <span className="text-sm font-medium text-gray-500 shrink-0">Tax ({formData.taxRate}%):</span>
+                                    <span className="text-sm font-medium text-gray-700 break-all text-right select-all">
+                                        {formatCurrency(subTotal * ((formData.taxRate || 0) / 100), country)}
+                                    </span>
+                                </div>
                             ) : null
                         )}
-                        <div className="border-t pt-2 mt-2">
-                            {(() => {
-                                const cgst = country === 'india' ? Math.round((subTotal * (formData.cgstRate || 0) / 100) * 100) / 100 : 0;
-                                const sgst = country === 'india' ? Math.round((subTotal * (formData.sgstRate || 0) / 100) * 100) / 100 : 0;
-                                const taxAmount = country === 'india'
-                                    ? (cgst + sgst)
-                                    : (showTaxToggle ? Math.round((subTotal * ((formData.taxRate || 0) / 100)) * 100) / 100 : 0);
-                                const totalBeforeRound = subTotal + taxAmount;
-                                const roundedTotal = Math.round(totalBeforeRound);
-                                const roundOff = roundedTotal - totalBeforeRound;
+                        {(() => {
+                            const cgst = country === 'india' ? Math.round((subTotal * (formData.cgstRate || 0) / 100) * 100) / 100 : 0;
+                            const sgst = country === 'india' ? Math.round((subTotal * (formData.sgstRate || 0) / 100) * 100) / 100 : 0;
+                            const taxAmount = country === 'india'
+                                ? (cgst + sgst)
+                                : (showTaxToggle ? Math.round((subTotal * ((formData.taxRate || 0) / 100)) * 100) / 100 : 0);
+                            const totalBeforeRound = subTotal + taxAmount;
+                            const roundedTotal = Math.round(totalBeforeRound);
+                            const roundOff = roundedTotal - totalBeforeRound;
 
-                                return (
-                                    <>
-                                        <p className="text-sm text-gray-500">Round Off: {formatCurrency(roundOff, country)}</p>
-                                        <p className="text-xl font-bold text-gray-800">Grand Total: {formatCurrency(roundedTotal, country)}</p>
-                                    </>
-                                );
-                            })()}
-                        </div>
+                            return (
+                                <div className="pt-2 mt-1 flex flex-col gap-2">
+                                    <div className="flex justify-between items-baseline gap-4 py-1 text-sm text-gray-500">
+                                        <span className="shrink-0">Round Off:</span>
+                                        <span className="font-medium break-all text-right select-all">{formatCurrency(roundOff, country)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-baseline gap-4 pt-3 border-t border-slate-200">
+                                        <span className="text-lg font-bold text-gray-900 shrink-0">Grand Total:</span>
+                                        <span className="text-xl font-extrabold text-blue-600 break-all text-right select-all tracking-tight">
+                                            {formatCurrency(roundedTotal, country)}
+                                        </span>
+                                    </div>
+                                </div>
+                            );
+                        })()}
                     </div>
                 </div>
             </div>
