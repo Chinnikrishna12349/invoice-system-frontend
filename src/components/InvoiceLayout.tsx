@@ -163,11 +163,11 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
         <table className="w-full border-collapse border border-gray-900">
           <thead>
             <tr className="border-b border-gray-900">
-              <th className="border-r border-gray-900 p-2 text-center w-[15mm] font-bold text-[10pt]">SNO</th>
+              <th className="border-r border-gray-900 p-2 text-center w-[12mm] font-bold text-[10pt]">SNO</th>
               <th className="border-r border-gray-900 p-2 text-center font-bold text-[10pt]">Description</th>
-              <th className="border-r border-gray-900 p-2 text-right w-[25mm] font-bold text-[10pt] pr-4">Hours</th>
-              <th className="border-r border-gray-900 p-2 text-right w-[35mm] font-bold text-[10pt] pr-4">Unit Price</th>
-              <th className="p-2 text-right w-[38mm] font-bold text-[10pt] pr-4">Amount</th>
+              <th className="border-r border-gray-900 p-2 text-right w-[22mm] font-bold text-[10pt] pr-4">Hours</th>
+              <th className="border-r border-gray-900 p-2 text-right w-[36mm] font-bold text-[10pt] pr-4">Unit Price</th>
+              <th className="p-2 text-right w-[48mm] font-bold text-[10pt] pr-4">Amount</th>
             </tr>
           </thead>
           <tbody>
@@ -176,26 +176,26 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
                   <tr key={idx} className="border-b border-gray-900 min-h-[12mm]">
                     <td className="border-r border-gray-900 p-2 text-center text-[10pt]">{idx + 1}</td>
                     <td className="border-r border-gray-900 p-2 text-left text-[10pt] whitespace-pre-wrap">{item.description}</td>
-                    <td className="border-r border-gray-900 p-2 text-right text-[10pt] pr-4 break-all max-w-[25mm]">{item.hours}</td>
-                    <td className="border-r border-gray-900 p-2 text-right text-[10pt] pr-4 break-all max-w-[35mm]">{formatCurrency(item.unitPrice, country, true, false)}</td>
-                    <td className="p-2 text-right text-[10pt] pr-4 break-all max-w-[38mm]">{formatCurrency(item.amount, country, true, false)}</td>
+                    <td className="border-r border-gray-900 p-2 text-right text-[10pt] pr-4 break-all max-w-[22mm]">{item.hours}</td>
+                    <td className="border-r border-gray-900 p-2 text-right text-[10pt] pr-4 break-all max-w-[36mm]">{formatCurrency(item.unitPrice, country, true, false)}</td>
+                    <td className="p-2 text-right text-[10pt] pr-4 break-all max-w-[48mm]">{formatCurrency(item.amount, country, true, false)}</td>
                   </tr>
                 );
             })}
             {/* Totals Section */}
             <tr className="border-b border-gray-900">
               <td colSpan={4} className="border-r border-gray-900 p-2 text-left font-bold text-[10pt]">SubTotal</td>
-              <td className="p-2 text-right text-[10pt] pr-4 font-bold break-all max-w-[38mm]">{formatCurrency(subtotal, country, true, false)}</td>
+              <td className="p-2 text-right text-[10pt] pr-4 font-bold break-all max-w-[48mm]">{formatCurrency(subtotal, country, true, false)}</td>
             </tr>
             {country === 'india' ? (
               <>
                 <tr className="border-b border-gray-900">
                   <td colSpan={4} className="border-r border-gray-900 p-2 text-left font-bold text-[10pt]">CGST ({cgstRate ?? (taxRate / 2)}%)</td>
-                  <td className="p-2 text-right text-[10pt] pr-4 font-bold break-all max-w-[38mm]">{formatCurrency(Math.round((subtotal * ((cgstRate ?? (taxRate / 2)) / 100)) * 100) / 100, country, true, false)}</td>
+                  <td className="p-2 text-right text-[10pt] pr-4 font-bold break-all max-w-[48mm]">{formatCurrency(Math.round((subtotal * ((cgstRate ?? (taxRate / 2)) / 100)) * 100) / 100, country, true, false)}</td>
                 </tr>
                 <tr className="border-b border-gray-900">
                   <td colSpan={4} className="border-r border-gray-900 p-2 text-left font-bold text-[10pt]">SGST ({sgstRate ?? (taxRate / 2)}%)</td>
-                  <td className="p-2 text-right text-[10pt] pr-4 font-bold break-all max-w-[38mm]">{formatCurrency(Math.round((subtotal * ((sgstRate ?? (taxRate / 2)) / 100)) * 100) / 100, country, true, false)}</td>
+                  <td className="p-2 text-right text-[10pt] pr-4 font-bold break-all max-w-[48mm]">{formatCurrency(Math.round((subtotal * ((sgstRate ?? (taxRate / 2)) / 100)) * 100) / 100, country, true, false)}</td>
                 </tr>
 
               </>
@@ -203,19 +203,19 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
               taxAmount > 0 && (
                 <tr className="border-b border-gray-900">
                   <td colSpan={4} className="border-r border-gray-900 p-2 text-left font-bold text-[10pt]">Consumption Tax ({taxRate}%)</td>
-                  <td className="p-2 text-right text-[10pt] pr-4 font-bold break-all max-w-[38mm]">{formatCurrency(taxAmount, country, true, false)}</td>
+                  <td className="p-2 text-right text-[10pt] pr-4 font-bold break-all max-w-[48mm]">{formatCurrency(taxAmount, country, true, false)}</td>
                 </tr>
               )
             )}
             {roundOff !== undefined && roundOff !== 0 && (
               <tr className="border-b border-gray-900">
                 <td colSpan={4} className="border-r border-gray-900 p-2 text-left font-bold text-[10pt]">Round Off</td>
-                <td className="p-2 text-right text-[10pt] pr-4 font-bold break-all max-w-[38mm]">{formatCurrency(roundOff, country, true, false)}</td>
+                <td className="p-2 text-right text-[10pt] pr-4 font-bold break-all max-w-[48mm]">{formatCurrency(roundOff, country, true, false)}</td>
               </tr>
             )}
             <tr className="border-b border-gray-900">
               <td colSpan={4} className="border-r border-gray-900 p-2 text-left font-bold text-[10pt]">Grand Total ({currencyCode})</td>
-              <td className="p-2 text-right text-[10pt] pr-4 font-bold break-all max-w-[38mm]">{formatCurrency(grandTotal, country, true, false)}</td>
+              <td className="p-2 text-right text-[10pt] pr-4 font-bold break-all max-w-[48mm]">{formatCurrency(grandTotal, country, true, false)}</td>
             </tr>
           </tbody>
         </table>

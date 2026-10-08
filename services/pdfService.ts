@@ -797,8 +797,8 @@ const drawInvoiceContent = async (
 
 
     // Services Table
-    // Refined column widths for better spacing and professional alignment
-    const colX = [14, 25, 105, 125, 160, 196];
+    // Refined column widths for better spacing and professional alignment (giving 52mm to Amount for large numbers)
+    const colX = [14, 24, 85, 106, 144, 196];
     const tableStartY = yPosition + 5;
 
     doc.setDrawColor(0);
@@ -896,13 +896,39 @@ const drawInvoiceContent = async (
 
         // Hours
         const formattedHours = Number(service.hours).toLocaleString(undefined, { maximumFractionDigits: 2 });
-        await addTextToPdf(doc, formattedHours, colX[3] - 4, rowTextY, { align: 'right', language, fontSize: 9 });
+        const maxHoursWidth = (colX[3] - colX[2]) - 5;
+        let hoursFontSize = 9;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(hoursFontSize);
+        while (doc.getTextWidth(formattedHours) > maxHoursWidth && hoursFontSize > 6.5) {
+            hoursFontSize -= 0.5;
+            doc.setFontSize(hoursFontSize);
+        }
+        await addTextToPdf(doc, formattedHours, colX[3] - 3, rowTextY, { align: 'right', language, fontSize: hoursFontSize, maxWidth: maxHoursWidth });
 
         // Unit Price
-        await addTextToPdf(doc, formatAmount(service.rate, false), colX[4] - 4, rowTextY, { align: 'right', language, fontSize: 9 });
+        const rateStr = formatAmount(service.rate, false);
+        const maxRateWidth = (colX[4] - colX[3]) - 5;
+        let rateFontSize = 9;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(rateFontSize);
+        while (doc.getTextWidth(rateStr) > maxRateWidth && rateFontSize > 6.5) {
+            rateFontSize -= 0.5;
+            doc.setFontSize(rateFontSize);
+        }
+        await addTextToPdf(doc, rateStr, colX[4] - 3, rowTextY, { align: 'right', language, fontSize: rateFontSize, maxWidth: maxRateWidth });
 
         // Amount
-        await addTextToPdf(doc, formatAmount(amount, false), colX[5] - 4, rowTextY, { align: 'right', language, fontSize: 9 });
+        const amountStr = formatAmount(amount, false);
+        const maxAmountWidth = (colX[5] - colX[4]) - 6;
+        let amountFontSize = 9;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(amountFontSize);
+        while (doc.getTextWidth(amountStr) > maxAmountWidth && amountFontSize > 6.5) {
+            amountFontSize -= 0.5;
+            doc.setFontSize(amountFontSize);
+        }
+        await addTextToPdf(doc, amountStr, colX[5] - 3, rowTextY, { align: 'right', language, fontSize: amountFontSize, maxWidth: maxAmountWidth });
 
         doc.line(colX[0], yPosition + rowHeight, colX[5], yPosition + rowHeight);
         yPosition += rowHeight;
@@ -937,20 +963,31 @@ const drawInvoiceContent = async (
 
         doc.line(colX[0], yPosition + rowH, colX[5], yPosition + rowH);
 
-        const fontSize = 10;
+        const baseFontSize = isBold ? 10 : 9;
         // Center text vertically in the 10mm row (10 - 3.5) / 2 = 3.25
         const textY = yPosition + 3.25;
 
-        await addTextToPdf(doc, label.replace(/[：:]/g, ''), colX[0] + 2, textY, {
-            fontSize, fontStyle: isBold ? 'bold' : 'normal', align: 'left', language
+        const maxLabelWidth = (colX[4] - colX[0]) - 6;
+        await addTextToPdf(doc, label.replace(/[：:]/g, ''), colX[0] + 3, textY, {
+            fontSize: baseFontSize, fontStyle: isBold ? 'bold' : 'normal', align: 'left', language, maxWidth: maxLabelWidth
         });
 
         // Correctly right-align value at the end of the table
-        await addTextToPdf(doc, value, colX[5] - 4, textY, {
-            fontSize,
+        const maxValueWidth = (colX[5] - colX[4]) - 6;
+        let valueFontSize = baseFontSize;
+        doc.setFont('helvetica', isBold ? 'bold' : 'normal');
+        doc.setFontSize(valueFontSize);
+        while (doc.getTextWidth(value) > maxValueWidth && valueFontSize > 6.5) {
+            valueFontSize -= 0.5;
+            doc.setFontSize(valueFontSize);
+        }
+
+        await addTextToPdf(doc, value, colX[5] - 3, textY, {
+            fontSize: valueFontSize,
             fontStyle: isBold ? 'bold' : 'normal',
             align: 'right',
-            language
+            language,
+            maxWidth: maxValueWidth
         });
 
         yPosition += rowH;
