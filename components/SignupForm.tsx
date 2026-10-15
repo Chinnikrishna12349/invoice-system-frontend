@@ -80,25 +80,11 @@ export const SignupForm: React.FC = () => {
         setIsLoading(true);
 
         try {
-            // Inject Placeholder/Dummy Data for Backend Compliance
-            // The backend requires these fields, but we don't want the user to fill them.
-            // We'll update them later via the Invoice Form dropdowns logic implicitly (data isolation).
             await signup({
-                email,
+                email: email.trim(),
                 password,
-                name,
-                companyName: "Pending Setup",
-                companyAddress: "Address Not Set",
-                invoiceFormat: "INV-",
-                companyLogo: null, // No logo initially
-                bankDetails: {
-                    bankName: "Pending",
-                    accountNumber: "0000000000",
-                    accountHolderName: "Pending",
-                    ifscCode: "PEND0000000",
-                    branchName: "Main",
-                    accountType: "Current"
-                },
+                name: name.trim(),
+                confirmPassword,
             });
             setShowSuccessModal(true);
             // AuthContext will handle navigation to dashboard automatically

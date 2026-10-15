@@ -18,12 +18,13 @@ export interface SignupCredentials {
     email: string;
     password: string;
     name: string;
-    companyName: string;
-    companyAddress: string;
+    confirmPassword?: string;
+    companyName?: string;
+    companyAddress?: string;
     invoiceFormat?: string;
     fromEmail?: string;
-    companyLogo: File | null;
-    bankDetails: {
+    companyLogo?: File | null;
+    bankDetails?: {
         bankName: string;
         accountNumber: string;
         accountHolderName: string;
@@ -56,7 +57,8 @@ interface SignupResponse {
     token: string;
     userId: string;
     email: string;
-    companyInfo: CompanyInfo;
+    name?: string;
+    companyInfo?: CompanyInfo;
 }
 
 const TOKEN_KEY = 'authToken';
@@ -327,7 +329,7 @@ export const checkBackendHealth = async (maxRetries = 10): Promise<boolean> => {
  * Signup new user - calls secure backend API
  * Password is NEVER stored on frontend
  */
-export const signup = async (credentials: SignupCredentials): Promise<{ token: string; user: User; companyInfo: CompanyInfo }> => {
+export const signup = async (credentials: SignupCredentials): Promise<{ token: string; user: User; companyInfo?: CompanyInfo | null }> => {
     // First check if backend is reachable
     const isBackendHealthy = await checkBackendHealth();
     if (!isBackendHealthy) {
@@ -340,54 +342,11 @@ export const signup = async (credentials: SignupCredentials): Promise<{ token: s
     if (!credentials.email || !credentials.password || !credentials.name) {
         throw new Error('Email, password, and name are required');
     }
-    if (!credentials.companyName || !credentials.companyAddress) {
-        throw new Error('Company name and address are required');
-    }
-    if (!credentials.bankDetails.bankName || !credentials.bankDetails.accountNumber ||
-        !credentials.bankDetails.accountHolderName || !credentials.bankDetails.ifscCode) {
-        throw new Error('Bank details are required');
-    }
     if (credentials.password.length < 6) {
         throw new Error('Password must be at least 6 characters');
     }
-
-    // Create FormData for multipart/form-data request
-    const formData = new FormData();
-    formData.append('email', credentials.email.trim());
-    formData.append('password', credentials.password);
-    formData.append('name', credentials.name.trim());
-    formData.append('companyName', credentials.companyName.trim());
-    formData.append('companyAddress', credentials.companyAddress.trim());
-    if (credentials.invoiceFormat) {
-        formData.append('invoiceFormat', credentials.invoiceFormat);
-    }
-    if (credentials.fromEmail) {
-        formData.append('fromEmail', credentials.fromEmail.trim());
-    }
-    if (credentials.companyLogo) {
-        formData.append('companyLogo', credentials.companyLogo);
-    }
-
-    formData.append('bankName', credentials.bankDetails.bankName.trim());
-    formData.append('accountNumber', credentials.bankDetails.accountNumber.trim());
-    formData.append('accountHolderName', credentials.bankDetails.accountHolderName.trim());
-    formData.append('ifscCode', credentials.bankDetails.ifscCode.trim());
-    // Only append optional fields if they have values
-    if (credentials.bankDetails.branchName && credentials.bankDetails.branchName.trim()) {
-        formData.append('branchName', credentials.bankDetails.branchName.trim());
-    }
-    if (credentials.bankDetails.branchCode && credentials.bankDetails.branchCode.trim()) {
-        formData.append('branchCode', credentials.bankDetails.branchCode.trim());
-    }
-    if (credentials.bankDetails.accountType && credentials.bankDetails.accountType.trim()) {
-        formData.append('accountType', credentials.bankDetails.accountType.trim());
-    }
-
-    // Log FormData contents for debugging (without sensitive data)
-    // Debug logging only in development
-    if (import.meta.env?.DEV) {
-        console.log('Signup FormData keys:', Array.from(formData.keys()));
-        console.log('FormData has companyLogo:', formData.has('companyLogo'));
+    if (credentials.confirmPassword && credentials.password !== credentials.confirmPassword) {
+        throw new Error('Passwords do not match');
     }
 
     let response: Response;
@@ -396,7 +355,15 @@ export const signup = async (credentials: SignupCredentials): Promise<{ token: s
     try {
         response = await fetch(`${AUTH_API_URL}/api/auth/signup`, {
             method: 'POST',
-            body: formData, // Don't set Content-Type header, browser will set it with boundary
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                name: credentials.name.trim(),
+                email: credentials.email.trim(),
+                password: credentials.password,
+                confirmPassword: credentials.confirmPassword,
+            }),
         });
     } catch (networkError) {
         // Network error (CORS, connection refused, etc.)
@@ -455,15 +422,19 @@ export const signup = async (credentials: SignupCredentials): Promise<{ token: s
 
     const { token, userId, email, companyInfo } = result.data;
 
-    // Store token, user info, and company info (NO password)
+    // Store token and user info (NO password)
     localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(USER_KEY, JSON.stringify({ id: userId, email }));
-    localStorage.setItem(COMPANY_INFO_KEY, JSON.stringify(companyInfo));
+    localStorage.setItem(USER_KEY, JSON.stringify({ id: userId, email, name: credentials.name.trim() }));
+    if (companyInfo) {
+        localStorage.setItem(COMPANY_INFO_KEY, JSON.stringify(companyInfo));
+    } else {
+        localStorage.removeItem(COMPANY_INFO_KEY);
+    }
 
     return {
         token,
         user: { id: userId, email },
-        companyInfo,
+        companyInfo: companyInfo || null,
     };
 };
 
