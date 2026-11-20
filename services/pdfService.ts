@@ -1013,15 +1013,27 @@ const drawInvoiceContent = async (
         if (effectiveSgstRate) await drawTotalRow(`${t.sgst} (${effectiveSgstRate}%)`, formatAmount(effectiveSgstAmount, false, false), true);
     }
 
-    // Round Off (if exists)
-    if (invoice.roundOff !== undefined && invoice.roundOff !== 0) {
-        await drawTotalRow(t.roundOff, formatAmount(invoice.roundOff, false, false), true);
+    // Round Off (only if valid non-zero number)
+    const rawRoundOff = Number(invoice.roundOff);
+    const hasNonZeroRoundOff = invoice.roundOff !== null && invoice.roundOff !== undefined && !isNaN(rawRoundOff) && Math.abs(rawRoundOff) > 0.001;
+    const effectiveRoundOff = hasNonZeroRoundOff ? rawRoundOff : 0;
+
+    if (hasNonZeroRoundOff) {
+        await drawTotalRow(t.roundOff, formatAmount(effectiveRoundOff, false, false), true);
     }
 
     // Grand Total (Currency in label, amount without symbol)
-    // Use stored finalAmount if available, otherwise calculated
+    // If invoice.finalAmount is a valid positive number, use it; otherwise compute from subTotal + tax + roundOff
     const currencyCode = effectiveCountry === 'japan' ? 'JPY' : 'INR';
-    const finalGrandTotal = invoice.finalAmount !== undefined ? invoice.finalAmount : (shouldCalculateTax ? grandTotal : subTotal);
+    const parsedFinalAmount = Number(invoice.finalAmount);
+    const hasValidFinalAmount = invoice.finalAmount !== null && invoice.finalAmount !== undefined && !isNaN(parsedFinalAmount) && parsedFinalAmount > 0;
+
+    const computedBaseTotal = shouldCalculateTax ? grandTotal : subTotal;
+    const calculatedFinalTotal = effectiveCountry === 'japan' 
+        ? Math.round(computedBaseTotal + effectiveRoundOff)
+        : Math.round((computedBaseTotal + effectiveRoundOff) * 100) / 100;
+
+    const finalGrandTotal = hasValidFinalAmount ? parsedFinalAmount : calculatedFinalTotal;
 
     await drawTotalRow(`${t.grandTotal} (${currencyCode})`, formatAmount(finalGrandTotal, false, true), true);
 

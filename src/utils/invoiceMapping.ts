@@ -3,8 +3,34 @@ import { VISION_AI_LOGO_BASE64 } from '../assets/visionAiLogoBase64';
 import { Invoice } from '../../types';
 
 export const mapInvoiceToLayoutProps = (invoice: Invoice) => {
-    const subTotal = (invoice.services || []).reduce((sum, s) => sum + (s.hours * s.rate), 0);
-    const taxAmount = (invoice.finalAmount || 0) - (invoice.roundOff || 0) - subTotal;
+    const subTotal = (invoice.services || []).reduce((sum, s) => {
+        const hrs = Number(s?.hours) || 0;
+        const rt = Number(s?.rate) || 0;
+        return sum + Math.round((hrs * rt) * 100) / 100;
+    }, 0);
+
+    const country = (invoice.country || 'india') as any;
+    const shouldCalculateTax = country === 'india' || (country === 'japan' && invoice.showConsumptionTax);
+    const taxRate = Number(invoice.taxRate) || (country === 'japan' ? 10 : 18);
+
+    let calculatedTax = 0;
+    if (country === 'japan') {
+        calculatedTax = shouldCalculateTax ? Math.round((subTotal * (taxRate / 100)) * 100) / 100 : 0;
+    } else if (country === 'india') {
+        const cgst = Math.round((subTotal * (Number(invoice.cgstRate ?? (taxRate / 2)) / 100)) * 100) / 100;
+        const sgst = Math.round((subTotal * (Number(invoice.sgstRate ?? (taxRate / 2)) / 100)) * 100) / 100;
+        calculatedTax = cgst + sgst;
+    }
+
+    const rawRoundOff = Number(invoice.roundOff);
+    const roundOff = (invoice.roundOff !== null && invoice.roundOff !== undefined && !isNaN(rawRoundOff)) ? rawRoundOff : 0;
+
+    const parsedFinal = Number(invoice.finalAmount);
+    const grandTotal = (invoice.finalAmount !== null && invoice.finalAmount !== undefined && !isNaN(parsedFinal) && parsedFinal > 0)
+        ? parsedFinal
+        : (country === 'japan' ? Math.round(subTotal + calculatedTax + roundOff) : Math.round((subTotal + calculatedTax + roundOff) * 100) / 100);
+
+    const taxAmount = calculatedTax;
 
     // Determine if it's Vision AI for specific branding
     const isVisionAI = invoice.companyInfo?.companyName === 'Vision AI LLC';
@@ -43,8 +69,8 @@ export const mapInvoiceToLayoutProps = (invoice: Invoice) => {
         subtotal: subTotal,
         taxRate: invoice.taxRate || (invoice.cgstRate || 0) + (invoice.sgstRate || 0),
         taxAmount: taxAmount,
-        grandTotal: invoice.finalAmount || 0,
-        roundOff: invoice.roundOff,
+        grandTotal: grandTotal,
+        roundOff: roundOff,
         bankDetails: {
             bankName: invoice.companyInfo?.bankDetails?.bankName || '',
             accountName: invoice.companyInfo?.bankDetails?.accountHolderName || '',
