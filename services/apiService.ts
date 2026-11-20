@@ -62,51 +62,115 @@ interface ApiResponse<T> {
 }
 
 /**
+ * Safely preserve invoice draft in localStorage when an error occurs
+ */
+export const preserveInvoiceDraft = (invoice?: any): void => {
+  if (!invoice) return;
+  try {
+    localStorage.setItem('draftInvoice', JSON.stringify(invoice));
+    localStorage.setItem('dashboard_autosave', JSON.stringify(invoice));
+  } catch (err) {
+    console.warn('Could not auto-save draft to localStorage', err);
+  }
+};
+
+/**
+ * Handle network or server communication errors
+ */
+const handleNetworkError = (error: any, draftPayload?: any): never => {
+  preserveInvoiceDraft(draftPayload);
+
+  const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+  const isFailedToFetch = error?.message?.includes('Failed to fetch') || error?.name === 'TypeError';
+
+  if (isOffline) {
+    throw new Error(
+      'Internet connection lost (Offline). Your invoice has been safely preserved as a local draft. Please reconnect to the internet and click "Confirm & Create" to retry.'
+    );
+  }
+
+  if (isFailedToFetch) {
+    throw new Error(
+      'Unable to connect to the backend server. The server may be waking up (Render free tier takes 30-50s on cold-start) or your network flickered. Your invoice has been safely saved as a draft. Please click "Confirm & Create" to retry.'
+    );
+  }
+
+  throw error;
+};
+
+/**
+ * Resilient fetch with automatic retries for transient connection drops
+ */
+const resilientFetch = async (url: string, options: RequestInit, retries = 2, delayMs = 1200): Promise<Response> => {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+      return response;
+    } catch (err: any) {
+      if (attempt === retries || (typeof navigator !== 'undefined' && !navigator.onLine)) {
+        throw err;
+      }
+      console.warn(`Fetch attempt ${attempt + 1} failed, retrying in ${delayMs}ms...`, err);
+      await new Promise(res => setTimeout(res, delayMs));
+    }
+  }
+  throw new Error('Failed to connect to the server');
+};
+
+/**
  * Create a new invoice
  */
 export const createInvoice = async (invoice: Invoice): Promise<Invoice> => {
-  const response = await fetch(`${API_BASE_URL}`, {
-    method: 'POST',
-    headers: createAuthHeaders(),
-    body: JSON.stringify(invoice),
-  });
+  try {
+    const response = await resilientFetch(`${API_BASE_URL}`, {
+      method: 'POST',
+      headers: createAuthHeaders(),
+      body: JSON.stringify(invoice),
+    });
 
-  checkAuthError(response, invoice);
+    checkAuthError(response, invoice);
 
-  if (!response.ok) {
-    throw new Error(`Failed to create invoice: ${response.statusText}`);
+    if (!response.ok) {
+      throw new Error(`Failed to create invoice: ${response.statusText}`);
+    }
+
+    const result: ApiResponse<Invoice> = await response.json();
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to create invoice');
+    }
+
+    return result.data!;
+  } catch (err: any) {
+    handleNetworkError(err, invoice);
   }
-
-  const result: ApiResponse<Invoice> = await response.json();
-  if (!result.success) {
-    throw new Error(result.error || 'Failed to create invoice');
-  }
-
-  return result.data!;
 };
 
 /**
  * Update an existing invoice
  */
 export const updateInvoice = async (id: string, invoice: Invoice): Promise<Invoice> => {
-  const response = await fetch(`${API_BASE_URL}/${id}`, {
-    method: 'PUT',
-    headers: createAuthHeaders(),
-    body: JSON.stringify(invoice),
-  });
+  try {
+    const response = await resilientFetch(`${API_BASE_URL}/${id}`, {
+      method: 'PUT',
+      headers: createAuthHeaders(),
+      body: JSON.stringify(invoice),
+    });
 
-  checkAuthError(response, invoice);
+    checkAuthError(response, invoice);
 
-  if (!response.ok) {
-    throw new Error(`Failed to update invoice: ${response.statusText}`);
+    if (!response.ok) {
+      throw new Error(`Failed to update invoice: ${response.statusText}`);
+    }
+
+    const result: ApiResponse<Invoice> = await response.json();
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to update invoice');
+    }
+
+    return result.data!;
+  } catch (err: any) {
+    handleNetworkError(err, invoice);
   }
-
-  const result: ApiResponse<Invoice> = await response.json();
-  if (!result.success) {
-    throw new Error(result.error || 'Failed to update invoice');
-  }
-
-  return result.data!;
 };
 
 /**

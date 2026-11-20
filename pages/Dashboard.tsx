@@ -71,7 +71,7 @@ export const Dashboard: React.FC = () => {
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Failed to save invoice';
             setError(errorMessage);
-            alert(errorMessage);
+            // Re-throw error so InvoiceForm's preview modal displays the error message and allows the user to retry
             throw err;
         }
     }, [selectedInvoice, country, navigate, user?.id]);
