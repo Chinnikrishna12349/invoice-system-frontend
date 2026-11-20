@@ -1224,7 +1224,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 </div>
                 <div>
                     <label className={labelClasses}>PO Number <span className="text-gray-400 font-normal text-xs">(Optional)</span></label>
-                    <input type="text" name="poNumber" maxLength={50} value={formData.poNumber || ''} onChange={handleChange} className={inputClasses(!!errors.poNumber)} placeholder="Enter PO Number (max 50 chars)" />
+                    <input type="text" name="poNumber" maxLength={50} value={formData.poNumber || ''} onChange={handleChange} className={inputClasses(!!errors.poNumber)} placeholder="Enter PO number" />
                     {errors.poNumber && <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.poNumber}</p>}
                 </div>
                 <div>
