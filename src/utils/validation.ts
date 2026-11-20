@@ -84,7 +84,7 @@ export const validateEmail = (email: string | undefined): string | null => {
 };
 
 /**
- * Validates SWIFT/BIC code format (ISO 9362 standard).
+ * Validates SWIFT code format (ISO 9362 standard).
  * 8 or 11 characters:
  * - 4 letters (Bank Code)
  * - 2 letters (Country Code)
@@ -97,7 +97,7 @@ export const validateSwiftCode = (code: string | undefined, isRequired: boolean 
     }
     const clean = code.trim().toUpperCase();
     if (clean.length !== 8 && clean.length !== 11) {
-        return "SWIFT/BIC code must be exactly 8 or 11 characters long.";
+        return "SWIFT code must be exactly 8 or 11 characters long.";
     }
     if (!/^[A-Z]{4}/.test(clean)) {
         return "Bank Code (first 4 characters of SWIFT) must contain letters only (A–Z).";

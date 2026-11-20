@@ -156,13 +156,13 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                         {codeType === 'swift' && (
                             <button
                                 type="button"
-                                onClick={() => setShowSwiftInfo(!showSwiftInfo)}
-                                className="text-xs text-blue-600 hover:text-blue-800 underline flex items-center gap-1"
+                                onClick={() => setShowSwiftInfo(prev => !prev)}
+                                className="text-xs text-blue-600 hover:text-blue-800 underline flex items-center gap-1 cursor-pointer font-medium"
                             >
                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
-                                {showSwiftInfo ? 'Hide Format Rules' : 'SWIFT/BIC Format Info'}
+                                {showSwiftInfo ? 'Hide Details' : 'SWIFT Format Info'}
                             </button>
                         )}
                     </div>
@@ -187,10 +187,10 @@ export const BankDetailsForm: React.FC<BankDetailsFormProps> = ({ data, onChange
                         <p className="mt-1 text-xs text-red-600 font-bold animate-pulse">{errors.ifscCode || errors.swiftCode}</p>
                     )}
 
-                    {codeType === 'swift' && (showSwiftInfo || true) && (
-                        <div className="mt-2 p-2.5 bg-blue-50/70 border border-blue-100 rounded-lg text-xs text-blue-900 space-y-1">
+                    {codeType === 'swift' && showSwiftInfo && (
+                        <div className="mt-2 p-2.5 bg-blue-50/70 border border-blue-100 rounded-lg text-xs text-blue-900 space-y-1 animate-in fade-in duration-200">
                             <p className="font-semibold text-blue-950 flex items-center gap-1">
-                                ℹ️ SWIFT/BIC Code Format (8 or 11 Characters):
+                                ℹ️ SWIFT Code Format (8 or 11 Characters):
                             </p>
                             <ul className="list-disc list-inside space-y-0.5 text-[11px] text-blue-800">
                                 <li><strong>Positions 1–4 (Bank Code):</strong> 4 letters (A–Z only)</li>

@@ -1665,44 +1665,59 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                     </div>
                     {availableBankAccounts.length > 0 && (
                         <div className="flex items-center gap-2">
-                            <label className="text-sm font-medium text-gray-600">Quick Select:</label>
+                            <label className="text-xs sm:text-sm font-medium text-gray-600 whitespace-nowrap">Quick Select:</label>
                             <select
                                 value={selectedBankAccountId}
                                 onChange={(e) => {
                                     const accountId = e.target.value;
-                                    setSelectedBankAccountId(accountId);
-                                    const account = availableBankAccounts.find(a => a.id === accountId);
-                                    console.log("Selected account from Quick Select:", account);
-                                    if (account) {
+                                    if (!accountId) return;
+
+                                    if (accountId === '__clear__') {
+                                        // Clear all bank fields completely to empty state
                                         setBankDetails({
-                                            bankName: account.bankName,
-                                            accountNumber: account.accountNumber,
-                                            accountHolderName: account.accountHolderName,
-                                            ifscCode: account.ifscCode,
-                                            swiftCode: account.swiftCode,
-                                            bankCode: account.bankCode,
-                                            branchName: account.branchName,
-                                            branchCode: account.branchCode,
-                                            accountType: account.accountType
-                                        } as BankDetails);
-                                    } else {
-                                        // Reset/Clear Details option selected
+                                            bankName: '',
+                                            accountNumber: '',
+                                            accountHolderName: '',
+                                            ifscCode: '',
+                                            swiftCode: '',
+                                            bankCode: '',
+                                            branchName: '',
+                                            branchCode: '',
+                                            accountType: ''
+                                        });
+                                        // Clear any active bank validation errors
+                                        setErrors(prev => {
+                                            const newErrors = { ...prev };
+                                            delete newErrors.bankName;
+                                            delete newErrors.accountNumber;
+                                            delete newErrors.accountHolderName;
+                                            delete newErrors.ifscCode;
+                                            delete newErrors.swiftCode;
+                                            delete newErrors.bankCode;
+                                            delete newErrors.branchName;
+                                            delete newErrors.branchCode;
+                                            delete newErrors.accountType;
+                                            return newErrors;
+                                        });
+                                        setSelectedBankAccountId('');
+                                    } else if (accountId === '__reset__') {
+                                        // Reset to sender company's default bank details
                                         let defaultBank: BankDetails | null = null;
                                         
                                         if (selectedFromId && selectedFromId !== 'other') {
                                             const company = FROM_COMPANIES.find(c => c.id === selectedFromId);
                                             const dynamicCompany = dynamicSenders.find(c => `dynamic-from-${c.companyName}` === selectedFromId);
-                                            if (company) {
+                                            if (company?.bankDetails) {
                                                 defaultBank = company.bankDetails;
-                                            } else if (dynamicCompany) {
+                                            } else if (dynamicCompany?.bankDetails) {
                                                 defaultBank = dynamicCompany.bankDetails;
                                             }
                                         } else if (clientType === 'employee' && selectedToId && selectedToId !== 'other') {
                                             const employee = TO_EMPLOYEES.find(e => e.id === selectedToId);
                                             const dynamicEmployee = dynamicClientEmployees.find(e => e.id === selectedToId || e.companyName === selectedToId);
-                                            if (employee && employee.bankDetails) {
+                                            if (employee?.bankDetails) {
                                                 defaultBank = employee.bankDetails;
-                                            } else if (dynamicEmployee && dynamicEmployee.bankDetails) {
+                                            } else if (dynamicEmployee?.bankDetails) {
                                                 defaultBank = dynamicEmployee.bankDetails;
                                             }
                                         }
@@ -1722,14 +1737,38 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                                 accountType: ''
                                             });
                                         }
+                                        setSelectedBankAccountId('');
+                                    } else {
+                                        // Saved bank account selected
+                                        setSelectedBankAccountId(accountId);
+                                        const account = availableBankAccounts.find(a => a.id === accountId);
+                                        if (account) {
+                                            setBankDetails({
+                                                bankName: account.bankName,
+                                                accountNumber: account.accountNumber,
+                                                accountHolderName: account.accountHolderName,
+                                                ifscCode: account.ifscCode,
+                                                swiftCode: account.swiftCode,
+                                                bankCode: account.bankCode,
+                                                branchName: account.branchName,
+                                                branchCode: account.branchCode,
+                                                accountType: account.accountType
+                                            } as BankDetails);
+                                        }
                                     }
                                 }}
-                                className="text-sm border-gray-200 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 p-2 border bg-white shadow-sm"
+                                className="text-xs sm:text-sm border-gray-200 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 py-1.5 px-2.5 border bg-white shadow-sm w-44 sm:w-52 max-w-[210px] truncate cursor-pointer"
                             >
-                                <option value="">Clear / Reset to Default</option>
-                                {availableBankAccounts.map(acc => (
-                                    <option key={acc.id} value={acc.id}>{acc.bankName} - {acc.accountNumber}</option>
-                                ))}
+                                <option value="">Quick Select Bank...</option>
+                                <option value="__clear__">Clear / Reset to Default</option>
+                                <option value="__reset__">Reset to Company Default</option>
+                                {availableBankAccounts.length > 0 && (
+                                    <optgroup label="Saved Accounts">
+                                        {availableBankAccounts.map(acc => (
+                                            <option key={acc.id} value={acc.id}>{acc.bankName} - {acc.accountNumber}</option>
+                                        ))}
+                                    </optgroup>
+                                )}
                             </select>
                         </div>
                     )}
